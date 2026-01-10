@@ -1,1 +1,5 @@
-// Flows will be imported for their side effects in this file.
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/track-performance-and-adapt-quiz-generation.ts';
+import '@/ai/flows/generate-custom-quiz.ts';
