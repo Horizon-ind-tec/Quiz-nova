@@ -14,6 +14,7 @@ export interface Quiz {
   board: string;
   chapter?: string;
   quizType: 'quiz' | 'exam';
+  ncert?: boolean;
   questions: Question[];
   createdAt: number;
 }

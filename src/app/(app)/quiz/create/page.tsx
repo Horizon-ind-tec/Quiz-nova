@@ -15,6 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/use-local-storage';
@@ -31,6 +32,7 @@ const formSchema = z.object({
   chapter: z.string().optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']),
   quizType: z.enum(['quiz', 'exam']),
+  ncert: z.boolean().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -50,6 +52,7 @@ export default function CreateQuizPage() {
       chapter: '',
       difficulty: 'medium',
       quizType: 'quiz',
+      ncert: false,
     },
   });
 
@@ -114,16 +117,36 @@ export default function CreateQuizPage() {
                       </FormItem>
                     )} />
                   </div>
-                  <FormField name="board" control={form.control} render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Educational Board</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select a board" /></SelectTrigger></FormControl>
-                        <SelectContent>{BOARDS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                    <FormField name="board" control={form.control} render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Educational Board</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl><SelectTrigger><SelectValue placeholder="Select a board" /></SelectTrigger></FormControl>
+                          <SelectContent>{BOARDS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                     <FormField
+                      control={form.control}
+                      name="ncert"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 mt-4">
+                          <FormLabel htmlFor="ncert-mode" className="mb-0">
+                            NCERT Curriculum
+                          </FormLabel>
+                          <FormControl>
+                            <Switch
+                              id="ncert-mode"
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                    <FormField
                     control={form.control}
                     name="chapter"

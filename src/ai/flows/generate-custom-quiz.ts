@@ -23,6 +23,7 @@ const GenerateCustomQuizInputSchema = z.object({
     .describe('The educational board for the quiz (e.g., CBSE, ICSE, State Board).'),
   chapter: z.string().optional().describe('The specific chapter or topic for the quiz.'),
   quizType: z.enum(['quiz', 'exam']).describe('The type of assessment (quiz or exam).'),
+  ncert: z.boolean().optional().describe('Whether the quiz should be based on the NCERT curriculum.'),
 });
 export type GenerateCustomQuizInput = z.infer<typeof GenerateCustomQuizInputSchema>;
 
@@ -57,6 +58,9 @@ Difficulty: {{{difficulty}}}
 Educational Board: {{{educationalBoard}}}
 {{#if chapter}}
 Chapter/Topic: {{{chapter}}}
+{{/if}}
+{{#if ncert}}
+Curriculum: NCERT
 {{/if}}
 Type: {{{quizType}}}
 
