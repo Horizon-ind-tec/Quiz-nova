@@ -12,6 +12,8 @@ export interface Quiz {
   difficulty: 'easy' | 'medium' | 'hard';
   class: string;
   board: string;
+  chapter?: string;
+  quizType: 'quiz' | 'exam';
   questions: Question[];
   createdAt: number;
 }

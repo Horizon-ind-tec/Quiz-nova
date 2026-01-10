@@ -6,3 +6,7 @@ export const DIFFICULTIES = [
   { value: 'medium', label: 'Medium' },
   { value: 'hard', label: 'Hard' },
 ];
+export const QUIZ_TYPES = [
+  { value: 'quiz', label: 'Quiz (5 Questions)' },
+  { value: 'exam', label: 'Exam (10 Questions)' },
+];

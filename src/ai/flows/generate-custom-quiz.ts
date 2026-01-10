@@ -21,6 +21,8 @@ const GenerateCustomQuizInputSchema = z.object({
   educationalBoard: z
     .string()
     .describe('The educational board for the quiz (e.g., CBSE, ICSE, State Board).'),
+  chapter: z.string().optional().describe('The specific chapter or topic for the quiz.'),
+  quizType: z.enum(['quiz', 'exam']).describe('The type of assessment (quiz or exam).'),
 });
 export type GenerateCustomQuizInput = z.infer<typeof GenerateCustomQuizInputSchema>;
 
@@ -53,6 +55,12 @@ const generateCustomQuizPrompt = ai.definePrompt({
 Subject: {{{subject}}}
 Difficulty: {{{difficulty}}}
 Educational Board: {{{educationalBoard}}}
+{{#if chapter}}
+Chapter/Topic: {{{chapter}}}
+{{/if}}
+Type: {{{quizType}}}
+
+Generate 5 questions for a 'quiz' and 10 questions for an 'exam'.
 
 The quiz should be in JSON format. The JSON should be an array of objects. Each object should have the following fields:
 - question: The quiz question.

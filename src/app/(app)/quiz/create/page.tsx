@@ -11,6 +11,7 @@ import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
@@ -21,7 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 
 import { generateQuizAction } from '@/app/actions';
-import { CLASSES, SUBJECTS, BOARDS, DIFFICULTIES } from '@/lib/data';
+import { CLASSES, SUBJECTS, BOARDS, DIFFICULTIES, QUIZ_TYPES } from '@/lib/data';
 import type { Quiz, Question, QuizAttempt } from '@/lib/types';
 import type { GenerateCustomQuizOutput } from '@/ai/flows/generate-custom-quiz';
 
@@ -29,7 +30,9 @@ const formSchema = z.object({
   class: z.string().min(1, 'Please select a class.'),
   subject: z.string().min(1, 'Please select a subject.'),
   board: z.string().min(1, 'Please select an educational board.'),
+  chapter: z.string().optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']),
+  quizType: z.enum(['quiz', 'exam']),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -50,7 +53,9 @@ export default function CreateQuizPage() {
       class: '',
       subject: '',
       board: '',
+      chapter: '',
       difficulty: 'medium',
+      quizType: 'quiz',
     },
   });
 
@@ -283,6 +288,51 @@ export default function CreateQuizPage() {
                       <FormMessage />
                     </FormItem>
                   )} />
+                   <FormField
+                    control={form.control}
+                    name="chapter"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Chapter/Topic (Optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Photosynthesis, Algebra" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    name="quizType"
+                    control={form.control}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Type</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex space-x-1"
+                          >
+                            {QUIZ_TYPES.map(d => (
+                              <FormItem key={d.value} className="flex-1">
+                                <FormControl>
+                                  <RadioGroupItem value={d.value} className="sr-only" />
+                                </FormControl>
+                                <FormLabel
+                                  className={cn(
+                                    "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                                  )}
+                                >
+                                  {d.label}
+                                </FormLabel>
+                              </FormItem>
+                            ))}
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <FormField name="difficulty" control={form.control} render={({ field }) => (
                     <FormItem>
                       <FormLabel>Difficulty</FormLabel>
@@ -305,7 +355,7 @@ export default function CreateQuizPage() {
                   )} />
                   <Button type="submit" className="w-full !mt-8" disabled={quizState === 'loading'}>
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Generate Quiz
+                    Generate
                   </Button>
                 </form>
               </FormProvider>
