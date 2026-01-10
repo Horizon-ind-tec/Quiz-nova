@@ -13,6 +13,7 @@ import {
   Bookmark,
   Grid,
 } from 'lucide-react';
+import { useForm, FormProvider } from 'react-hook-form';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,6 +52,7 @@ export default function TakeQuizPage() {
   const [score, setScore] = useState(0);
   const [, setQuizHistory] = useLocalStorage<QuizAttempt[]>('quizHistory', []);
   const router = useRouter();
+  const form = useForm();
 
   const timePerQuestion = quiz?.quizType === 'exam' ? 180 : 120; // 3 mins for exam, 2 for quiz
   const totalTime = useMemo(() => (quiz?.questions.length ?? 0) * timePerQuestion, [quiz, timePerQuestion]);
@@ -169,7 +171,7 @@ export default function TakeQuizPage() {
         }
 
         return (
-          <>
+          <FormProvider {...form}>
             <Card className="w-full">
               <div className="p-4 border-b">
                 <div className="flex justify-between items-center">
@@ -277,7 +279,7 @@ export default function TakeQuizPage() {
                     <ArrowRight className="h-5 w-5 md:ml-2" />
                   </Button>
             </div>
-          </>
+          </FormProvider>
         );
       case 'results':
         if (!quiz) return null;
@@ -369,5 +371,3 @@ export default function TakeQuizPage() {
     </div>
   );
 }
-
-    
