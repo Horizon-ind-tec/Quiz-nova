@@ -10,16 +10,12 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { cn } from '@/lib/utils';
 
 export function SideNav() {
   const pathname = usePathname();
 
-  const isActive = (path: string) => pathname === path;
+  const isActive = (path: string) => pathname.startsWith(path);
 
   return (
     <Sidebar>
@@ -46,7 +42,7 @@ export function SideNav() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={isActive('/quiz/create')}
+              isActive={isActive('/quiz')}
               tooltip={{ children: 'New Quiz' }}
             >
               <Link href="/quiz/create">

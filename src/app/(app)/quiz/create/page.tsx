@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, Sparkles, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Header } from '@/components/header';
@@ -14,16 +15,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Progress } from '@/components/ui/progress';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 
 import { generateQuizAction } from '@/app/actions';
 import { CLASSES, SUBJECTS, BOARDS, DIFFICULTIES, QUIZ_TYPES } from '@/lib/data';
-import type { Quiz, Question, QuizAttempt } from '@/lib/types';
+import type { Quiz } from '@/lib/types';
 import type { GenerateCustomQuizOutput } from '@/ai/flows/generate-custom-quiz';
 
 const formSchema = z.object({
@@ -36,16 +34,12 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
-type QuizState = 'setup' | 'loading' | 'taking' | 'results';
 
 export default function CreateQuizPage() {
-  const [quizState, setQuizState] = useState<QuizState>('setup');
-  const [quiz, setQuiz] = useState<Quiz | null>(null);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [userAnswers, setUserAnswers] = useState<string[]>([]);
-  const [score, setScore] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const [, setQuizHistory] = useLocalStorage<QuizAttempt[]>('quizHistory', []);
+  const [, setQuiz] = useLocalStorage<Quiz | null>('currentQuiz', null);
+  const router = useRouter();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -60,7 +54,7 @@ export default function CreateQuizPage() {
   });
 
   const onSubmit = async (data: FormValues) => {
-    setQuizState('loading');
+    setIsLoading(true);
     try {
       const result: GenerateCustomQuizOutput = await generateQuizAction(data);
       if (result && result.quiz.length > 0) {
@@ -71,9 +65,7 @@ export default function CreateQuizPage() {
           createdAt: Date.now(),
         };
         setQuiz(newQuiz);
-        setUserAnswers(Array(newQuiz.questions.length).fill(''));
-        setCurrentQuestionIndex(0);
-        setQuizState('taking');
+        router.push('/quiz/take');
       } else {
         throw new Error('AI failed to generate a quiz. Please try again.');
       }
@@ -83,172 +75,16 @@ export default function CreateQuizPage() {
         title: 'Error',
         description: (error as Error).message || 'Something went wrong.',
       });
-      setQuizState('setup');
+      setIsLoading(false);
     }
   };
 
-  const handleAnswerSelect = (answer: string) => {
-    const newAnswers = [...userAnswers];
-    newAnswers[currentQuestionIndex] = answer;
-    setUserAnswers(newAnswers);
-  };
-
-  const handleNextQuestion = () => {
-    if (currentQuestionIndex < (quiz?.questions.length ?? 0) - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    } else {
-      finishQuiz();
-    }
-  };
-
-  const finishQuiz = () => {
-    if (!quiz) return;
-    let correctAnswers = 0;
-    quiz.questions.forEach((q, index) => {
-      if (q.correctAnswer === userAnswers[index]) {
-        correctAnswers++;
-      }
-    });
-    const finalScore = Math.round((correctAnswers / quiz.questions.length) * 100);
-    setScore(finalScore);
-
-    const quizAttempt: QuizAttempt = {
-      ...quiz,
-      userAnswers,
-      score: finalScore,
-      completedAt: Date.now(),
-    };
-    setQuizHistory(prev => [...prev, quizAttempt]);
-    setQuizState('results');
-  };
-
-  const restartQuiz = () => {
-    setQuiz(null);
-    setQuizState('setup');
-    form.reset();
-  };
-
-  const renderContent = () => {
-    switch (quizState) {
-      case 'loading':
-        return (
-          <div className="flex flex-col items-center justify-center text-center p-8 h-96">
-            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-            <p className="text-lg font-semibold">Generating your quiz...</p>
-            <p className="text-muted-foreground">The AI is crafting your questions. Please wait a moment.</p>
-          </div>
-        );
-      case 'taking':
-        if (!quiz) return null;
-        const currentQuestion = quiz.questions[currentQuestionIndex];
-        const progress = ((currentQuestionIndex + 1) / quiz.questions.length) * 100;
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {quiz.subject} Quiz{' '}
-                <span className="text-sm font-normal text-muted-foreground">
-                  ({currentQuestionIndex + 1}/{quiz.questions.length})
-                </span>
-              </CardTitle>
-              <Progress value={progress} className="w-full h-2 mt-2 bg-accent" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-lg font-semibold mb-4">{currentQuestion.question}</p>
-              <RadioGroup
-                value={userAnswers[currentQuestionIndex]}
-                onValueChange={handleAnswerSelect}
-                className="space-y-2"
-              >
-                {currentQuestion.options.map((option, index) => (
-                  <FormItem key={index} className="flex items-center space-x-3 space-y-0 rounded-md border p-4 hover:bg-secondary/50 transition-colors">
-                    <FormControl>
-                      <RadioGroupItem value={option} />
-                    </FormControl>
-                    <FormLabel className="font-normal flex-1 cursor-pointer">{option}</FormLabel>
-                  </FormItem>
-                ))}
-              </RadioGroup>
-              <Button onClick={handleNextQuestion} className="w-full mt-6" disabled={!userAnswers[currentQuestionIndex]}>
-                {currentQuestionIndex < quiz.questions.length - 1 ? 'Next Question' : 'Finish Quiz'}
-              </Button>
-            </CardContent>
-          </Card>
-        );
-      case 'results':
-        if (!quiz) return null;
-        return (
-          <Card>
-            <CardHeader className="items-center text-center">
-              <CardTitle className="text-3xl">Quiz Complete!</CardTitle>
-              <CardDescription>You scored</CardDescription>
-              <div className="relative my-4 h-32 w-32">
-                <svg className="h-full w-full" viewBox="0 0 36 36">
-                  <path
-                    className="stroke-secondary"
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    fill="none"
-                    strokeWidth="3"
-                  />
-                  <path
-                    className="stroke-accent"
-                    strokeDasharray={`${score}, 100`}
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    fill="none"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-4xl font-bold text-foreground">{score}%</span>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <h3 className="text-lg font-semibold mb-4 text-center">Review Your Answers</h3>
-              <Accordion type="single" collapsible className="w-full">
-                {quiz.questions.map((q, index) => {
-                  const userAnswer = userAnswers[index];
-                  const isCorrect = userAnswer === q.correctAnswer;
-                  return (
-                    <AccordionItem value={`item-${index}`} key={index}>
-                      <AccordionTrigger className="hover:no-underline">
-                        <div className="flex items-center gap-3 flex-1">
-                          {isCorrect ? (
-                            <CheckCircle className="h-5 w-5 text-green-500" />
-                          ) : (
-                            <XCircle className="h-5 w-5 text-destructive" />
-                          )}
-                          <span className="text-left font-medium">Question {index + 1}</span>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="p-4 bg-secondary/30 rounded-md">
-                        <p className="font-semibold">{q.question}</p>
-                        <p className="mt-2 text-sm">
-                          Your answer: <span className={cn(isCorrect ? 'text-green-600' : 'text-destructive', 'font-semibold')}>{userAnswer || 'Not answered'}</span>
-                        </p>
-                        {!isCorrect && (
-                          <p className="mt-1 text-sm">
-                            Correct answer: <span className="font-semibold text-green-600">{q.correctAnswer}</span>
-                          </p>
-                        )}
-                        <Separator className="my-3" />
-                        <p className="text-sm text-muted-foreground"><span className="font-semibold text-foreground">Explanation:</span> {q.explanation}</p>
-                      </AccordionContent>
-                    </AccordionItem>
-                  );
-                })}
-              </Accordion>
-              <Button onClick={restartQuiz} className="w-full mt-6">
-                Create Another Quiz
-              </Button>
-            </CardContent>
-          </Card>
-        );
-      case 'setup':
-      default:
-        return (
-          <Card>
+  return (
+    <div className="flex flex-col h-screen">
+      <Header title="New Quiz" />
+      <main className="flex-1 grid md:grid-cols-2">
+        <div className="p-4 pt-6 md:p-8">
+          <Card className="max-w-2xl mx-auto">
             <CardHeader>
               <CardTitle>Create a New Quiz</CardTitle>
               <CardDescription>Select your preferences and let our AI generate a custom quiz for you.</CardDescription>
@@ -353,24 +189,23 @@ export default function CreateQuizPage() {
                       <FormMessage />
                     </FormItem>
                   )} />
-                  <Button type="submit" className="w-full !mt-8" disabled={quizState === 'loading'}>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Generate
+                  <Button type="submit" className="w-full !mt-8" disabled={isLoading}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    {isLoading ? 'Generating...' : 'Generate'}
                   </Button>
                 </form>
               </FormProvider>
             </CardContent>
           </Card>
-        );
-    }
-  };
-
-  return (
-    <div className="flex flex-col">
-      <Header title="New Quiz" />
-      <main className="flex-1 p-4 pt-6 md:p-8 flex justify-center items-start">
-        <div className="w-full max-w-2xl">
-          {renderContent()}
+        </div>
+        <div className="hidden md:flex flex-col items-center justify-center bg-muted p-8">
+          <div className="text-center">
+             <Sparkles className="mx-auto h-16 w-16 text-primary" />
+            <h2 className="mt-6 text-2xl font-semibold">Your Quiz Awaits</h2>
+            <p className="mt-2 text-muted-foreground">
+              After you generate a quiz, it will appear here, ready for you to take.
+            </p>
+          </div>
         </div>
       </main>
     </div>
