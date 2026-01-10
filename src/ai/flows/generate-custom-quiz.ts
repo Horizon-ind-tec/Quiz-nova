@@ -18,12 +18,11 @@ import {z} from 'genkit';
 const GenerateCustomQuizInputSchema = z.object({
   subject: z.string().describe('The subject of the quiz (e.g., Mathematics, History).'),
   difficulty: z.enum(['easy', 'medium', 'hard']).describe('The difficulty level of the quiz.'),
-  educationalBoard: z
-    .string()
-    .describe('The educational board for the quiz (e.g., CBSE, ICSE, State Board).'),
+  board: z.string().describe('The educational board for the quiz (e.g., CBSE, ICSE, State Board).'),
   chapter: z.string().optional().describe('The specific chapter or topic for the quiz.'),
   quizType: z.enum(['quiz', 'exam']).describe('The type of assessment (quiz or exam).'),
   ncert: z.boolean().optional().describe('Whether the quiz should be based on the NCERT curriculum.'),
+  class: z.string().optional().describe('The class of the student.'),
 });
 export type GenerateCustomQuizInput = z.infer<typeof GenerateCustomQuizInputSchema>;
 
@@ -55,7 +54,7 @@ const generateCustomQuizPrompt = ai.definePrompt({
 
 Subject: {{{subject}}}
 Difficulty: {{{difficulty}}}
-Educational Board: {{{educationalBoard}}}
+Educational Board: {{{board}}}
 {{#if chapter}}
 Chapter/Topic: {{{chapter}}}
 {{/if}}
