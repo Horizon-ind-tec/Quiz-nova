@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Copy, Loader2, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 
@@ -54,6 +54,12 @@ function PaymentPageContents() {
   const [qrCodeUrl, setQrCodeUrl] = useState(defaultQrCodeUrl);
   const [isUploading, setIsUploading] = useState(false);
   
+    useEffect(() => {
+        if (!userLoading && !user) {
+            router.push('/login');
+        }
+    }, [user, userLoading, router]);
+
   useEffect(() => {
     if (upiSettings) {
       setQrCodeUrl(upiSettings.qrCodeUrl);
@@ -61,15 +67,17 @@ function PaymentPageContents() {
       const initializeSettings = async () => {
         if(settingsDocRef) {
            const docSnap = await getDoc(settingsDocRef);
-           if (!docSnap.exists()) {
+           if (!docSnap.exists() && user?.email === ADMIN_EMAIL) {
              await setDoc(settingsDocRef, { qrCodeUrl: defaultQrCodeUrl });
            }
         }
       };
-      initializeSettings();
+      if (user) {
+        initializeSettings();
+      }
       setQrCodeUrl(defaultQrCodeUrl);
     }
-  }, [upiSettings, defaultQrCodeUrl, settingsDocRef]);
+  }, [upiSettings, defaultQrCodeUrl, settingsDocRef, user]);
   
 
   const copyToClipboard = (text: string) => {
@@ -140,7 +148,7 @@ function PaymentPageContents() {
 
   if (userLoading || settingsLoading) {
     return (
-        <div className="flex h-48 items-center justify-center">
+        <div className="flex h-screen items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin" />
         </div>
     )
