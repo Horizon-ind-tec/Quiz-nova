@@ -18,22 +18,28 @@ import {
 } from '@/ai/flows/get-performance-report';
 import { notifyAdminOfPayment, type NotifyAdminOfPaymentInput } from '@/ai/flows/notify-admin-of-payment';
 
-import { initializeApp, getApps } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { initializeApp, getApps, App } from 'firebase-admin/app';
+import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { firebaseConfig } from '@/firebase/config';
 
-// Initialize Firebase Admin SDK
-if (!getApps().some(app => app.name === 'actions')) {
-    initializeApp({
-        credential: {
-            projectId: firebaseConfig.projectId,
-            clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL!,
-            privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY!.replace(/\\n/g, '\n'),
-        }
-    }, 'actions');
-}
+let adminDb: Firestore;
+let adminApp: App;
 
-const adminDb = getFirestore('actions');
+// Initialize Firebase Admin SDK only if env vars are present
+if (process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
+  if (!getApps().some(app => app.name === 'actions')) {
+      adminApp = initializeApp({
+          credential: {
+              projectId: firebaseConfig.projectId,
+              clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+              privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, '\n'),
+          }
+      }, 'actions');
+  } else {
+      adminApp = getApps().find(app => app.name === 'actions')!;
+  }
+  adminDb = getFirestore(adminApp);
+}
 
 
 export async function generateQuizAction(
@@ -81,6 +87,10 @@ export async function notifyAdminOfPaymentAction(input: NotifyAdminOfPaymentInpu
 
 
 export async function handlePaymentAction(input: { targetUserId: string, action: 'approve' | 'deny' }): Promise<void> {
+  if (!adminDb) {
+    throw new Error('Firebase Admin SDK not initialized. Server environment is not configured.');
+  }
+
   const { targetUserId, action } = input;
   
   const userRef = adminDb.collection('users').doc(targetUserId);

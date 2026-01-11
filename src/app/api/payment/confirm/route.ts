@@ -1,24 +1,33 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { initializeApp, getApps, App } from 'firebase-admin/app';
+import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { firebaseConfig } from '@/firebase/config';
 import { notifyAdminOfPayment } from '@/ai/flows/notify-admin-of-payment';
 
+let adminDb: Firestore;
+
 // Ensure Firebase Admin is initialized only once
-if (!getApps().some(app => app.name === 'payment-confirmation')) {
-    initializeApp({
-        credential: {
-            projectId: firebaseConfig.projectId,
-            clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL!,
-            privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY!.replace(/\\n/g, '\n'),
-        }
-    }, 'payment-confirmation');
+if (process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
+    if (!getApps().some(app => app.name === 'payment-confirmation')) {
+        initializeApp({
+            credential: {
+                projectId: firebaseConfig.projectId,
+                clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+                privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, '\n'),
+            }
+        }, 'payment-confirmation');
+    }
+    adminDb = getFirestore(getApps().find(app => app.name === 'payment-confirmation'));
 }
 
-const adminDb = getFirestore('payment-confirmation');
 
 export async function GET(request: NextRequest) {
+  if (!adminDb) {
+    const errorHtml = `<html><body style="font-family: sans-serif; display: grid; place-content: center; height: 100vh; text-align: center;"><div><h1 style="color: #dc2626;">Configuration Error</h1><p>The server is not configured for Firebase Admin operations. Please check environment variables.</p></div></body></html>`;
+    return new NextResponse(errorHtml, { status: 500, headers: { 'Content-Type': 'text/html' } });
+  }
+
   const { searchParams } = new URL(request.url);
   const action = searchParams.get('action');
   const userId = searchParams.get('userId');
@@ -73,6 +82,7 @@ export async function GET(request: NextRequest) {
                 <div>
                     <h1 style="color: #22c55e;">Action Complete</h1>
                     <p>${message}</p>
+                    <p style="margin-top: 20px; font-size: 12px; color: #888;">You can close this tab.</p>
                 </div>
             </body>
         </html>`, 
