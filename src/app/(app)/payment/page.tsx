@@ -1,17 +1,17 @@
-
-
 'use client';
 
-import { Suspense, useState, useRef } from 'react';
+import { Suspense, useState, useRef, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Copy, Loader2, ShieldCheck, Upload } from 'lucide-react';
+import { ArrowLeft, Copy, Loader2, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { useDoc } from '@/firebase/firestore/use-doc';
 
 const plansDetails = {
   premium: {
@@ -35,15 +35,45 @@ function PaymentPageContents() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
-  const { user, loading } = useUser();
+  const { user, loading: userLoading } = useUser();
+  const firestore = useFirestore();
   const plan = searchParams.get('plan') as keyof typeof plansDetails;
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+  
   const selectedPlan = plansDetails[plan] || { name: 'Plan', price: '₹---', amount: '0' };
   
-  const initialQrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=${UPI_ID}&pn=QuizNova&am=${selectedPlan.amount}&cu=INR`;
-  const [qrCodeUrl, setQrCodeUrl] = useState(initialQrCodeUrl);
+  const defaultQrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=${UPI_ID}&pn=QuizNova&am=${selectedPlan.amount}&cu=INR`;
   
+  const settingsDocRef = useMemoFirebase(
+    () => (firestore ? doc(firestore, 'settings', 'upiDetails') : null),
+    [firestore]
+  );
+  
+  const { data: upiSettings, isLoading: settingsLoading } = useDoc<{ qrCodeUrl: string }>(settingsDocRef);
+
+  const [qrCodeUrl, setQrCodeUrl] = useState(defaultQrCodeUrl);
+  const [isUploading, setIsUploading] = useState(false);
+  
+  useEffect(() => {
+    if (upiSettings) {
+      setQrCodeUrl(upiSettings.qrCodeUrl);
+    } else {
+      // If no setting is found in Firestore, initialize it with the default QR code.
+      // This is helpful for the first run.
+      const initializeSettings = async () => {
+        if(settingsDocRef) {
+           const docSnap = await getDoc(settingsDocRef);
+           if (!docSnap.exists()) {
+             await setDoc(settingsDocRef, { qrCodeUrl: defaultQrCodeUrl });
+           }
+        }
+      };
+      initializeSettings();
+      setQrCodeUrl(defaultQrCodeUrl);
+    }
+  }, [upiSettings, defaultQrCodeUrl, settingsDocRef]);
+  
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({
@@ -52,17 +82,31 @@ function PaymentPageContents() {
     });
   };
 
-  const handleQrCodeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleQrCodeChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
+    if (file && settingsDocRef) {
+        setIsUploading(true);
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
             if (e.target?.result) {
-                setQrCodeUrl(e.target.result as string);
-                toast({
-                    title: 'QR Code Updated',
-                    description: 'The QR code has been changed successfully.',
-                });
+                const newQrCodeUrl = e.target.result as string;
+                try {
+                    await setDoc(settingsDocRef, { qrCodeUrl: newQrCodeUrl });
+                    setQrCodeUrl(newQrCodeUrl); // Optimistically update UI
+                    toast({
+                        title: 'QR Code Updated',
+                        description: 'The new QR code has been saved successfully.',
+                    });
+                } catch(error) {
+                    console.error("Error updating QR code:", error);
+                    toast({
+                        variant: 'destructive',
+                        title: 'Update Failed',
+                        description: (error as Error).message || 'Could not save the new QR code.',
+                    });
+                } finally {
+                    setIsUploading(false);
+                }
             }
         };
         reader.readAsDataURL(file);
@@ -73,7 +117,7 @@ function PaymentPageContents() {
     fileInputRef.current?.click();
   };
 
-  if (loading) {
+  if (userLoading || settingsLoading) {
     return (
         <div className="flex h-48 items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin" />
@@ -107,30 +151,36 @@ function PaymentPageContents() {
                 <TabsContent value="upi" className="mt-6">
                   <div className="flex flex-col items-center text-center">
                     <p className="mb-4 text-muted-foreground">Scan the QR code with your UPI app.</p>
-                    <div className="flex items-center gap-4">
+                    <div className="relative w-[200px] h-[200px]">
+                        { (settingsLoading || isUploading) && 
+                            <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-md">
+                                <Loader2 className="h-8 w-8 animate-spin" />
+                            </div>
+                        }
                         <Image 
                           src={qrCodeUrl}
                           alt="UPI QR Code"
                           width={200}
                           height={200}
-                          key={qrCodeUrl}
+                          className="rounded-md"
+                          key={qrCodeUrl} // Re-renders the image when URL changes
                         />
-                        {isUserAdmin && (
-                            <>
-                                <Button variant="outline" onClick={handleChangeQrClick}>
-                                    <Upload className="mr-2 h-4 w-4" />
-                                    Change QR Code
-                                </Button>
-                                <input
-                                  type="file"
-                                  ref={fileInputRef}
-                                  onChange={handleQrCodeChange}
-                                  className="hidden"
-                                  accept="image/png, image/jpeg, image/gif"
-                                />
-                            </>
-                        )}
                     </div>
+                     {isUserAdmin && (
+                        <div className="mt-4">
+                            <Button variant="outline" onClick={handleChangeQrClick} disabled={isUploading}>
+                                <Upload className="mr-2 h-4 w-4" />
+                                Change QR Code
+                            </Button>
+                            <input
+                              type="file"
+                              ref={fileInputRef}
+                              onChange={handleQrCodeChange}
+                              className="hidden"
+                              accept="image/png, image/jpeg, image/gif"
+                            />
+                        </div>
+                    )}
                      <p className="my-4 text-muted-foreground">Or pay using the UPI ID below:</p>
                      <div 
                         className="flex items-center gap-2 rounded-lg bg-muted p-3 cursor-pointer hover:bg-accent"
@@ -182,7 +232,11 @@ function PaymentPageContents() {
 
 export default function PaymentPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={
+             <div className="flex h-screen w-full items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        }>
             <PaymentPageContents />
         </Suspense>
     )

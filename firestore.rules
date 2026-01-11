@@ -134,6 +134,18 @@ service cloud.firestore {
     //-------------------------------------------------------------------------
     // Collection Rules
     //-------------------------------------------------------------------------
+
+     /**
+     * @description Manages global app settings, like the UPI QR code.
+     * @path /settings/{settingId}
+     * @allow (read) Any authenticated user can read settings.
+     * @allow (write) Only the admin can create or update settings.
+     * @principle Centralized configuration with admin-only write access.
+     */
+    match /settings/{settingId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
     
     /**
      * @description Manages video coaching content.
@@ -208,5 +220,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
