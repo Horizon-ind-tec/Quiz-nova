@@ -24,7 +24,6 @@ import { useLocalStorage } from '@/hooks/use-local-storage';
 import { generateQuizAction } from '@/app/actions';
 import { CLASSES, SUBJECTS_DATA, BOARDS, DIFFICULTIES } from '@/lib/data';
 import type { Quiz } from '@/lib/types';
-import type { GenerateCustomQuizOutput } from '@/ai/flows/generate-custom-quiz';
 import { useUser } from '@/firebase';
 
 const formSchema = z.object({
@@ -35,6 +34,7 @@ const formSchema = z.object({
   chapter: z.string().optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']),
   numberOfQuestions: z.coerce.number().min(1, "You must have at least 1 question.").max(50, "You can have at most 50 questions."),
+  quizType: z.enum(['quiz', 'exam'], { required_error: 'Please select a quiz type.' }),
   ncert: z.boolean().optional(),
 });
 
@@ -56,7 +56,7 @@ export default function CreateQuizPage() {
       board: '',
       chapter: '',
       difficulty: 'medium',
-      numberOfQuestions: 5,
+      numberOfQuestions: 10,
       ncert: false,
     },
   });
@@ -75,12 +75,11 @@ export default function CreateQuizPage() {
     }
     setIsLoading(true);
     try {
-      const result: GenerateCustomQuizOutput = await generateQuizAction(data);
+      const result = await generateQuizAction(data);
       if (result && result.questions.length > 0) {
         const newQuiz: Quiz = {
           id: uuidv4(),
           ...data,
-          quizType: data.numberOfQuestions > 10 ? 'exam' : 'quiz', // Determine type based on length
           questions: result.questions,
           createdAt: Date.now(),
         };
@@ -100,19 +99,62 @@ export default function CreateQuizPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col">
       <Header title="New Quiz" />
-      <main className="flex-1 grid md:grid-cols-2">
-        <div className="p-4 pt-6 md:p-8 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto">
+        <div className="p-4 pt-6 md:p-8">
           <Card className="max-w-2xl mx-auto">
             <CardHeader>
-              <CardTitle>Create a New Quiz</CardTitle>
-              <CardDescription>Select your preferences and let our AI generate a custom quiz for you.</CardDescription>
+              <CardTitle>Create a New Assessment</CardTitle>
+              <CardDescription>Select your preferences and let our AI generate a custom quiz or exam for you.</CardDescription>
             </CardHeader>
             <CardContent>
               <FormProvider {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   
+                  <FormField
+                    name="quizType"
+                    control={form.control}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Assessment Type</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="grid grid-cols-2 gap-4"
+                          >
+                            <FormItem>
+                              <FormControl>
+                                <RadioGroupItem value="quiz" id="type-quiz" className="sr-only" />
+                              </FormControl>
+                              <FormLabel
+                                htmlFor="type-quiz"
+                                className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                              >
+                                <span className="font-bold">Quiz</span>
+                                <span className="text-xs text-muted-foreground">Interactive session</span>
+                              </FormLabel>
+                            </FormItem>
+                             <FormItem>
+                              <FormControl>
+                                <RadioGroupItem value="exam" id="type-exam" className="sr-only" />
+                              </FormControl>
+                              <FormLabel
+                                htmlFor="type-exam"
+                                className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                              >
+                                <span className="font-bold">Exam</span>
+                                <span className="text-xs text-muted-foreground">Paper-style test</span>
+                              </FormLabel>
+                            </FormItem>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <FormField
                     name="subject"
                     control={form.control}
@@ -288,15 +330,6 @@ export default function CreateQuizPage() {
               </FormProvider>
             </CardContent>
           </Card>
-        </div>
-        <div className="hidden md:flex flex-col items-center justify-center bg-muted p-8">
-          <div className="text-center">
-             <Sparkles className="mx-auto h-16 w-16 text-primary" />
-            <h2 className="mt-6 text-2xl font-semibold">Your Quiz Awaits</h2>
-            <p className="mt-2 text-muted-foreground">
-              After you generate a quiz, it will appear here, ready for you to take.
-            </p>
-          </div>
         </div>
       </main>
     </div>

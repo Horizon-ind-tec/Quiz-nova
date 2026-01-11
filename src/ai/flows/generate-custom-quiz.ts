@@ -23,6 +23,7 @@ const GenerateCustomQuizInputSchema = z.object({
   board: z.string().describe('The educational board for the quiz (e.g., CBSE, ICSE, State Board).'),
   chapter: z.string().optional().describe('The specific chapter or topic for the quiz.'),
   numberOfQuestions: z.number().describe('The total number of questions to generate for the quiz.'),
+  quizType: z.enum(['quiz', 'exam']).describe('The type of assessment: a short interactive quiz or a formal, paper-style exam.'),
   ncert: z.boolean().optional().describe('Whether the quiz should be based on the NCERT curriculum.'),
   class: z.string().optional().describe('The class of the student.'),
 });
@@ -81,6 +82,7 @@ Sub-category: {{{subCategory}}}
 {{/if}}
 Difficulty: {{{difficulty}}}
 Educational Board: {{{board}}}
+Assessment Type: {{{quizType}}}
 {{#if chapter}}
 Chapter/Topic: {{{chapter}}}
 {{/if}}
@@ -88,7 +90,7 @@ Chapter/Topic: {{{chapter}}}
 Curriculum: NCERT
 {{/if}}
 
-- Generate a mix of question types (MCQ, Match the Following, Numerical) if the total number of questions is large (e.g., >15). Otherwise, prioritize MCQs.
+- Generate a mix of question types (MCQ, Match the Following, Numerical) if the assessment type is 'exam' and the number of questions is large (e.g., >15). Otherwise, prioritize MCQs.
 - Ensure you generate exactly {{{numberOfQuestions}}} questions in total.
 
 The entire output should be a single JSON object with a "questions" key, which holds an array of question objects. Each question object must have a "type" field ('mcq', 'match', or 'numerical') and other fields appropriate for that type.

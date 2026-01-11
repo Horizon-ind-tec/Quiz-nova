@@ -19,13 +19,9 @@ import {
 
 
 export async function generateQuizAction(
-  input: Omit<GenerateCustomQuizInput, 'quizType'>
+  input: GenerateCustomQuizInput
 ): Promise<GenerateCustomQuizOutput> {
-  const flowInput: GenerateCustomQuizInput = {
-    ...input,
-    quizType: input.numberOfQuestions > 10 ? 'exam' : 'quiz',
-  };
-  return await generateCustomQuiz(flowInput);
+  return await generateCustomQuiz(input);
 }
 
 
