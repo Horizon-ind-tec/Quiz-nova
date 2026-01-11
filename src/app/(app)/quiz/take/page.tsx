@@ -139,7 +139,7 @@ export default function TakeQuizPage() {
   
   const handlePrevQuestion = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
     }
   };
   
@@ -226,9 +226,13 @@ export default function TakeQuizPage() {
     let correctAnswers = 0;
     quiz.questions.forEach((q, index) => {
       const userAnswer = userAnswers[index];
-      if (q.type === 'mcq' && userAnswer && userAnswer === q.correctAnswer) {
+      if (userAnswer === undefined || userAnswer === '' || (typeof userAnswer === 'object' && Object.keys(userAnswer).length === 0)) {
+        return;
+      }
+      
+      if (q.type === 'mcq' && userAnswer === q.correctAnswer) {
         correctAnswers++;
-      } else if (q.type === 'numerical' && userAnswer && Number(userAnswer) === q.correctAnswer) {
+      } else if (q.type === 'numerical' && Number(userAnswer) === q.correctAnswer) {
         correctAnswers++;
       } else if (q.type === 'match') {
         const userMatches = userAnswer as { [key: string]: string };
@@ -238,15 +242,13 @@ export default function TakeQuizPage() {
       }
     });
     
-    if (totalQuestions === 0) return 0;
-
     return (correctAnswers / totalQuestions) * 100;
   }, [userAnswers, quiz, totalQuestions]);
   
 
   const renderMCQ = (q: MCQ, questionIndex: number) => {
     const userAnswer = userAnswers[questionIndex] as string;
-    const isAnswered = userAnswer !== '';
+    const isAnswered = userAnswer !== '' && userAnswer !== undefined;
     return (
         <>
             <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
@@ -390,7 +392,7 @@ export default function TakeQuizPage() {
                         <li>This test paper consists of {totalQuestions} questions.</li>
                         <li>Each question carries +4 marks for correct answer and -1 mark for wrong answer.</li>
                         <li>Attempt all questions.</li>
-                        <li>Mark your answers in the provided interface. Once an answer is selected, it cannot be changed.</li>
+                        <li>Mark your answers in the provided interface. For MCQs, once an answer is selected, it cannot be changed.</li>
                     </ol>
                 </div>
             </div>
