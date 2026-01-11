@@ -84,19 +84,21 @@ service cloud.firestore {
     
     /**
      * Enforces immutability of core fields during a user's own profile update.
-     * Allows a user to set their payment to 'pending' but not to change their plan.
+     * Allows a user to set their payment to 'pending' but not to change their plan directly.
      */
     function isUpdatingOwnProfile(userId) {
-       // A user can initiate a payment.
+       // A user can initiate a payment by setting status to 'pending' and defining a 'pendingPlan'.
+       // They cannot change their current 'plan'.
        let isInitiatingPayment = request.resource.data.paymentStatus == 'pending' 
                                  && 'pendingPlan' in request.resource.data
                                  && request.resource.data.plan == resource.data.plan;
        
-       // Ensure core immutable fields are not changed.
+       // Ensure core immutable fields are not changed by the user.
        let idIsUnchanged = request.resource.data.id == resource.data.id;
        let emailIsUnchanged = request.resource.data.email == resource.data.email;
        let creationDateIsUnchanged = request.resource.data.createdAt == resource.data.createdAt;
        
+       // The user must be the owner, be initiating a payment, and not changing immutable fields.
        return isOwner(userId) && isInitiatingPayment && idIsUnchanged && emailIsUnchanged && creationDateIsUnchanged;
     }
 
@@ -237,5 +239,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
