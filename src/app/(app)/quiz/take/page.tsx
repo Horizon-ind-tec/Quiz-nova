@@ -200,19 +200,8 @@ export default function TakeQuizPage() {
     setScore(finalScore);
 
     const newQuizAttempt: QuizAttempt = {
-      // Base quiz data
-      subject: quiz.subject,
-      subCategory: quiz.subCategory,
-      difficulty: quiz.difficulty,
-      class: quiz.class,
-      board: quiz.board,
-      chapter: quiz.chapter,
-      quizType: quiz.quizType,
-      ncert: quiz.ncert,
-      questions: quiz.questions,
-      createdAt: quiz.createdAt,
-      // Attempt-specific data
-      id: uuidv4(), // CRITICAL: Ensure a new unique ID for the attempt
+      ...quiz,
+      id: uuidv4(),
       userAnswers: userAnswers,
       score: finalScore,
       completedAt: Date.now(),
@@ -245,7 +234,7 @@ export default function TakeQuizPage() {
       if (q.type === 'mcq' || q.type === 'numerical') {
         if (userAnswer) answeredCount++;
       } else if (q.type === 'match') {
-        if (Object.keys(userAnswer).length > 0) answeredCount++;
+        if (userAnswer && Object.keys(userAnswer).length > 0) answeredCount++;
       }
     });
     return (answeredCount / totalQuestions) * 100;
