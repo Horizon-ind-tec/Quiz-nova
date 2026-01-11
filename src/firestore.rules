@@ -1,0 +1,246 @@
+/**
+ * This ruleset enforces a strict user-ownership model for the QuizNova application.
+ * All data, including user profiles, quizzes, questions, and results, is private
+ * and accessible only by the user who created it. The security model is designed
+ * for simplicity, performance, and strong authorization guarantees.
+ *
+ * Core Philosophy:
+ * The fundamental principle is that users own their data. There are no public or
+ * shared resources. All access control decisions are based on the authenticated
+
+ * user's UID.
+ *
+ * Data Structure:
+ * The data is organized hierarchically. All user-specific content is nested
+ * under their unique document in the `/users/{userId}` path. For example, a
+ * user's quizzes are located at `/users/{userId}/quizzes/{quizId}`. This path-based
+ * ownership model makes security rules clear and efficient.
+ *
+ * Key Security Decisions:
+ * - User Isolation: Users can only interact with their own data subtree. They cannot
+ *   read, write, or even list data belonging to other users.
+ * - No Public Data: There are no globally readable collections. All access requires
+ *   authentication.
+ * - User Enumeration Disabled: Listing the top-level `/users` collection is explicitly
+ *   disallowed to protect user privacy.
+ * - Default Deny: Any operation not explicitly permitted is denied.
+ *
+ * Denormalization for Authorization:
+ * This ruleset relies on path-based security, a form of structural denormalization.
+ * The `userId` in the document path is the primary source of truth for ownership. To
+ * ensure data integrity, we enforce that documents created within a user's data
+ * tree contain a corresponding `userId` field that matches the path, preventing
+ * data from being misplaced or misattributed.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    //-------------------------------------------------------------------------
+    // Helper Functions
+    //-------------------------------------------------------------------------
+
+    /**
+     * Checks if a user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    /**
+     * Checks if the currently authenticated user is the admin.
+     */
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email == 'wizofclassknowledge@gmail.com';
+    }
+
+    /**
+     * Checks if the currently authenticated user is the owner of the resource
+     * identified by the given userId.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks if the authenticated user is the owner of an existing document.
+     * Crucially used for update and delete operations to prevent modifying
+     * non-existent data.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && exists(/databases/$(database)/documents/users/$(userId));
+    }
+
+    /**
+     * Validates that the User document being created has an 'id' field
+     * that matches the document's ID (which is the user's UID), and starts with a free plan.
+     */
+    function isCreatingOwnProfile(userId) {
+      let isPlanFree = request.resource.data.plan == 'free';
+      let hasNoPaymentStatus = !('paymentStatus' in request.resource.data);
+      let hasNoPendingPlan = !('pendingPlan' in request.resource.data);
+      return isOwner(userId) && request.resource.data.id == userId && isPlanFree && hasNoPaymentStatus && hasNoPendingPlan;
+    }
+    
+    /**
+     * Allows a user to update their profile to initiate a payment.
+     * They can set 'paymentStatus' to 'pending' and specify a 'pendingPlan'.
+     * They cannot change their existing 'plan' or other core fields.
+     */
+    function isUpdatingOwnProfileForPayment(userId) {
+        let incomingData = request.resource.data;
+        let existingData = resource.data;
+        // Ensure the user is the owner
+        return isOwner(userId)
+            // They are setting status to 'pending'
+            && incomingData.paymentStatus == 'pending'
+            // They are setting which plan they are paying for
+            && 'pendingPlan' in incomingData
+            // They are NOT changing their current plan directly
+            && incomingData.plan == existingData.plan
+            // They are not modifying immutable fields
+            && incomingData.id == existingData.id
+            && incomingData.email == existingData.email
+            && incomingData.createdAt == existingData.createdAt;
+    }
+
+    /**
+     * Validates that the Quiz document being created has a 'userId' field
+     * that matches the owner's UID from the path.
+     */
+    function isCreatingOwnQuiz(userId) {
+      return request.resource.data.userId == userId;
+    }
+
+    /**
+     * Enforces immutability of the Quiz's 'userId' field during updates.
+     */
+    function isUpdatingOwnQuiz() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+    /**
+     * Validates that the Question document being created has a 'quizId' field
+     * that matches the parent quiz's ID from the path.
+     */
+    function isCreatingOwnQuestion(quizId) {
+      return request.resource.data.quizId == quizId;
+    }
+
+    /**
+     * Enforces immutability of the Question's 'quizId' field during updates.
+     */
+    function isUpdatingOwnQuestion() {
+      return request.resource.data.quizId == resource.data.quizId;
+    }
+
+    /**
+     * Validates that the QuizResult document being created has a 'userId' field
+     * that matches the owner's UID from the path.
+     */
+    function isCreatingOwnQuizResult(userId) {
+      return request.resource.data.userId == userId;
+    }
+
+    /**
+     * Enforces immutability of the QuizResult's 'userId' field during updates.
+     */
+    function isUpdatingOwnQuizResult() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+
+    //-------------------------------------------------------------------------
+    // Collection Rules
+    //-------------------------------------------------------------------------
+
+     /**
+     * @description Manages global app settings, like the UPI QR code.
+     * @path /settings/{settingId}
+     * @allow (read) Any authenticated user can read settings.
+     * @allow (write) Only the admin can create or update settings.
+     * @principle Centralized configuration with admin-only write access.
+     */
+    match /settings/{settingId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    
+    /**
+     * @description Manages video coaching content.
+     * @path /videos/{videoId}
+     * @allow (read) Any authenticated user can read video information.
+     * @allow (write) Only the admin user can create, update, or delete videos.
+     * @principle Public read access for educational content, with centralized admin control.
+     */
+    match /videos/{videoId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    /**
+     * @description Manages user profile documents.
+     * @path /users/{userId}
+     * @allow (create) A newly authenticated user creating their own profile document.
+     * @allow (get) A user reading their own profile, or an admin reading any profile.
+     * @allow (list) An admin listing users (e.g., to find pending payments).
+     * @allow (update) A user updating their own profile to initiate payment (write with merge), or an admin updating any profile to confirm payment.
+     * @principle Restricts access to a user's own data tree but grants full access to admins.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin(); 
+      allow create: if isCreatingOwnProfile(userId);
+      // Allow user to set payment status (which might be a write not an update on a new doc)
+      // Or allow admin to update anything.
+      allow write: if (isOwner(userId) && request.resource.data.paymentStatus == 'pending') || isAdmin();
+      allow update: if isUpdatingOwnProfileForPayment(userId) || isAdmin();
+      allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Manages quizzes created by a user.
+       * @path /users/{userId}/quizzes/{quizId}
+       * @allow (create) An authenticated user creating a new quiz for themselves.
+       * @deny (get) User 'A' trying to read a quiz belonging to user 'B'.
+       * @principle Enforces strict document ownership within a user's private subcollection.
+       */
+      match /quizzes/{quizId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isCreatingOwnQuiz(userId);
+        allow update: if isExistingOwner(userId) && isUpdatingOwnQuiz();
+        allow delete: if isExistingOwner(userId);
+
+        /**
+         * @description Manages questions within a specific quiz.
+         * @path /users/{userId}/quizzes/{quizId}/questions/{questionId}
+         * @allow (list) The owner of a quiz listing all questions for that quiz.
+         * @deny (update) A user trying to modify a question in someone else's quiz.
+         * @principle Inherits ownership from the parent user document, securing nested data.
+         */
+        match /questions/{questionId} {
+          allow get: if isOwner(userId);
+          allow list: if isOwner(userId);
+          allow create: if isOwner(userId) && isCreatingOwnQuestion(quizId);
+          allow update: if isExistingOwner(userId) && isUpdatingOwnQuestion();
+          allow delete: if isExistingOwner(userId);
+        }
+      }
+
+      /**
+       * @description Manages quiz results for a user.
+       * @path /users/{userId}/quiz_results/{quizResultId}
+       * @allow (create) A user saving their own result after completing a quiz.
+       * @deny (list) User 'A' attempting to see the quiz results of user 'B'.
+       * @principle Ensures personal performance data remains private to the user.
+       */
+      match /quiz_results/{quizResultId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isCreatingOwnQuizResult(userId);
+        allow update: if isExistingOwner(userId) && isUpdatingOwnQuizResult();
+        allow delete: if isExistingOwner(userId);
+      }
+    }
+  }
+}

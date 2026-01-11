@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Copy, Loader2, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { useAuth, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 
