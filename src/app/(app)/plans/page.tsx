@@ -8,14 +8,21 @@ import { cn } from '@/lib/utils';
 
 const plans = [
   {
-    name: 'Basic',
-    price: 'Free',
-    description: 'For individuals just getting started.',
+    name: 'Free Plan',
+    price: '₹0',
+    priceDescription: '',
+    description: 'Try everything, limited AI help.',
     features: [
-      'Unlimited Quizzes',
-      'Basic Performance Tracking',
-      '5 AI Report Queries/day',
-      'Access to All Subjects',
+      'Unlimited quiz generation',
+      'Unlimited exam generation',
+      'Access to all classes 7–11',
+      'All question types available',
+      'Full progress tracking',
+      'Chapter & subject completion system',
+      'Ads included',
+      'AI Assistant access limited',
+      '5000 AI coins for 1 day only',
+      'Basic AI reports & tips',
     ],
     isPopular: false,
   },
@@ -89,7 +96,7 @@ export default function PlansPage() {
               </CardContent>
               <CardFooter>
                 <Button className={cn('w-full', !plan.isPopular && 'bg-blue-600 hover:bg-blue-700')}>
-                  {plan.price === 'Free' ? 'Current Plan' : 'Choose Plan'}
+                  {plan.price === '₹0' ? 'Current Plan' : 'Choose Plan'}
                 </Button>
               </CardFooter>
             </Card>
