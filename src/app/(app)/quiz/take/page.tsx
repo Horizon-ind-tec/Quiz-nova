@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useForm, FormProvider } from 'react-hook-form';
 
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { FormItem, FormLabel, FormControl } from '@/components/ui/form';
@@ -284,6 +284,7 @@ export default function TakeQuizPage() {
       case 'results':
         if (!quiz) return null;
         return (
+          <FormProvider {...form}>
           <Card>
             <CardHeader className="items-center text-center">
               <CardTitle className="text-3xl">Quiz Complete!</CardTitle>
@@ -350,6 +351,7 @@ export default function TakeQuizPage() {
               </Button>
             </CardContent>
           </Card>
+          </FormProvider>
         );
       case 'loading':
       default:
