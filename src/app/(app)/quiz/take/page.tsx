@@ -164,10 +164,9 @@ export default function TakeQuizPage() {
       }
     });
     
-    const answeredCount = userAnswers.filter(a => a !== '').length;
-    if (answeredCount === 0) return 0;
+    if (totalQuestions === 0) return 0;
 
-    return (correctSoFar / answeredCount) * 100;
+    return (correctSoFar / totalQuestions) * 100;
   }, [userAnswers, quiz, totalQuestions]);
 
 
@@ -327,7 +326,7 @@ export default function TakeQuizPage() {
                      <Button onClick={handleMarkForReview} variant="outline" className="flex-1 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200">
                          Mark for Review
                       </Button>
-                      <Button onClick={handleClearSelection} variant="outline" className="flex-1 bg-red-100 text-red-700 border-red-200 hover:bg-red-200" disabled={isAnswered}>
+                      <Button onClick={handleClearSelection} variant="outline" className="flex-1 bg-red-100 text-red-700 border-red-200 hover:bg-red-200" disabled={!isAnswered}>
                           Clear
                       </Button>
                   </div>
