@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BrainCircuit, LayoutDashboard, PlusCircle, TrendingUp, MessageSquareHeart, Gem, BookUser } from 'lucide-react';
+import { BrainCircuit, LayoutDashboard, PlusCircle, TrendingUp, MessageSquareHeart, Gem, BookUser, Wallet } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -99,6 +99,18 @@ export function SideNav() {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton
+                asChild
+                isActive={isActive('/payment')}
+                tooltip={{ children: 'Payment' }}
+                >
+                <Link href="/payment">
+                    <Wallet />
+                    <span>Payment</span>
+                </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>
     </Sidebar>

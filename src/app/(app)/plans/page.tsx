@@ -6,9 +6,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Check, Coins, Gem, X, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 const plans = [
   {
+    id: 'free',
     name: 'Free Plan',
     price: '₹0',
     priceDescription: '',
@@ -28,6 +30,7 @@ const plans = [
     isPopular: false,
   },
   {
+    id: 'premium',
     name: 'Premium Plan',
     icon: Gem,
     price: '₹500',
@@ -50,6 +53,7 @@ const plans = [
     isPopular: true,
   },
   {
+    id: 'ultimate',
     name: 'Ultimate Plan',
     icon: ShieldCheck,
     price: '₹1000',
@@ -115,8 +119,12 @@ export default function PlansPage() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button className={cn('w-full', plan.isPopular && 'bg-primary hover:bg-primary/90')} disabled={plan.price === 'Coming Soon'}>
-                  {plan.price === '₹0' ? 'Current Plan' : (plan.price === 'Coming Soon' ? 'Coming Soon' : 'Choose Plan')}
+                 <Button asChild className={cn('w-full', plan.isPopular && 'bg-primary hover:bg-primary/90')} disabled={plan.id === 'free'}>
+                   {plan.id === 'free' ? (
+                       <span>Current Plan</span>
+                   ) : (
+                       <Link href={`/payment?plan=${plan.id}`}>Choose Plan</Link>
+                   )}
                 </Button>
               </CardFooter>
             </Card>
