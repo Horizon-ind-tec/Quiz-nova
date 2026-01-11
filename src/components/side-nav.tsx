@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BrainCircuit, LayoutDashboard, PlusCircle, TrendingUp } from 'lucide-react';
+import { BrainCircuit, LayoutDashboard, PlusCircle, TrendingUp, MessageSquareHeart } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -48,6 +48,18 @@ export function SideNav() {
               <Link href="/quiz/create">
                 <PlusCircle />
                 <span>New Quiz</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+           <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive('/report')}
+              tooltip={{ children: 'AI Report' }}
+            >
+              <Link href="/report">
+                <MessageSquareHeart />
+                <span>AI Report</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

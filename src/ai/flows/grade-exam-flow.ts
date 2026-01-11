@@ -16,19 +16,25 @@ import { z } from 'genkit';
 import type { Question } from '@/lib/types';
 
 // Define the schema for a single question to be passed to the AI
-const QuestionSchema = z.object({
-  type: z.enum(['mcq', 'match', 'numerical']).describe('The type of the question.'),
-  question: z.string().describe('The question text.'),
-  // Marking correctAnswer as optional for the schema passed to the prompt
-  // as the AI needs to find the user's answer from the image.
-  correctAnswer: z.union([z.string(), z.number(), z.array(z.object({ item: z.string(), match: z.string() }))]).optional(),
+const QuestionSchemaForAI = z.object({
+  type: z.enum(['mcq', 'match', 'numerical']),
+  question: z.string(),
+  // For the AI, correctAnswer can be string, number, or array of pairs for matching
+  correctAnswer: z.union([
+    z.string(), 
+    z.number(), 
+    z.array(z.object({ item: z.string(), match: z.string() }))
+  ]),
+  // Options are only for MCQs
+  options: z.array(z.string()).optional(),
 });
+
 
 const GradeExamInputSchema = z.object({
   answerSheetImages: z.array(z.string()).describe(
     "An array of photos of the user's handwritten answer sheets, as data URIs. Each URI must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
   ),
-  questions: z.array(QuestionSchema).describe('The array of questions from the exam.'),
+  questions: z.array(QuestionSchemaForAI).describe('The array of questions from the exam, including their correct answers.'),
 });
 export type GradeExamInput = z.infer<typeof GradeExamInputSchema>;
 
@@ -46,12 +52,7 @@ const GradeExamOutputSchema = z.object({
 export type GradeExamOutput = z.infer<typeof GradeExamOutputSchema>;
 
 // Main function to initiate the flow
-export async function gradeExam(input: {
-  answerSheetImages: string[];
-  questions: Question[];
-}): Promise<GradeExamOutput> {
-  // The AI prompt doesn't need the full correctAnswer details for matching pairs,
-  // so we can just pass the questions as is.
+export async function gradeExam(input: GradeExamInput): Promise<GradeExamOutput> {
   return gradeExamFlow(input);
 }
 
@@ -86,9 +87,9 @@ const gradeExamPrompt = ai.definePrompt({
             {{/if}}
         {{/each}}
 
-    3.  For each question, find the student's answer in the images.
+    3.  For each question, find the student's answer in the images. The answers should be in the same order as the questions.
     4.  Compare the student's answer to the correct answer. Be flexible with minor spelling variations but strict with the core concepts.
-        - For MCQs, the user might write the option letter (A, B, C, D) or the full answer text.
+        - For MCQs, the user might write the option letter (A, B, C, D) or the full answer text. Your job is to map this back to the correct option text.
         - For Match the Following, the user might write pairs like "1 -> c", "Item -> Match". You must determine if their pairings are correct based on the provided correct answers.
         - For Numerical questions, the number must match exactly.
 
@@ -96,7 +97,7 @@ const gradeExamPrompt = ai.definePrompt({
     
     6. Calculate the final score as a percentage of correct answers. For example, if 15 out of 30 are correct, the score is 50.
     
-    7. Provide overall feedback on the user's performance.
+    7. Provide overall feedback on the user's performance, highlighting areas of strength and weakness.
     
     **Output Format:**
     You must return a valid JSON object that strictly follows this structure. For each question, include the extracted user answer and whether it was correct.
@@ -112,7 +113,7 @@ const gradeExamPrompt = ai.definePrompt({
         },
         {
           "questionIndex": 1,
-          "userAnswer": "The user matched 'Newton' to 'Gravity' and 'Einstein' to 'E=mc^2'.",
+          "userAnswer": "The user matched 'Newton' to 'Laws of Motion' and 'Einstein' to 'Theory of Relativity'.",
           "isCorrect": true
         },
         {
@@ -142,19 +143,12 @@ const gradeExamFlow = ai.defineFlow(
     outputSchema: GradeExamOutputSchema,
   },
   async (input) => {
-    // We need to transform the questions to include the correct answer format the prompt expects.
-    const questionsForPrompt = input.questions.map(q => {
-        if (q.type === 'match') {
-            return { ...q, correctAnswer: q.pairs };
-        }
-        return q;
-    });
-
-    const { output } = await gradeExamPrompt({
-        answerSheetImages: input.answerSheetImages,
-        questions: questionsForPrompt,
-    });
+    const { output } = await gradeExamPrompt(input);
     
-    return output!;
+    if (!output) {
+        throw new Error('AI failed to generate a grade.');
+    }
+    
+    return output;
   }
 );

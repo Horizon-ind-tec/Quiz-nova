@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, BrainCircuit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Header } from '@/components/header';
@@ -30,6 +30,12 @@ export default function Dashboard() {
             <p className="text-muted-foreground">Your personalized learning hub.</p>
           </div>
           <div className="flex items-center space-x-2">
+             <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                <Link href="/report">
+                    <BrainCircuit className="mr-2 h-4 w-4" />
+                    AI Learning Report
+                </Link>
+             </Button>
             <Button asChild>
               <Link href="/quiz/create">
                 <PlusCircle className="mr-2 h-4 w-4" />
