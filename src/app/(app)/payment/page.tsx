@@ -136,11 +136,17 @@ function PaymentPageContents() {
     const userDocRef = doc(firestore, 'users', user.uid);
     
     try {
-      // 1. Update Firestore document to set payment as pending
+      // 1. Immediately upgrade the user's plan
       await setDoc(userDocRef, {
-        paymentStatus: 'pending',
-        pendingPlan: plan,
+        plan: plan,
+        paymentStatus: 'confirmed',
+        pendingPlan: null, // Clear any pending plan
       }, { merge: true });
+
+      toast({
+        title: 'Upgrade Successful!',
+        description: `You now have access to the ${selectedPlan.name}.`,
+      });
       
       // 2. Trigger the admin notification flow (non-blocking)
       notifyAdminOfPaymentAction({
@@ -153,17 +159,17 @@ function PaymentPageContents() {
          console.error("Failed to send admin notification:", err);
       });
 
-      // 3. Redirect the user to the confirmation page
-      router.push('/payment/confirmation');
+      // 3. Redirect the user to the dashboard
+      router.push('/dashboard');
 
     } catch (error) {
-      console.error("Error setting payment status:", error);
+      console.error("Error confirming payment:", error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: (error as Error).message || 'Could not initiate payment confirmation.'
+        description: (error as Error).message || 'Could not confirm payment.'
       });
-      setIsConfirming(false); // Only stop loading if there's an error
+      setIsConfirming(false);
     }
   };
 

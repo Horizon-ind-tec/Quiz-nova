@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BrainCircuit, LayoutDashboard, PlusCircle, TrendingUp, MessageSquareHeart, Gem, BookUser, Wallet, ShieldCheck, UserCheck } from 'lucide-react';
+import { BrainCircuit, LayoutDashboard, PlusCircle, TrendingUp, MessageSquareHeart, Gem, BookUser } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -106,20 +106,6 @@ export function SideNav() {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-            {isUserAdmin && (
-                 <SidebarMenuItem>
-                    <SidebarMenuButton
-                    asChild
-                    isActive={isActive('/admin/confirm-payments')}
-                    tooltip={{ children: 'Confirm Payments' }}
-                    >
-                    <Link href="/admin/confirm-payments">
-                        <UserCheck />
-                        <span>Confirm Payments</span>
-                    </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            )}
         </SidebarMenu>
       </SidebarContent>
     </Sidebar>
