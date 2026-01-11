@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Calculator, Atom, FlaskConical, Leaf, Scroll, Globe, Scale, Landmark, Rocket, Microscope, Presentation, Plane } from 'lucide-react';
+import { Calculator, Atom, FlaskConical, Leaf, Scroll, Globe, Scale, Landmark, Rocket, Microscope, Presentation, Plane, Cpu, BrainCircuit, Palette, Briefcase } from 'lucide-react';
 
 export const CLASSES = ['7th', '8th', '9th', '10th', '11th', '12th'];
 
@@ -35,11 +35,37 @@ export const SUBJECTS_DATA: {
     ]
   },
   {
-    name: 'Astronomy',
-    icon: Rocket,
+    name: 'Commerce',
+    icon: Briefcase,
     subCategories: [
-      { name: 'Basics', description: 'Fundamental concepts of astronomy.' },
-      { name: 'Advance', description: 'In-depth topics and theories.' }
+        { name: 'Accountancy' },
+        { name: 'Business Studies' },
+        { name: 'Economics' }
+    ]
+  },
+  {
+    name: 'Computer',
+    icon: Cpu,
+    subCategories: [
+        { name: 'Computer Science' },
+        { name: 'Information Practices' }
+    ]
+  },
+  {
+    name: 'AI',
+    icon: BrainCircuit,
+    subCategories: [
+        { name: 'Basics', description: 'Fundamental concepts of AI.' },
+        { name: 'Advanced', description: 'In-depth topics and theories.' }
+    ]
+  },
+  {
+    name: 'Art',
+    icon: Palette,
+     subCategories: [
+        { name: 'Painting' },
+        { name: 'Sculpture' },
+        { name: 'History of Art' }
     ]
   },
   { name: 'General Knowledge', icon: Globe },
