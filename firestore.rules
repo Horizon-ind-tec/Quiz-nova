@@ -7,6 +7,7 @@
  * Core Philosophy:
  * The fundamental principle is that users own their data. There are no public or
  * shared resources. All access control decisions are based on the authenticated
+
  * user's UID.
  *
  * Data Structure:
@@ -77,18 +78,26 @@ service cloud.firestore {
     function isCreatingOwnProfile(userId) {
       let isPlanFree = request.resource.data.plan == 'free';
       let hasNoPaymentStatus = !('paymentStatus' in request.resource.data);
-      return isOwner(userId) && request.resource.data.id == userId && isPlanFree && hasNoPaymentStatus;
+      let hasNoPendingPlan = !('pendingPlan' in request.resource.data);
+      return isOwner(userId) && request.resource.data.id == userId && isPlanFree && hasNoPaymentStatus && hasNoPendingPlan;
     }
     
     /**
      * Enforces immutability of core fields during a user's own profile update.
      * Allows a user to set their payment to 'pending' but not to change their plan.
      */
-    function isUpdatingOwnProfile() {
-       let isInitiatingPayment = request.resource.data.paymentStatus == 'pending' && 'pendingPlan' in request.resource.data;
-       let planIsUnchanged = request.resource.data.plan == resource.data.plan;
+    function isUpdatingOwnProfile(userId) {
+       // A user can initiate a payment.
+       let isInitiatingPayment = request.resource.data.paymentStatus == 'pending' 
+                                 && 'pendingPlan' in request.resource.data
+                                 && request.resource.data.plan == resource.data.plan;
+       
+       // Ensure core immutable fields are not changed.
        let idIsUnchanged = request.resource.data.id == resource.data.id;
-       return idIsUnchanged && planIsUnchanged && isInitiatingPayment;
+       let emailIsUnchanged = request.resource.data.email == resource.data.email;
+       let creationDateIsUnchanged = request.resource.data.createdAt == resource.data.createdAt;
+       
+       return isOwner(userId) && isInitiatingPayment && idIsUnchanged && emailIsUnchanged && creationDateIsUnchanged;
     }
 
     /**
@@ -178,7 +187,7 @@ service cloud.firestore {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin(); 
       allow create: if isCreatingOwnProfile(userId);
-      allow update: if (isOwner(userId) && isUpdatingOwnProfile()) || isAdmin();
+      allow update: if isUpdatingOwnProfile(userId) || isAdmin();
       allow delete: if isExistingOwner(userId);
 
       /**
@@ -228,3 +237,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
