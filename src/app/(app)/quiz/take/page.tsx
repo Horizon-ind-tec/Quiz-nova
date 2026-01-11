@@ -144,7 +144,7 @@ export default function TakeQuizPage() {
   
   const handlePrevQuestion = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
   };
   
@@ -201,7 +201,7 @@ export default function TakeQuizPage() {
 
     const quizAttempt: QuizAttempt = {
       ...quiz,
-      id: uuidv4(), // Assign a new unique ID for each attempt
+      id: uuidv4(),
       userAnswers,
       score: finalScore,
       completedAt: Date.now(),
@@ -227,15 +227,15 @@ export default function TakeQuizPage() {
 
   const progress = useMemo(() => {
     if (!quiz || totalQuestions === 0) return 0;
-
-    const answeredCount = Object.values(userAnswers).filter(answer => {
-      if (answer === null || answer === '') return false;
-      if (typeof answer === 'object' && Object.keys(answer).length === 0) return false;
-      return true;
-    }).length;
-
-    return (answeredCount / totalQuestions) * 100;
-  }, [userAnswers, totalQuestions, quiz]);
+    let correctCount = 0;
+    quiz.questions.forEach((q, index) => {
+      const userAnswer = userAnswers[index];
+      if (q.type === 'mcq' && userAnswer === q.correctAnswer) {
+        correctCount++;
+      }
+    });
+    return (correctCount / totalQuestions) * 100;
+  }, [userAnswers, quiz, totalQuestions]);
 
   const renderMCQ = (q: MCQ, questionIndex: number, isExam: boolean) => {
     const userAnswer = userAnswers[questionIndex] as string;
@@ -412,6 +412,7 @@ export default function TakeQuizPage() {
     const numericals = quiz.questions.filter(q => q.type === 'numerical');
 
     return (
+    <FormProvider {...form}>
      <div className="bg-white shadow-lg rounded-lg">
         <div className="p-4 sm:p-8">
             <div className="text-center p-2 bg-red-500 text-white font-semibold rounded-t-md">
@@ -437,7 +438,7 @@ export default function TakeQuizPage() {
                         <li>This test paper consists of {totalQuestions} questions.</li>
                         <li>Each question carries +4 marks for correct answer and -1 mark for wrong answer.</li>
                         <li>Attempt all questions.</li>
-                        <li>This is a static paper. To submit, click the "FINISH & VIEW RESULTS" button at the bottom.</li>
+                        <li>This is a static paper. To submit, click the "Grade with AI" button at the bottom.</li>
                     </ol>
                 </div>
             </div>
@@ -465,23 +466,24 @@ export default function TakeQuizPage() {
         <div className="p-4 sm:p-8 flex justify-center">
              <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 text-lg">FINISH & VIEW RESULTS</Button>
+                  <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 text-lg">Grade with AI</Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Are you ready to view your results?</AlertDialogTitle>
+                    <AlertDialogTitle>Ready to Grade Your Exam?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will end the exam. You won't be able to change your answers.
+                      You will be redirected to the AI grading page to upload your answers.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => setQuizState('results')}>View Results</AlertDialogAction>
+                    <AlertDialogAction onClick={() => router.push('/quiz/grade')}>Proceed</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
         </div>
     </div>
+    </FormProvider>
     )
   }
 

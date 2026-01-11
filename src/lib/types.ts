@@ -48,3 +48,17 @@ export interface QuizAttempt extends Quiz {
   userAnswers: UserAnswers;
   completedAt: number;
 }
+
+
+// Types for the AI Grading Flow
+export interface GradedAnswer {
+  questionIndex: number;
+  userAnswer: string;
+  isCorrect: boolean;
+}
+
+export interface GradeExamOutput {
+  score: number;
+  gradedAnswers: GradedAnswer[];
+  generalFeedback: string;
+}
