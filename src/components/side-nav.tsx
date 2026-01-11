@@ -1,8 +1,9 @@
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BrainCircuit, LayoutDashboard, PlusCircle, TrendingUp, MessageSquareHeart, Gem, BookUser } from 'lucide-react';
+import { BrainCircuit, LayoutDashboard, PlusCircle, TrendingUp, MessageSquareHeart, Gem, BookUser, Bell, UserShield } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -10,8 +11,12 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuBadge
 } from '@/components/ui/sidebar';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/types';
+
 
 const ADMIN_EMAIL = 'wizofclassknowledge@gmail.com';
 
@@ -19,10 +24,18 @@ const ADMIN_EMAIL = 'wizofclassknowledge@gmail.com';
 export function SideNav() {
   const pathname = usePathname();
   const { user } = useUser();
-
-  const isActive = (path: string) => pathname.startsWith(path);
+  const firestore = useFirestore();
   const isUserAdmin = user?.email === ADMIN_EMAIL;
 
+  const pendingUsersQuery = useMemoFirebase(
+    () => (firestore && isUserAdmin ? query(collection(firestore, 'users'), where('paymentStatus', '==', 'pending')) : null),
+    [firestore, isUserAdmin]
+  );
+  
+  const { data: pendingUsers } = useCollection<UserProfile>(pendingUsersQuery);
+  const notificationCount = pendingUsers?.length || 0;
+
+  const isActive = (path: string) => pathname.startsWith(path);
 
   return (
     <Sidebar>
@@ -106,6 +119,19 @@ export function SideNav() {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
+           <SidebarMenuItem>
+                <SidebarMenuButton
+                asChild
+                isActive={isActive('/notifications')}
+                tooltip={{ children: 'Notifications' }}
+                >
+                <Link href="/notifications">
+                    <Bell />
+                    <span>Notifications</span>
+                    {notificationCount > 0 && <SidebarMenuBadge>{notificationCount}</SidebarMenuBadge>}
+                </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>
     </Sidebar>
