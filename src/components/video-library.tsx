@@ -14,9 +14,9 @@ import { CLASSES, SUBJECTS_DATA } from '@/lib/data';
 
 export function VideoLibrary() {
   const firestore = useFirestore();
-  const [selectedClass, setSelectedClass] = useState('');
-  const [selectedSubjectId, setSelectedSubjectId] = useState('');
-  const [selectedChapterId, setSelectedChapterId] = useState('');
+  const [selectedClass, setSelectedClass] = useState('all');
+  const [selectedSubjectId, setSelectedSubjectId] = useState('all');
+  const [selectedChapterId, setSelectedChapterId] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: videos, loading: videosLoading } = useCollection<Video>(
@@ -26,7 +26,7 @@ export function VideoLibrary() {
     firestore ? collection(firestore, 'subjects') : null
   );
   const { data: chapters, loading: chaptersLoading } = useCollection<Chapter>(
-    firestore && selectedSubjectId ? collection(firestore, `subjects/${selectedSubjectId}/chapters`) : null
+    firestore && selectedSubjectId && selectedSubjectId !== 'all' ? collection(firestore, `subjects/${selectedSubjectId}/chapters`) : null
   );
 
   const subjectMap = useMemo(() => {
@@ -46,9 +46,9 @@ export function VideoLibrary() {
 
   const filteredVideos = useMemo(() => {
     return (videos || []).filter(video => {
-      const classMatch = selectedClass ? video.class === selectedClass : true;
-      const subjectMatch = selectedSubjectId ? video.subjectId === selectedSubjectId : true;
-      const chapterMatch = selectedChapterId ? video.chapterId === selectedChapterId : true;
+      const classMatch = selectedClass !== 'all' ? video.class === selectedClass : true;
+      const subjectMatch = selectedSubjectId !== 'all' ? video.subjectId === selectedSubjectId : true;
+      const chapterMatch = selectedChapterId !== 'all' ? video.chapterId === selectedChapterId : true;
       const searchMatch = searchTerm
         ? video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
           (subjectMap[video.subjectId] || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -58,7 +58,7 @@ export function VideoLibrary() {
     });
   }, [videos, selectedClass, selectedSubjectId, selectedChapterId, searchTerm, subjectMap, chapterMap]);
 
-  const isLoading = videosLoading || subjectsLoading || chaptersLoading;
+  const isLoading = videosLoading || subjectsLoading;
 
   return (
     <Card>
@@ -71,21 +71,22 @@ export function VideoLibrary() {
           <Select value={selectedClass} onValueChange={setSelectedClass}>
             <SelectTrigger><SelectValue placeholder="Filter by Class..." /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Classes</SelectItem>
+              <SelectItem value="all">All Classes</SelectItem>
               {CLASSES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Select value={selectedSubjectId} onValueChange={(value) => { setSelectedSubjectId(value); setSelectedChapterId(''); }}>
+          <Select value={selectedSubjectId} onValueChange={(value) => { setSelectedSubjectId(value); setSelectedChapterId('all'); }}>
             <SelectTrigger><SelectValue placeholder="Filter by Subject..." /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Subjects</SelectItem>
+              <SelectItem value="all">All Subjects</SelectItem>
               {subjects?.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Select value={selectedChapterId} onValueChange={setSelectedChapterId} disabled={!selectedSubjectId}>
+          <Select value={selectedChapterId} onValueChange={setSelectedChapterId} disabled={selectedSubjectId === 'all'}>
             <SelectTrigger><SelectValue placeholder="Filter by Chapter..." /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Chapters</SelectItem>
+              <SelectItem value="all">All Chapters</SelectItem>
+              {chaptersLoading && <SelectItem value="loading" disabled>Loading...</SelectItem>}
               {chapters?.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
