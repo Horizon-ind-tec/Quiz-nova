@@ -64,8 +64,15 @@ function PaymentPageContents() {
       router.push('/login');
     }
      if (user && plan) {
-      const uniqueId = `NOVA-${plan.slice(0, 3).toUpperCase()}-${user.uid.slice(0, 8).toUpperCase()}`;
-      setTransactionId(uniqueId);
+        let prefix = 'NOVA-';
+        if (plan === 'premium') {
+            prefix = 'Nova+';
+        } else if (plan === 'ultimate') {
+            prefix = 'Nova$';
+        }
+        const userCode = user.uid.slice(0, 9).toLowerCase();
+        const uniqueId = `${prefix}${userCode}`;
+        setTransactionId(uniqueId);
     }
   }, [user, userLoading, router, plan]);
 
