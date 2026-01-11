@@ -84,14 +84,21 @@ service cloud.firestore {
     }
     
     /**
-     * Allows a user to update their own profile with payment-related information.
-     * This rule is flexible enough to handle both initiating a payment and confirming it.
+     * Allows a user to update their profile to initiate a payment.
+     * They can set 'paymentStatus' to 'pending' and specify a 'pendingPlan'.
+     * They cannot change their existing 'plan' or other core fields.
      */
-    function isUpdatingOwnProfileForPayment(userId) {
+    function isUpdatingToInitiatePayment(userId) {
         let incomingData = request.resource.data;
         let existingData = resource.data;
         // Ensure the user is the owner
         return isOwner(userId)
+            // They are setting status to 'pending'
+            && incomingData.paymentStatus == 'pending'
+            // They are setting which plan they are paying for
+            && incomingData.pendingPlan in ['premium', 'ultimate']
+            // They are NOT changing their current plan directly
+            && incomingData.plan == existingData.plan
             // They are not modifying immutable fields
             && incomingData.id == existingData.id
             && incomingData.email == existingData.email
@@ -176,16 +183,16 @@ service cloud.firestore {
      * @description Manages user profile documents.
      * @path /users/{userId}
      * @allow (create) A newly authenticated user creating their own profile document.
-     * @allow (get) A user reading their own profile.
+     * @allow (get) A user reading their own profile, or an admin reading any profile.
      * @allow (list) No one can list all users.
-     * @allow (update) A user updating their own profile for payment, or an admin updating any profile.
-     * @principle Restricts access to a user's own data tree but grants full access to admins for management.
+     * @allow (update) A user updating their own profile to initiate payment, or an admin updating any profile to confirm payment.
+     * @principle Restricts access to a user's own data tree but grants full access to admins.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
+      allow get: if isOwner(userId) || isAdmin();
       allow list: if false; 
       allow create: if isCreatingOwnProfile(userId);
-      allow update: if isUpdatingOwnProfileForPayment(userId) || isAdmin();
+      allow update: if isUpdatingToInitiatePayment(userId) || isAdmin();
       allow delete: if isExistingOwner(userId);
 
       /**
@@ -235,3 +242,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
