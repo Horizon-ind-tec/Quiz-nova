@@ -3,7 +3,7 @@
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check } from 'lucide-react';
+import { Check, Coins, Gem, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const plans = [
@@ -27,30 +27,38 @@ const plans = [
     isPopular: false,
   },
   {
-    name: 'Pro',
-    price: '$9.99',
+    name: 'Premium Plan',
+    icon: Gem,
+    price: '₹500',
     priceDescription: '/ month',
-    description: 'For serious learners who want to excel.',
+    description: 'Full learning without AI assistant.',
     features: [
-      'Everything in Basic',
-      'Advanced Performance Analytics',
-      'Unlimited AI Report Queries',
-      'Handwritten Exam Grading',
-      'Priority Support',
+      'Unlimited quiz generation (free)',
+      'Unlimited exam generation (free)',
+      'Access to Classes 7–11',
+      'All subjects unlocked',
+      'All question types',
+      'Full progress & analytics',
+      'Chapter-wise mastery system',
+      'No ads',
     ],
     isPopular: true,
+    exclusions: [
+        'No AI assistant access',
+        'No coins required',
+    ]
   },
   {
-    name: 'Premium',
-    price: '$19.99',
-    priceDescription: '/ month',
-    description: 'For power users and institutions.',
+    name: 'Ultimate Plan',
+    price: 'Coming Soon',
+    priceDescription: '',
+    description: 'The ultimate learning experience with unlimited AI.',
     features: [
-      'Everything in Pro',
+      'Everything in Premium',
+      'Unlimited AI Assistant access',
+      'Unlimited Coins',
+      'Handwritten Exam Grading',
       'Adaptive Quiz Generation',
-      'Team & Class Management',
-      'Custom Branding',
-      'Dedicated Account Manager',
     ],
     isPopular: false,
   },
@@ -60,7 +68,7 @@ export default function PlansPage() {
   return (
     <div className="flex flex-col">
       <Header title="Upgrade Your Plan" />
-      <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
+      <main className="flex-1 space-y-8 p-4 pt-6 md:p-8">
         <div className="text-center">
           <h2 className="text-3xl font-bold tracking-tight">Flexible Plans for Everyone</h2>
           <p className="mt-2 text-lg text-muted-foreground">
@@ -77,7 +85,10 @@ export default function PlansPage() {
                   </div>
                 )}
               <CardHeader className="items-start">
-                <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                <CardTitle className="text-2xl flex items-center gap-2">
+                    {plan.icon && <plan.icon className="h-6 w-6 text-primary" />}
+                    {plan.name}
+                </CardTitle>
                 <CardDescription>{plan.description}</CardDescription>
               </CardHeader>
               <CardContent className="flex-1 space-y-6">
@@ -92,16 +103,53 @@ export default function PlansPage() {
                       <span className="text-muted-foreground">{feature}</span>
                     </li>
                   ))}
+                  {plan.exclusions && plan.exclusions.map((exclusion) => (
+                     <li key={exclusion} className="flex items-center gap-3">
+                        <X className="h-5 w-5 text-red-500" />
+                        <span className="text-muted-foreground">{exclusion}</span>
+                     </li>
+                  ))}
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button className={cn('w-full', !plan.isPopular && 'bg-blue-600 hover:bg-blue-700')}>
-                  {plan.price === '₹0' ? 'Current Plan' : 'Choose Plan'}
+                <Button className={cn('w-full', plan.isPopular && 'bg-primary hover:bg-primary/90')} disabled={plan.price === 'Coming Soon'}>
+                  {plan.price === '₹0' ? 'Current Plan' : (plan.price === 'Coming Soon' ? 'Coming Soon' : 'Choose Plan')}
                 </Button>
               </CardFooter>
             </Card>
           ))}
         </div>
+        
+        <div className="max-w-4xl mx-auto pt-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Coins className="h-6 w-6 text-yellow-500" />
+                        AI Coin Usage
+                    </CardTitle>
+                    <CardDescription>
+                        Coins are used for premium AI features like getting detailed performance reports, improvement tips, and personalized study help from Nova.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                        <div className="p-4 rounded-lg bg-muted">
+                            <p className="font-semibold">Free Plan</p>
+                            <p className="text-sm text-muted-foreground">5,000 coins (1 day)</p>
+                        </div>
+                        <div className="p-4 rounded-lg bg-muted">
+                            <p className="font-semibold">Premium Plan</p>
+                            <p className="text-sm text-muted-foreground">Not available</p>
+                        </div>
+                         <div className="p-4 rounded-lg bg-muted">
+                            <p className="font-semibold">Ultimate Plan</p>
+                            <p className="text-sm text-muted-foreground">Unlimited</p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+
       </main>
     </div>
   );
