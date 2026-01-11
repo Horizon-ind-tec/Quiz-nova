@@ -21,7 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 
 import { generateQuizAction } from '@/app/actions';
-import { CLASSES, SUBJECTS, BOARDS, DIFFICULTIES, QUIZ_TYPES } from '@/lib/data';
+import { CLASSES, SUBJECTS_DATA, BOARDS, DIFFICULTIES, QUIZ_TYPES } from '@/lib/data';
 import type { Quiz } from '@/lib/types';
 import type { GenerateCustomQuizOutput } from '@/ai/flows/generate-custom-quiz';
 
@@ -95,6 +95,43 @@ export default function CreateQuizPage() {
             <CardContent>
               <FormProvider {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  
+                  <FormField
+                    name="subject"
+                    control={form.control}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Subject</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="grid grid-cols-2 sm:grid-cols-3 gap-2"
+                          >
+                            {SUBJECTS_DATA.map(subject => {
+                              const Icon = subject.icon;
+                              return (
+                              <FormItem key={subject.name} className="flex-1">
+                                <FormControl>
+                                  <RadioGroupItem value={subject.name} className="sr-only" />
+                                </FormControl>
+                                <FormLabel
+                                  className={cn(
+                                    "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-28"
+                                  )}
+                                >
+                                  <Icon className="h-8 w-8 mb-2" />
+                                  <span>{subject.name}</span>
+                                </FormLabel>
+                              </FormItem>
+                            )})}
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField name="class" control={form.control} render={({ field }) => (
                       <FormItem>
@@ -106,18 +143,6 @@ export default function CreateQuizPage() {
                         <FormMessage />
                       </FormItem>
                     )} />
-                    <FormField name="subject" control={form.control} render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Subject</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl><SelectTrigger><SelectValue placeholder="Select a subject" /></SelectTrigger></FormControl>
-                          <SelectContent>{SUBJECTS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                     <FormField name="board" control={form.control} render={({ field }) => (
                       <FormItem>
                         <FormLabel>Educational Board</FormLabel>
@@ -128,14 +153,17 @@ export default function CreateQuizPage() {
                         <FormMessage />
                       </FormItem>
                     )} />
-                     <FormField
+                  </div>
+                  
+                  <div className="flex flex-row items-center justify-between rounded-lg border p-3">
+                    <FormLabel htmlFor="ncert-mode" className="mb-0">
+                      NCERT Curriculum
+                    </FormLabel>
+                    <FormField
                       control={form.control}
                       name="ncert"
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 mt-4">
-                          <FormLabel htmlFor="ncert-mode" className="mb-0">
-                            NCERT Curriculum
-                          </FormLabel>
+                        <FormItem>
                           <FormControl>
                             <Switch
                               id="ncert-mode"
@@ -147,6 +175,7 @@ export default function CreateQuizPage() {
                       )}
                     />
                   </div>
+                  
                    <FormField
                     control={form.control}
                     name="chapter"
