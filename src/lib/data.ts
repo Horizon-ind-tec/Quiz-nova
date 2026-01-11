@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Calculator, Atom, FlaskConical, Leaf, Scroll, Globe, Scale, Landmark, Rocket, Microscope, Presentation } from 'lucide-react';
+import { Calculator, Atom, FlaskConical, Leaf, Scroll, Globe, Scale, Landmark, Rocket, Microscope, Presentation, Plane } from 'lucide-react';
 
 export const CLASSES = ['7th', '8th', '9th', '10th', '11th', '12th'];
 
@@ -42,6 +42,7 @@ export const SUBJECTS_DATA: {
       { name: 'Advance', description: 'In-depth topics and theories.' }
     ]
   },
+  { name: 'Planes', icon: Plane },
   { name: 'General Knowledge', icon: Globe },
 ];
 
