@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BrainCircuit, LayoutDashboard, PlusCircle, TrendingUp, MessageSquareHeart, Gem, BookUser, Bell, UserShield } from 'lucide-react';
+import { BrainCircuit, LayoutDashboard, PlusCircle, TrendingUp, MessageSquareHeart, Gem, BookUser, Shield } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -127,7 +127,7 @@ export function SideNav() {
                     tooltip={{ children: 'Admin Panel' }}
                     >
                     <Link href="/admin/confirm-payments">
-                        <UserShield />
+                        <Shield />
                         <span>Admin Panel</span>
                         {notificationCount > 0 && <SidebarMenuBadge>{notificationCount}</SidebarMenuBadge>}
                     </Link>
