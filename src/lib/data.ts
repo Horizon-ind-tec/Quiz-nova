@@ -42,7 +42,6 @@ export const SUBJECTS_DATA: {
       { name: 'Advance', description: 'In-depth topics and theories.' }
     ]
   },
-  { name: 'Planes', icon: Plane },
   { name: 'General Knowledge', icon: Globe },
 ];
 
