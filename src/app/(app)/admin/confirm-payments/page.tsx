@@ -32,7 +32,7 @@ export default function AdminConfirmPaymentsPage() {
             await updateDoc(userDocRef, {
                 plan: plan,
                 paymentStatus: 'confirmed',
-                pendingPlan: null,
+                pendingPlan: null, // Using null to remove the field
             });
             toast({
                 title: 'Payment Confirmed',
