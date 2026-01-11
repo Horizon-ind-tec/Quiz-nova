@@ -43,7 +43,16 @@ const ChartContainer = React.forwardRef<
     >["children"]
   }
 >(({ id, className, children, config, ...props }, ref) => {
+  const [isMounted, setIsMounted] = React.useState(false);
   const chartId = `chart-${id || React.useId()}`
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return <div ref={ref} className={cn("flex aspect-video justify-center items-center", className)} {...props}></div>;
+  }
 
   return (
     <ChartContext.Provider value={{ config }}>
@@ -362,5 +371,3 @@ export {
   ChartLegendContent,
   ChartStyle,
 }
-
-    

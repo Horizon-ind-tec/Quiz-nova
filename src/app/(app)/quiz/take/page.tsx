@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   CheckCircle,
@@ -12,7 +12,6 @@ import {
   AlertTriangle,
   Bookmark,
   Grid,
-  BrainCircuit,
 } from 'lucide-react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { v4 as uuidv4 } from 'uuid';
@@ -56,7 +55,7 @@ export default function TakeQuizPage() {
   const [userAnswers, setUserAnswers] = useState<UserAnswers>({});
   const [markedForReview, setMarkedForReview] = useState<boolean[]>([]);
   const [score, setScore] = useState(0);
-  const [, setQuizHistory] = useLocalStorage<QuizAttempt[]>('quizHistory', []);
+  const [quizHistory, setQuizHistory] = useLocalStorage<QuizAttempt[]>('quizHistory', []);
   const router = useRouter();
   const form = useForm();
   
@@ -120,7 +119,9 @@ export default function TakeQuizPage() {
 
   const handleAnswerSelect = (questionIndex: number, answer: any) => {
     setUserAnswers(prev => {
-        // Prevent changing answer once given
+        const q = quiz?.questions[questionIndex];
+        if (!q) return prev;
+
         if (q.type === 'mcq' && prev[questionIndex] !== '') return prev;
         
         return {
@@ -138,7 +139,7 @@ export default function TakeQuizPage() {
   
   const handlePrevQuestion = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
   };
   
@@ -200,7 +201,7 @@ export default function TakeQuizPage() {
       score: finalScore,
       completedAt: Date.now(),
     };
-    setQuizHistory(prev => [quizAttempt, ...prev.filter(qa => qa.id !== quiz.id)]);
+    setQuizHistory(prev => [quizAttempt, ...prev]);
     setQuizState('results');
   };
 
@@ -222,24 +223,24 @@ export default function TakeQuizPage() {
   const progress = useMemo(() => {
     if (!quiz || totalQuestions === 0) return 0;
     
-    let correctSoFar = 0;
+    let correctAnswers = 0;
     quiz.questions.forEach((q, index) => {
-        const userAnswer = userAnswers[index];
-        if (q.type === 'mcq' && userAnswer && userAnswer === q.correctAnswer) {
-            correctSoFar++;
-        } else if (q.type === 'numerical' && userAnswer && Number(userAnswer) === q.correctAnswer) {
-            correctSoFar++;
-        } else if (q.type === 'match') {
-            const userMatches = userAnswer as { [key: string]: string };
-            if (q.pairs.every(p => userMatches?.[p.item] === p.match)) {
-                correctSoFar++;
-            }
+      const userAnswer = userAnswers[index];
+      if (q.type === 'mcq' && userAnswer && userAnswer === q.correctAnswer) {
+        correctAnswers++;
+      } else if (q.type === 'numerical' && userAnswer && Number(userAnswer) === q.correctAnswer) {
+        correctAnswers++;
+      } else if (q.type === 'match') {
+        const userMatches = userAnswer as { [key: string]: string };
+        if (userMatches && q.pairs.every(p => userMatches[p.item] === p.match)) {
+          correctAnswers++;
         }
+      }
     });
     
     if (totalQuestions === 0) return 0;
 
-    return (correctSoFar / totalQuestions) * 100;
+    return (correctAnswers / totalQuestions) * 100;
   }, [userAnswers, quiz, totalQuestions]);
   
 
@@ -248,11 +249,12 @@ export default function TakeQuizPage() {
     const isAnswered = userAnswer !== '';
     return (
         <>
-            <p className="font-semibold mb-4">{questionIndex + 1}. {q.question}</p>
+            <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
             <RadioGroup
                 value={userAnswer}
                 onValueChange={(value) => handleAnswerSelect(questionIndex, value)}
                 className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+                 disabled={isAnswered}
             >
                 {q.options.map((option, index) => {
                     const isCorrect = option === q.correctAnswer;
@@ -270,18 +272,19 @@ export default function TakeQuizPage() {
                     return (
                         <FormItem key={index}>
                             <FormControl>
-                                <RadioGroupItem value={option} id={`q${questionIndex}-option-${index}`} className="sr-only" disabled={isAnswered} />
+                                <RadioGroupItem value={option} id={`q${questionIndex}-option-${index}`} className="sr-only" />
                             </FormControl>
                             <FormLabel
                                 htmlFor={`q${questionIndex}-option-${index}`}
                                 className={cn("flex items-center space-x-3 space-y-0 rounded-md border p-3 transition-all", getOptionStyle())}
                             >
                                 <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0">
-                                    {index + 1}
+                                    {String.fromCharCode(65 + index)}
                                 </div>
                                 <span className="flex-1">{option}</span>
                                 {isAnswered && isSelected && isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
                                 {isAnswered && isSelected && !isCorrect && <XCircle className="h-5 w-5 text-red-600" />}
+                                {isAnswered && !isSelected && isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
                             </FormLabel>
                         </FormItem>
                     );
@@ -298,11 +301,11 @@ export default function TakeQuizPage() {
   
     return (
       <div>
-        <p className="font-semibold mb-4">{questionIndex + 1}. {q.question}</p>
+        <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
         <div className="grid grid-cols-2 gap-x-8 gap-y-4">
           <div className="font-semibold">Column A</div>
           <div className="font-semibold">Column B</div>
-          {items.map((item, index) => (
+          {items.map((item) => (
             <React.Fragment key={item}>
               <div className="p-3 border rounded-md bg-gray-50 flex items-center">{item}</div>
               <Select
@@ -332,7 +335,7 @@ export default function TakeQuizPage() {
     const userAnswer = userAnswers[questionIndex] as string;
     return (
       <div>
-        <p className="font-semibold mb-4">{questionIndex + 1}. {q.question}</p>
+        <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
         <Input
           type="number"
           value={userAnswer}
@@ -445,7 +448,7 @@ export default function TakeQuizPage() {
             return renderExamPaper();
         }
 
-        const isAnswered = userAnswers[currentQuestionIndex] !== '' && userAnswers[currentQuestionIndex] !== undefined;
+        const isAnswered = userAnswers[currentQuestionIndex] !== '' && userAnswers[currentQuestionIndex] !== undefined && userAnswers[currentQuestionIndex] !== null;
 
         if (quizState === 'paused') {
           return (
@@ -654,7 +657,7 @@ export default function TakeQuizPage() {
                     userFriendlyAnswer = (userAnswer as string) || "Not Answered";
                   } else if (q.type === 'match') {
                      const userMatches = userAnswer as { [key: string]: string };
-                     isCorrect = q.pairs.every(p => userMatches?.[p.item] === p.match);
+                     isCorrect = userMatches ? q.pairs.every(p => userMatches[p.item] === p.match) : false;
                   }
 
                   return (
@@ -703,7 +706,7 @@ export default function TakeQuizPage() {
                              <p className="mt-2 text-sm font-semibold">Your matches:</p>
                              <ul className="list-disc pl-5 mt-1 text-sm">
                                 {q.pairs.map(pair => {
-                                  const userMatch = (userAnswer as any)[pair.item];
+                                  const userMatch = (userAnswer as any)?.[pair.item];
                                   const isPairCorrect = userMatch === pair.match;
                                   return (
                                     <li key={pair.item}>
