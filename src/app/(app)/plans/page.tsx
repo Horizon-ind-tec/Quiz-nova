@@ -16,7 +16,7 @@ const plans = [
     features: [
       'Unlimited quiz generation',
       'Unlimited exam generation',
-      'Access to all classes 7–11',
+      'Access to all classes 7-12',
       'All question types available',
       'Full progress tracking',
       'Chapter & subject completion system',
@@ -36,7 +36,7 @@ const plans = [
     features: [
       'Unlimited quiz generation (free)',
       'Unlimited exam generation (free)',
-      'Access to Classes 7–11',
+      'Access to Classes 7-12',
       'All subjects unlocked',
       'All question types',
       'Full progress & analytics',
@@ -56,6 +56,7 @@ const plans = [
     description: 'The ultimate learning experience with unlimited AI.',
     features: [
       'Everything in Premium',
+      'Access to all classes 7-12',
       'Unlimited AI Assistant access',
       'Unlimited Coins',
       'Handwritten Exam Grading',
