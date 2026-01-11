@@ -10,7 +10,7 @@ import { PerformanceChart } from '@/components/performance-chart';
 import { RecentQuizzes } from '@/components/recent-quizzes';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import type { QuizAttempt } from '@/lib/types';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 type ViewType = 'quiz' | 'exam';
 
@@ -44,28 +44,51 @@ export default function Dashboard() {
             <TabsTrigger value="quiz">Quiz Performance</TabsTrigger>
             <TabsTrigger value="exam">Exam Performance</TabsTrigger>
           </TabsList>
+          <TabsContent value="quiz">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                <Card className="col-span-4">
+                  <CardHeader>
+                    <CardTitle>Performance Overview</CardTitle>
+                    <CardDescription>Your recent quiz scores.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pl-2">
+                    <PerformanceChart data={filteredHistory} />
+                  </CardContent>
+                </Card>
+                <Card className="col-span-4 lg:col-span-3">
+                  <CardHeader>
+                    <CardTitle>Recent Quizzes</CardTitle>
+                    <CardDescription>A log of your most recent quiz attempts.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <RecentQuizzes data={filteredHistory} />
+                  </CardContent>
+                </Card>
+              </div>
+          </TabsContent>
+          <TabsContent value="exam">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                <Card className="col-span-4">
+                  <CardHeader>
+                    <CardTitle>Performance Overview</CardTitle>
+                    <CardDescription>Your recent exam scores.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pl-2">
+                    <PerformanceChart data={filteredHistory} />
+                  </CardContent>
+                </Card>
+                <Card className="col-span-4 lg:col-span-3">
+                  <CardHeader>
+                    <CardTitle>Recent Exams</CardTitle>
+                    <CardDescription>A log of your most recent exam attempts.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <RecentQuizzes data={filteredHistory} />
+                  </CardContent>
+                </Card>
+              </div>
+          </TabsContent>
         </Tabs>
-
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <Card className="col-span-4">
-            <CardHeader>
-              <CardTitle>Performance Overview</CardTitle>
-              <CardDescription>Your recent {view} scores.</CardDescription>
-            </CardHeader>
-            <CardContent className="pl-2">
-              <PerformanceChart data={filteredHistory} />
-            </CardContent>
-          </Card>
-          <Card className="col-span-4 lg:col-span-3">
-            <CardHeader>
-              <CardTitle>Recent {view === 'quiz' ? 'Quizzes' : 'Exams'}</CardTitle>
-              <CardDescription>A log of your most recent {view} attempts.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <RecentQuizzes data={filteredHistory} />
-            </CardContent>
-          </Card>
-        </div>
       </main>
     </div>
   );
