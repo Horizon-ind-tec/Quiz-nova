@@ -28,6 +28,7 @@ import type { GenerateCustomQuizOutput } from '@/ai/flows/generate-custom-quiz';
 const formSchema = z.object({
   class: z.string().min(1, 'Please select a class.'),
   subject: z.string().min(1, 'Please select a subject.'),
+  subCategory: z.string().optional(),
   board: z.string().min(1, 'Please select an educational board.'),
   chapter: z.string().optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']),
@@ -48,6 +49,7 @@ export default function CreateQuizPage() {
     defaultValues: {
       class: '',
       subject: '',
+      subCategory: '',
       board: '',
       chapter: '',
       difficulty: 'medium',
@@ -55,6 +57,9 @@ export default function CreateQuizPage() {
       ncert: false,
     },
   });
+
+  const selectedSubjectName = form.watch('subject');
+  const selectedSubject = SUBJECTS_DATA.find(s => s.name === selectedSubjectName);
 
   const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
@@ -86,7 +91,7 @@ export default function CreateQuizPage() {
     <div className="flex flex-col h-screen">
       <Header title="New Quiz" />
       <main className="flex-1 grid md:grid-cols-2">
-        <div className="p-4 pt-6 md:p-8">
+        <div className="p-4 pt-6 md:p-8 overflow-y-auto">
           <Card className="max-w-2xl mx-auto">
             <CardHeader>
               <CardTitle>Create a New Quiz</CardTitle>
@@ -104,7 +109,10 @@ export default function CreateQuizPage() {
                         <FormLabel>Subject</FormLabel>
                         <FormControl>
                           <RadioGroup
-                            onValueChange={field.onChange}
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              form.setValue('subCategory', '');
+                            }}
                             defaultValue={field.value}
                             className="grid grid-cols-2 sm:grid-cols-3 gap-2"
                           >
@@ -131,6 +139,42 @@ export default function CreateQuizPage() {
                       </FormItem>
                     )}
                   />
+
+                  {selectedSubject && selectedSubject.subCategories && (
+                     <FormField
+                        name="subCategory"
+                        control={form.control}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{selectedSubject.name} Category</FormLabel>
+                            <FormControl>
+                              <RadioGroup
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                                className="grid grid-cols-2 gap-2"
+                              >
+                                {selectedSubject.subCategories?.map(sub => (
+                                <FormItem key={sub.name} className="flex-1">
+                                  <FormControl>
+                                    <RadioGroupItem value={sub.name} className="sr-only" />
+                                  </FormControl>
+                                  <FormLabel
+                                    className={cn(
+                                      "flex flex-col items-start justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                                    )}
+                                  >
+                                    <span className="font-semibold">{sub.name}</span>
+                                    {sub.description && <span className="text-sm text-muted-foreground mt-1">{sub.description}</span>}
+                                  </FormLabel>
+                                </FormItem>
+                              ))}
+                              </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                  )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField name="class" control={form.control} render={({ field }) => (

@@ -9,6 +9,7 @@ export interface Question {
 export interface Quiz {
   id: string;
   subject: string;
+  subCategory?: string;
   difficulty: 'easy' | 'medium' | 'hard';
   class: string;
   board: string;

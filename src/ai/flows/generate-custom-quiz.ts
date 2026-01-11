@@ -17,6 +17,7 @@ import {z} from 'genkit';
 
 const GenerateCustomQuizInputSchema = z.object({
   subject: z.string().describe('The subject of the quiz (e.g., Mathematics, History).'),
+  subCategory: z.string().optional().describe('The sub-category of the subject (e.g., Advance Math, Physics).'),
   difficulty: z.enum(['easy', 'medium', 'hard']).describe('The difficulty level of the quiz.'),
   board: z.string().describe('The educational board for the quiz (e.g., CBSE, ICSE, State Board).'),
   chapter: z.string().optional().describe('The specific chapter or topic for the quiz.'),
@@ -53,6 +54,9 @@ const generateCustomQuizPrompt = ai.definePrompt({
   prompt: `You are an expert quiz generator for students. Generate a quiz based on the following criteria:
 
 Subject: {{{subject}}}
+{{#if subCategory}}
+Sub-category: {{{subCategory}}}
+{{/if}}
 Difficulty: {{{difficulty}}}
 Educational Board: {{{board}}}
 {{#if chapter}}
@@ -63,7 +67,7 @@ Curriculum: NCERT
 {{/if}}
 Type: {{{quizType}}}
 
-Generate 5 questions for a 'quiz' and 10 questions for an 'exam'.
+Generate 5 questions for a 'quiz' and 30 questions for an 'exam'.
 
 The quiz should be in JSON format. The JSON should be an array of objects. Each object should have the following fields:
 - question: The quiz question.

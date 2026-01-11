@@ -34,6 +34,7 @@ export default function PerformancePage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Subject</TableHead>
+                    <TableHead>Category</TableHead>
                     <TableHead>Class</TableHead>
                     <TableHead>Board</TableHead>
                     <TableHead>Difficulty</TableHead>
@@ -45,6 +46,7 @@ export default function PerformancePage() {
                   {sortedHistory.map((attempt) => (
                     <TableRow key={attempt.id}>
                       <TableCell className="font-medium">{attempt.subject}</TableCell>
+                      <TableCell>{attempt.subCategory || '-'}</TableCell>
                       <TableCell>{attempt.class}</TableCell>
                       <TableCell>{attempt.board}</TableCell>
                       <TableCell className="capitalize">{attempt.difficulty}</TableCell>
