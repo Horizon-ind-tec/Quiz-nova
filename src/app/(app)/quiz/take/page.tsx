@@ -97,7 +97,9 @@ export default function TakeQuizPage() {
       setQuizState('taking');
       setTimeRemaining(totalTime);
     } else {
-      router.replace('/quiz/create');
+      if (typeof window !== 'undefined') {
+        router.replace('/quiz/create');
+      }
     }
   }, [quiz, router, totalTime, shuffleArray]);
   
@@ -122,7 +124,10 @@ export default function TakeQuizPage() {
         const q = quiz?.questions[questionIndex];
         if (!q) return prev;
 
-        if (q.type === 'mcq' && prev[questionIndex] !== '') return prev;
+        if (quiz.quizType === 'quiz') {
+            const isAnswered = prev[questionIndex] !== '' && prev[questionIndex] !== undefined;
+             if (q.type === 'mcq' && isAnswered) return prev;
+        }
         
         return {
             ...prev,
@@ -226,7 +231,7 @@ export default function TakeQuizPage() {
     let correctAnswers = 0;
     quiz.questions.forEach((q, index) => {
       const userAnswer = userAnswers[index];
-      if (userAnswer === undefined || userAnswer === '' || (typeof userAnswer === 'object' && Object.keys(userAnswer).length === 0)) {
+       if (userAnswer === undefined || userAnswer === '' || (typeof userAnswer === 'object' && Object.keys(userAnswer).length === 0)) {
         return;
       }
       
@@ -249,6 +254,7 @@ export default function TakeQuizPage() {
   const renderMCQ = (q: MCQ, questionIndex: number) => {
     const userAnswer = userAnswers[questionIndex] as string;
     const isAnswered = userAnswer !== '' && userAnswer !== undefined;
+    const inQuizMode = quiz?.quizType === 'quiz';
     return (
         <>
             <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
@@ -256,13 +262,13 @@ export default function TakeQuizPage() {
                 value={userAnswer}
                 onValueChange={(value) => handleAnswerSelect(questionIndex, value)}
                 className="grid grid-cols-1 sm:grid-cols-2 gap-3"
-                 disabled={isAnswered}
+                 disabled={inQuizMode && isAnswered}
             >
                 {q.options.map((option, index) => {
                     const isCorrect = option === q.correctAnswer;
                     const isSelected = option === userAnswer;
                     const getOptionStyle = () => {
-                      if (!isAnswered) return "border-gray-300 hover:border-blue-500 hover:bg-blue-50 cursor-pointer";
+                      if (!inQuizMode || !isAnswered) return "border-gray-300 hover:border-blue-500 hover:bg-blue-50 cursor-pointer";
                       if (isSelected) {
                           return isCorrect ? "border-green-500 bg-green-100 text-green-900 font-semibold" : "border-red-500 bg-red-100 text-red-900 font-semibold";
                       }
@@ -284,9 +290,9 @@ export default function TakeQuizPage() {
                                     {String.fromCharCode(65 + index)}
                                 </div>
                                 <span className="flex-1">{option}</span>
-                                {isAnswered && isSelected && isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
-                                {isAnswered && isSelected && !isCorrect && <XCircle className="h-5 w-5 text-red-600" />}
-                                {isAnswered && !isSelected && isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
+                                {inQuizMode && isAnswered && isSelected && isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
+                                {inQuizMode && isAnswered && isSelected && !isCorrect && <XCircle className="h-5 w-5 text-red-600" />}
+                                {inQuizMode && isAnswered && !isSelected && isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
                             </FormLabel>
                         </FormItem>
                     );
@@ -367,6 +373,7 @@ export default function TakeQuizPage() {
     const numericals = quiz.questions.filter(q => q.type === 'numerical');
 
     return (
+      <FormProvider {...form}>
        <div className="bg-white shadow-lg rounded-lg">
         <div className="p-4 sm:p-8">
             <div className="text-center p-2 bg-red-500 text-white font-semibold rounded-t-md">
@@ -437,6 +444,7 @@ export default function TakeQuizPage() {
               </AlertDialog>
         </div>
     </div>
+    </FormProvider>
     )
   }
 
