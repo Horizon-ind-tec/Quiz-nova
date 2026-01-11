@@ -58,6 +58,7 @@ export default function CreateQuizPage() {
       chapter: '',
       difficulty: 'medium',
       numberOfQuestions: 10,
+      quizType: 'quiz',
       ncert: false,
     },
   });
@@ -78,7 +79,6 @@ export default function CreateQuizPage() {
     try {
       const result = await generateQuizAction({
         ...data,
-        // The AI flow expects a single subCategory string, so we join the array
         subCategory: data.subCategories?.join(', '),
       });
 
@@ -182,7 +182,7 @@ export default function CreateQuizPage() {
                               return (
                               <FormItem key={subject.name} className="flex-1">
                                 <FormControl>
-                                  <RadioGroupItem value={subject.name} className="sr-only" />
+                                  <RadioGroupItem value={subject.name} id={subject.name} className="sr-only" />
                                 </FormControl>
                                 <FormLabel
                                   htmlFor={subject.name}
@@ -233,7 +233,7 @@ export default function CreateQuizPage() {
                                 ) : (
                                     <RadioGroup
                                         onValueChange={(value) => field.onChange([value])}
-                                        defaultValue={field.value?.[0]}
+                                        value={field.value?.[0]}
                                         className="grid grid-cols-2 gap-2"
                                     >
                                         {selectedSubject.subCategories?.map(sub => (
@@ -265,7 +265,7 @@ export default function CreateQuizPage() {
                     <FormField name="class" control={form.control} render={({ field }) => (
                       <FormItem>
                         <FormLabel>Class</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl><SelectTrigger><SelectValue placeholder="Select a class" /></SelectTrigger></FormControl>
                           <SelectContent>{CLASSES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                         </Select>
@@ -275,7 +275,7 @@ export default function CreateQuizPage() {
                     <FormField name="board" control={form.control} render={({ field }) => (
                       <FormItem>
                         <FormLabel>Educational Board</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl><SelectTrigger><SelectValue placeholder="Select a board" /></SelectTrigger></FormControl>
                           <SelectContent>{BOARDS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
                         </Select>
