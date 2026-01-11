@@ -40,6 +40,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Progress } from '@/components/ui/progress';
 
 type QuizState = 'loading' | 'taking' | 'paused' | 'results';
 
@@ -149,6 +150,11 @@ export default function TakeQuizPage() {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
+  const totalQuestions = quiz?.questions.length ?? 0;
+  const answeredQuestions = userAnswers.filter(a => a !== '').length;
+  const progress = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
+
+
   const renderContent = () => {
     switch (quizState) {
       case 'taking':
@@ -173,7 +179,8 @@ export default function TakeQuizPage() {
         return (
           <FormProvider {...form}>
             <Card className="w-full">
-              <div className="p-4 border-b">
+              <div className="p-4 border-b space-y-3">
+                 <Progress value={progress} className="h-2" />
                 <div className="flex justify-between items-center">
                   <Button variant="ghost" size="sm" onClick={() => setQuizState('paused')}>
                     <Pause className="mr-2 h-4 w-4" /> Pause
