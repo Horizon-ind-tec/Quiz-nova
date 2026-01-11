@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { PlusCircle, BrainCircuit, Gem, BookUser } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,12 +12,31 @@ import { RecentQuizzes } from '@/components/recent-quizzes';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import type { QuizAttempt } from '@/lib/types';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useUser } from '@/firebase';
+import { Loader2 } from 'lucide-react';
 
 type ViewType = 'quiz' | 'exam';
 
 export default function Dashboard() {
   const [view, setView] = useState<ViewType>('quiz');
   const [quizHistory] = useLocalStorage<QuizAttempt[]>('quizHistory', []);
+  const { user, loading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+
+  if (loading || !user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   const filteredHistory = quizHistory.filter(attempt => attempt.quizType === view);
 
@@ -26,7 +46,7 @@ export default function Dashboard() {
       <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex-1">
-            <h2 className="text-3xl font-bold tracking-tight">Welcome to QuizNova!</h2>
+            <h2 className="text-3xl font-bold tracking-tight">Welcome back, {user.displayName || 'Student'}!</h2>
             <p className="text-muted-foreground">Your personalized learning hub.</p>
           </div>
           <div className="flex items-center space-x-2">

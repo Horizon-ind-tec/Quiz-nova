@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '@/firebase';
 import { Header } from '@/components/header';
 import { VideoLibrary } from '@/components/video-library';
@@ -8,14 +8,22 @@ import { AdminVideoManager } from '@/components/admin-video-manager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useRouter } from 'next/navigation';
 
 const ADMIN_EMAIL = 'wizofclassknowledge@gmail.com';
 
 export default function CoachingPage() {
   const { user, loading } = useUser();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const router = useRouter();
 
-  if (loading) {
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+
+  if (loading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
