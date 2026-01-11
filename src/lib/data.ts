@@ -7,6 +7,7 @@ export const CLASSES = ['7th', '8th', '9th', '10th', '11th', '12th'];
 export const SUBJECTS_DATA: { 
   name: string; 
   icon: LucideIcon;
+  multiSelect?: boolean;
   subCategories?: { name: string; description?: string }[];
 }[] = [
   { 
@@ -20,6 +21,7 @@ export const SUBJECTS_DATA: {
   {
     name: 'Science',
     icon: Microscope,
+    multiSelect: true,
     subCategories: [
       { name: 'Physics' },
       { name: 'Chemistry' },
@@ -29,6 +31,7 @@ export const SUBJECTS_DATA: {
   {
     name: 'Social Science',
     icon: Landmark,
+    multiSelect: true,
     subCategories: [
       { name: 'History' },
       { name: 'Geography' },
@@ -38,6 +41,7 @@ export const SUBJECTS_DATA: {
   {
     name: 'Commerce',
     icon: Briefcase,
+    multiSelect: true,
     subCategories: [
         { name: 'Accountancy' },
         { name: 'Business Studies' },

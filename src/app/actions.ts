@@ -19,7 +19,7 @@ import {
 
 
 export async function generateQuizAction(
-  input: GenerateCustomQuizInput
+  input: Omit<GenerateCustomQuizInput, 'subCategory'> & { subCategory?: string }
 ): Promise<GenerateCustomQuizOutput> {
   return await generateCustomQuiz(input);
 }

@@ -16,6 +16,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -29,7 +30,7 @@ import { useUser } from '@/firebase';
 const formSchema = z.object({
   class: z.string().min(1, 'Please select a class.'),
   subject: z.string().min(1, 'Please select a subject.'),
-  subCategory: z.string().optional(),
+  subCategories: z.array(z.string()).optional(),
   board: z.string().min(1, 'Please select an educational board.'),
   chapter: z.string().optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']),
@@ -52,7 +53,7 @@ export default function CreateQuizPage() {
     defaultValues: {
       class: '',
       subject: '',
-      subCategory: '',
+      subCategories: [],
       board: '',
       chapter: '',
       difficulty: 'medium',
@@ -75,11 +76,17 @@ export default function CreateQuizPage() {
     }
     setIsLoading(true);
     try {
-      const result = await generateQuizAction(data);
+      const result = await generateQuizAction({
+        ...data,
+        // The AI flow expects a single subCategory string, so we join the array
+        subCategory: data.subCategories?.join(', '),
+      });
+
       if (result && result.questions.length > 0) {
         const newQuiz: Quiz = {
           id: uuidv4(),
           ...data,
+          subCategory: data.subCategories?.join(', '),
           questions: result.questions,
           createdAt: Date.now(),
         };
@@ -165,7 +172,7 @@ export default function CreateQuizPage() {
                           <RadioGroup
                             onValueChange={(value) => {
                               field.onChange(value);
-                              form.setValue('subCategory', '');
+                              form.setValue('subCategories', []);
                             }}
                             defaultValue={field.value}
                             className="grid grid-cols-2 sm:grid-cols-3 gap-2"
@@ -178,6 +185,7 @@ export default function CreateQuizPage() {
                                   <RadioGroupItem value={subject.name} className="sr-only" />
                                 </FormControl>
                                 <FormLabel
+                                  htmlFor={subject.name}
                                   className={cn(
                                     "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-28"
                                   )}
@@ -196,33 +204,56 @@ export default function CreateQuizPage() {
 
                   {selectedSubject && selectedSubject.subCategories && (
                      <FormField
-                        name="subCategory"
+                        name="subCategories"
                         control={form.control}
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>{selectedSubject.name} Category</FormLabel>
                             <FormControl>
-                              <RadioGroup
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                                className="grid grid-cols-2 gap-2"
-                              >
-                                {selectedSubject.subCategories?.map(sub => (
-                                <FormItem key={sub.name} className="flex-1">
-                                  <FormControl>
-                                    <RadioGroupItem value={sub.name} className="sr-only" />
-                                  </FormControl>
-                                  <FormLabel
-                                    className={cn(
-                                      "flex flex-col items-start justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
-                                    )}
-                                  >
-                                    <span className="font-semibold">{sub.name}</span>
-                                    {sub.description && <span className="text-sm text-muted-foreground mt-1">{sub.description}</span>}
-                                  </FormLabel>
-                                </FormItem>
-                              ))}
-                              </RadioGroup>
+                                {selectedSubject.multiSelect ? (
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {selectedSubject.subCategories?.map(sub => (
+                                            <FormItem key={sub.name} className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                                                <FormControl>
+                                                    <Checkbox
+                                                        checked={field.value?.includes(sub.name)}
+                                                        onCheckedChange={(checked) => {
+                                                            return checked
+                                                                ? field.onChange([...(field.value || []), sub.name])
+                                                                : field.onChange(field.value?.filter(value => value !== sub.name))
+                                                        }}
+                                                    />
+                                                </FormControl>
+                                                <FormLabel className="font-normal">
+                                                    {sub.name}
+                                                </FormLabel>
+                                            </FormItem>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <RadioGroup
+                                        onValueChange={(value) => field.onChange([value])}
+                                        defaultValue={field.value?.[0]}
+                                        className="grid grid-cols-2 gap-2"
+                                    >
+                                        {selectedSubject.subCategories?.map(sub => (
+                                            <FormItem key={sub.name} className="flex-1">
+                                                <FormControl>
+                                                    <RadioGroupItem value={sub.name} id={`sub-${sub.name}`} className="sr-only" />
+                                                </FormControl>
+                                                <FormLabel
+                                                    htmlFor={`sub-${sub.name}`}
+                                                    className={cn(
+                                                        "flex flex-col items-start justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                                                    )}
+                                                >
+                                                    <span className="font-semibold">{sub.name}</span>
+                                                    {sub.description && <span className="text-sm text-muted-foreground mt-1">{sub.description}</span>}
+                                                </FormLabel>
+                                            </FormItem>
+                                        ))}
+                                    </RadioGroup>
+                                )}
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -310,9 +341,9 @@ export default function CreateQuizPage() {
                           {DIFFICULTIES.map(d => (
                             <FormItem key={d.value} className="flex-1">
                               <FormControl>
-                                <RadioGroupItem value={d.value} className="sr-only" />
+                                <RadioGroupItem value={d.value} id={`diff-${d.value}`} className="sr-only" />
                               </FormControl>
-                              <FormLabel className={cn("flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer")}>
+                              <FormLabel htmlFor={`diff-${d.value}`} className={cn("flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer")}>
                                 {d.label}
                               </FormLabel>
                             </FormItem>
