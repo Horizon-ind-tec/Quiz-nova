@@ -65,11 +65,11 @@ export default function CreateQuizPage() {
     setIsLoading(true);
     try {
       const result: GenerateCustomQuizOutput = await generateQuizAction(data);
-      if (result && result.quiz.length > 0) {
+      if (result && result.questions.length > 0) {
         const newQuiz: Quiz = {
           id: uuidv4(),
           ...data,
-          questions: result.quiz,
+          questions: result.questions,
           createdAt: Date.now(),
         };
         setQuiz(newQuiz);

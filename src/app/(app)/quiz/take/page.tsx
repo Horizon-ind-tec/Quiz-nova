@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   CheckCircle,
@@ -30,7 +30,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useLocalStorage } from '@/hooks/use-local-storage';
-import type { Quiz, QuizAttempt } from '@/lib/types';
+import type { Quiz, QuizAttempt, Question, MCQ, Match, Numerical, UserAnswers } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +43,9 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 type QuizState = 'loading' | 'taking' | 'paused' | 'results';
 
@@ -50,20 +53,45 @@ export default function TakeQuizPage() {
   const [quizState, setQuizState] = useState<QuizState>('loading');
   const [quiz, setQuiz] = useLocalStorage<Quiz | null>('currentQuiz', null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [userAnswers, setUserAnswers] = useState<string[]>([]);
+  const [userAnswers, setUserAnswers] = useState<UserAnswers>({});
   const [markedForReview, setMarkedForReview] = useState<boolean[]>([]);
   const [score, setScore] = useState(0);
   const [, setQuizHistory] = useLocalStorage<QuizAttempt[]>('quizHistory', []);
   const router = useRouter();
   const form = useForm();
-
+  
+  const [shuffledMatches, setShuffledMatches] = useState<{[key: number]: string[]}>({});
+  
   const timePerQuestion = quiz?.quizType === 'exam' ? 180 : 120; // 3 mins for exam, 2 for quiz
   const totalTime = useMemo(() => (quiz?.questions.length ?? 0) * timePerQuestion, [quiz, timePerQuestion]);
   const [timeRemaining, setTimeRemaining] = useState(totalTime);
+  
+  const shuffleArray = useCallback((array: any[]) => {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    return newArray;
+  }, []);
 
   useEffect(() => {
     if (quiz) {
-      setUserAnswers(Array(quiz.questions.length).fill(''));
+      const initialAnswers: UserAnswers = {};
+      const initialShuffles: {[key: number]: string[]} = {};
+      quiz.questions.forEach((q, index) => {
+        if (q.type === 'mcq') {
+          initialAnswers[index] = '';
+        } else if (q.type === 'match') {
+          initialAnswers[index] = {};
+          initialShuffles[index] = shuffleArray(q.pairs.map(p => p.match));
+        } else if (q.type === 'numerical') {
+          initialAnswers[index] = '';
+        }
+      });
+
+      setUserAnswers(initialAnswers);
+      setShuffledMatches(initialShuffles);
       setMarkedForReview(Array(quiz.questions.length).fill(false));
       setCurrentQuestionIndex(0);
       setScore(0);
@@ -72,7 +100,7 @@ export default function TakeQuizPage() {
     } else {
       router.replace('/quiz/create');
     }
-  }, [quiz, router, totalTime]);
+  }, [quiz, router, totalTime, shuffleArray]);
   
   useEffect(() => {
     if (quizState !== 'taking' || timeRemaining <= 0) return;
@@ -90,12 +118,16 @@ export default function TakeQuizPage() {
   }, [quizState, timeRemaining]);
 
 
-  const handleAnswerSelect = (questionIndex: number, answer: string) => {
-    const newAnswers = [...userAnswers];
-    if (newAnswers[questionIndex] === '') { // Lock answer after first selection
-        newAnswers[questionIndex] = answer;
-        setUserAnswers(newAnswers);
-    }
+  const handleAnswerSelect = (questionIndex: number, answer: any) => {
+    setUserAnswers(prev => {
+        // Prevent changing answer once given
+        if (q.type === 'mcq' && prev[questionIndex] !== '') return prev;
+        
+        return {
+            ...prev,
+            [questionIndex]: answer
+        }
+    });
   };
 
   const handleNextQuestion = () => {
@@ -111,9 +143,19 @@ export default function TakeQuizPage() {
   };
   
   const handleClearSelection = () => {
-    const newAnswers = [...userAnswers];
-    newAnswers[currentQuestionIndex] = '';
-    setUserAnswers(newAnswers);
+    const questionIndex = currentQuestionIndex;
+    const question = quiz?.questions[questionIndex];
+    if (!question) return;
+
+    setUserAnswers(prev => {
+      const newAnswers = {...prev};
+      if (question.type === 'mcq' || question.type === 'numerical') {
+        newAnswers[questionIndex] = '';
+      } else if (question.type === 'match') {
+        newAnswers[questionIndex] = {};
+      }
+      return newAnswers;
+    });
   };
 
   const handleMarkForReview = () => {
@@ -122,15 +164,33 @@ export default function TakeQuizPage() {
     setMarkedForReview(newMarked);
   }
 
-  const finishQuiz = () => {
-    if (!quiz) return;
+  const calculateScore = useCallback(() => {
+    if (!quiz) return 0;
+
     let correctAnswers = 0;
     quiz.questions.forEach((q, index) => {
-      if (q.correctAnswer === userAnswers[index]) {
+      const userAnswer = userAnswers[index];
+      if (q.type === 'mcq' && userAnswer === q.correctAnswer) {
         correctAnswers++;
+      } else if (q.type === 'numerical' && Number(userAnswer) === q.correctAnswer) {
+        correctAnswers++;
+      } else if (q.type === 'match') {
+        const userMatches = userAnswer as { [key: string]: string };
+        const isFullyCorrect = q.pairs.every(p => userMatches?.[p.item] === p.match);
+        if (isFullyCorrect) {
+          correctAnswers++;
+        }
       }
     });
-    const finalScore = Math.round((correctAnswers / quiz.questions.length) * 100);
+
+    return Math.round((correctAnswers / quiz.questions.length) * 100);
+  }, [quiz, userAnswers]);
+
+
+  const finishQuiz = () => {
+    if (!quiz) return;
+    
+    const finalScore = calculateScore();
     setScore(finalScore);
 
     const quizAttempt: QuizAttempt = {
@@ -140,7 +200,7 @@ export default function TakeQuizPage() {
       score: finalScore,
       completedAt: Date.now(),
     };
-    setQuizHistory(prev => [...prev, quizAttempt]);
+    setQuizHistory(prev => [quizAttempt, ...prev.filter(qa => qa.id !== quiz.id)]);
     setQuizState('results');
   };
 
@@ -157,15 +217,24 @@ export default function TakeQuizPage() {
   };
 
   const totalQuestions = quiz?.questions.length ?? 0;
+  const q = quiz?.questions[currentQuestionIndex];
 
   const progress = useMemo(() => {
     if (!quiz || totalQuestions === 0) return 0;
     
     let correctSoFar = 0;
-    userAnswers.forEach((answer, index) => {
-      if (answer && answer === quiz.questions[index].correctAnswer) {
-        correctSoFar++;
-      }
+    quiz.questions.forEach((q, index) => {
+        const userAnswer = userAnswers[index];
+        if (q.type === 'mcq' && userAnswer && userAnswer === q.correctAnswer) {
+            correctSoFar++;
+        } else if (q.type === 'numerical' && userAnswer && Number(userAnswer) === q.correctAnswer) {
+            correctSoFar++;
+        } else if (q.type === 'match') {
+            const userMatches = userAnswer as { [key: string]: string };
+            if (q.pairs.every(p => userMatches?.[p.item] === p.match)) {
+                correctSoFar++;
+            }
+        }
     });
     
     if (totalQuestions === 0) return 0;
@@ -173,11 +242,124 @@ export default function TakeQuizPage() {
     return (correctSoFar / totalQuestions) * 100;
   }, [userAnswers, quiz, totalQuestions]);
   
+
+  const renderMCQ = (q: MCQ, questionIndex: number) => {
+    const userAnswer = userAnswers[questionIndex] as string;
+    const isAnswered = userAnswer !== '';
+    return (
+        <>
+            <p className="font-semibold mb-4">{questionIndex + 1}. {q.question}</p>
+            <RadioGroup
+                value={userAnswer}
+                onValueChange={(value) => handleAnswerSelect(questionIndex, value)}
+                className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+            >
+                {q.options.map((option, index) => {
+                    const isCorrect = option === q.correctAnswer;
+                    const isSelected = option === userAnswer;
+                    const getOptionStyle = () => {
+                      if (!isAnswered) return "border-gray-300 hover:border-blue-500 hover:bg-blue-50 cursor-pointer";
+                      if (isSelected) {
+                          return isCorrect ? "border-green-500 bg-green-100 text-green-900 font-semibold" : "border-red-500 bg-red-100 text-red-900 font-semibold";
+                      }
+                      if (isCorrect) {
+                          return "border-green-500 bg-green-100 text-green-900";
+                      }
+                      return "border-gray-300 opacity-70 cursor-not-allowed";
+                    };
+                    return (
+                        <FormItem key={index}>
+                            <FormControl>
+                                <RadioGroupItem value={option} id={`q${questionIndex}-option-${index}`} className="sr-only" disabled={isAnswered} />
+                            </FormControl>
+                            <FormLabel
+                                htmlFor={`q${questionIndex}-option-${index}`}
+                                className={cn("flex items-center space-x-3 space-y-0 rounded-md border p-3 transition-all", getOptionStyle())}
+                            >
+                                <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0">
+                                    {index + 1}
+                                </div>
+                                <span className="flex-1">{option}</span>
+                                {isAnswered && isSelected && isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
+                                {isAnswered && isSelected && !isCorrect && <XCircle className="h-5 w-5 text-red-600" />}
+                            </FormLabel>
+                        </FormItem>
+                    );
+                })}
+            </RadioGroup>
+        </>
+    );
+  };
+
+  const renderMatch = (q: Match, questionIndex: number) => {
+    const userMatches = userAnswers[questionIndex] as { [key: string]: string } || {};
+    const items = q.pairs.map(p => p.item);
+    const options = shuffledMatches[questionIndex] || [];
+  
+    return (
+      <div>
+        <p className="font-semibold mb-4">{questionIndex + 1}. {q.question}</p>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+          <div className="font-semibold">Column A</div>
+          <div className="font-semibold">Column B</div>
+          {items.map((item, index) => (
+            <React.Fragment key={item}>
+              <div className="p-3 border rounded-md bg-gray-50 flex items-center">{item}</div>
+              <Select
+                value={userMatches[item] || ''}
+                onValueChange={(value) => {
+                  const newMatches = {...userMatches, [item]: value};
+                  handleAnswerSelect(questionIndex, newMatches);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a match" />
+                </SelectTrigger>
+                <SelectContent>
+                  {options.map(option => (
+                    <SelectItem key={option} value={option}>{option}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+    );
+  };
+  
+  const renderNumerical = (q: Numerical, questionIndex: number) => {
+    const userAnswer = userAnswers[questionIndex] as string;
+    return (
+      <div>
+        <p className="font-semibold mb-4">{questionIndex + 1}. {q.question}</p>
+        <Input
+          type="number"
+          value={userAnswer}
+          onChange={(e) => handleAnswerSelect(questionIndex, e.target.value)}
+          placeholder="Enter your answer"
+          className="max-w-xs"
+        />
+      </div>
+    );
+  };
+
+  const renderQuestion = (q: Question, index: number) => {
+    switch (q.type) {
+        case 'mcq': return renderMCQ(q, index);
+        case 'match': return renderMatch(q, index);
+        case 'numerical': return renderNumerical(q, index);
+        default: return <p>Unsupported question type.</p>;
+    }
+  }
+
+
   const renderExamPaper = () => {
     if (!quiz) return null;
 
-    const sections = quiz.subCategory ? [quiz.subCategory] : [quiz.subject];
-    const questionsPerSection = Math.ceil(quiz.questions.length / sections.length);
+    const mcqs = quiz.questions.filter(q => q.type === 'mcq');
+    const matches = quiz.questions.filter(q => q.type === 'match');
+    const numericals = quiz.questions.filter(q => q.type === 'numerical');
 
     return (
        <div className="bg-white shadow-lg rounded-lg">
@@ -212,64 +394,21 @@ export default function TakeQuizPage() {
         </div>
 
         <div className="p-4 sm:p-8">
-            {sections.map((section, secIndex) => (
-                <div key={secIndex}>
-                    <h2 className="text-center font-bold text-lg bg-gray-200 p-2 rounded-md mb-4 uppercase">{section}</h2>
-                    {quiz.questions.slice(secIndex * questionsPerSection, (secIndex + 1) * questionsPerSection).map((q, qIndex) => {
-                        const questionNumber = secIndex * questionsPerSection + qIndex + 1;
-                        const userAnswer = userAnswers[questionNumber - 1];
-                        const isAnswered = userAnswer !== '';
-
-                        return (
-                            <div key={questionNumber} className="mb-8 pb-4 border-b border-gray-200">
-                                <p className="font-semibold mb-4">{questionNumber}. {q.question}</p>
-                                <RadioGroup
-                                  value={userAnswer}
-                                  onValueChange={(value) => handleAnswerSelect(questionNumber - 1, value)}
-                                  className="grid grid-cols-1 sm:grid-cols-2 gap-3"
-                                >
-                                    {q.options.map((option, index) => {
-                                        const isCorrect = option === q.correctAnswer;
-                                        const isSelected = option === userAnswer;
-
-                                        const getOptionStyle = () => {
-                                            if (!isAnswered) return "border-gray-300 hover:border-blue-500 hover:bg-blue-50";
-                                            if (isSelected) {
-                                                return isCorrect ? "border-green-500 bg-green-100 text-green-900 font-semibold" : "border-red-500 bg-red-100 text-red-900 font-semibold";
-                                            }
-                                            if (isCorrect) {
-                                                return "border-green-500 bg-green-100 text-green-900";
-                                            }
-                                            return "border-gray-300 opacity-70 cursor-not-allowed";
-                                        };
-
-                                        return (
-                                            <FormItem key={index}>
-                                                <FormControl>
-                                                    <RadioGroupItem value={option} id={`q${questionNumber}-option-${index}`} className="sr-only" />
-                                                </FormControl>
-                                                <FormLabel
-                                                    htmlFor={`q${questionNumber}-option-${index}`}
-                                                    className={cn(
-                                                        "flex items-center space-x-3 space-y-0 rounded-md border p-3 transition-all cursor-pointer",
-                                                        getOptionStyle(),
-                                                    )}
-                                                >
-                                                    <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0">
-                                                        {index + 1}
-                                                    </div>
-                                                    <span className="flex-1">{option}</span>
-                                                    {isAnswered && isSelected && isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
-                                                    {isAnswered && isSelected && !isCorrect && <XCircle className="h-5 w-5 text-red-600" />}
-                                                </FormLabel>
-                                            </FormItem>
-                                        );
-                                    })}
-                                </RadioGroup>
+            {[
+              { title: 'Multiple Choice Questions', questions: mcqs },
+              { title: 'Match the Following', questions: matches },
+              { title: 'Numerical Answer Questions', questions: numericals }
+            ].map((section, secIndex) => (
+                section.questions.length > 0 && (
+                    <div key={secIndex}>
+                        <h2 className="text-center font-bold text-lg bg-gray-200 p-2 rounded-md mb-4 uppercase">{section.title}</h2>
+                        {section.questions.map(q => (
+                            <div key={quiz.questions.indexOf(q)} className="mb-8 pb-4 border-b border-gray-200">
+                               {renderQuestion(q, quiz.questions.indexOf(q))}
                             </div>
-                        );
-                    })}
-                </div>
+                        ))}
+                    </div>
+                )
             ))}
         </div>
         
@@ -296,20 +435,17 @@ export default function TakeQuizPage() {
     )
   }
 
-
   const renderContent = () => {
     switch (quizState) {
       case 'taking':
       case 'paused':
-        if (!quiz) return null;
+        if (!quiz || !q) return null;
         
         if (quiz.quizType === 'exam') {
             return renderExamPaper();
         }
 
-        const currentQuestion = quiz.questions[currentQuestionIndex];
-        const isAnswered = userAnswers[currentQuestionIndex] !== '';
-        const userAnswer = userAnswers[currentQuestionIndex];
+        const isAnswered = userAnswers[currentQuestionIndex] !== '' && userAnswers[currentQuestionIndex] !== undefined;
 
         if (quizState === 'paused') {
           return (
@@ -323,6 +459,8 @@ export default function TakeQuizPage() {
               </div>
           )
         }
+        
+        const currentMCQ = q as MCQ;
 
         return (
           <FormProvider {...form}>
@@ -375,16 +513,17 @@ export default function TakeQuizPage() {
                    <div className="text-xs font-semibold bg-gray-200 text-gray-700 px-2 py-1 rounded-md">+4.0 / -1.0</div>
                 </div>
 
-                <p className="text-base font-medium mb-6">{currentQuestion.question}</p>
+                <p className="text-base font-medium mb-6">{currentMCQ.question}</p>
 
                 <RadioGroup
-                  value={userAnswer}
+                  value={userAnswers[currentQuestionIndex] as string}
                   onValueChange={(value) => handleAnswerSelect(currentQuestionIndex, value)}
                   className="space-y-3"
+                  disabled={isAnswered}
                 >
-                  {currentQuestion.options.map((option, index) => {
-                    const isCorrect = option === currentQuestion.correctAnswer;
-                    const isSelected = option === userAnswer;
+                  {currentMCQ.options.map((option, index) => {
+                    const isCorrect = option === currentMCQ.correctAnswer;
+                    const isSelected = option === userAnswers[currentQuestionIndex];
                     
                     const getOptionStyle = () => {
                       if (!isAnswered) return "cursor-pointer hover:bg-accent";
@@ -504,7 +643,20 @@ export default function TakeQuizPage() {
               <Accordion type="single" collapsible className="w-full">
                 {quiz.questions.map((q, index) => {
                   const userAnswer = userAnswers[index];
-                  const isCorrect = userAnswer === q.correctAnswer;
+                  let isCorrect = false;
+                  let userFriendlyAnswer = "Not Answered";
+
+                  if (q.type === 'mcq') {
+                    isCorrect = userAnswer === q.correctAnswer;
+                    userFriendlyAnswer = (userAnswer as string) || "Not Answered";
+                  } else if (q.type === 'numerical') {
+                    isCorrect = Number(userAnswer) === q.correctAnswer;
+                    userFriendlyAnswer = (userAnswer as string) || "Not Answered";
+                  } else if (q.type === 'match') {
+                     const userMatches = userAnswer as { [key: string]: string };
+                     isCorrect = q.pairs.every(p => userMatches?.[p.item] === p.match);
+                  }
+
                   return (
                     <AccordionItem value={`item-${index}`} key={index}>
                       <AccordionTrigger className="hover:no-underline">
@@ -514,19 +666,57 @@ export default function TakeQuizPage() {
                           ) : (
                             <XCircle className="h-5 w-5 text-destructive" />
                           )}
-                          <span className="text-left font-medium">Question {index + 1}</span>
+                          <span className="text-left font-medium">Question {index + 1} ({q.type})</span>
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="p-4 bg-secondary/30 rounded-md">
                         <p className="font-semibold">{q.question}</p>
-                        <p className="mt-2 text-sm">
-                          Your answer: <span className={cn(isCorrect ? 'text-green-600' : 'text-destructive', 'font-semibold')}>{userAnswer || 'Not answered'}</span>
-                        </p>
-                        {!isCorrect && (
-                          <p className="mt-1 text-sm">
-                            Correct answer: <span className="font-semibold text-green-600">{q.correctAnswer}</span>
-                          </p>
+                        
+                        {q.type === 'mcq' && (
+                          <>
+                            <p className="mt-2 text-sm">
+                              Your answer: <span className={cn(isCorrect ? 'text-green-600' : 'text-destructive', 'font-semibold')}>{userFriendlyAnswer}</span>
+                            </p>
+                            {!isCorrect && (
+                              <p className="mt-1 text-sm">
+                                Correct answer: <span className="font-semibold text-green-600">{q.correctAnswer}</span>
+                              </p>
+                            )}
+                          </>
                         )}
+
+                        {q.type === 'numerical' && (
+                          <>
+                            <p className="mt-2 text-sm">
+                              Your answer: <span className={cn(isCorrect ? 'text-green-600' : 'text-destructive', 'font-semibold')}>{userFriendlyAnswer}</span>
+                            </p>
+                            {!isCorrect && (
+                              <p className="mt-1 text-sm">
+                                Correct answer: <span className="font-semibold text-green-600">{q.correctAnswer}</span>
+                              </p>
+                            )}
+                          </>
+                        )}
+
+                        {q.type === 'match' && (
+                           <div>
+                             <p className="mt-2 text-sm font-semibold">Your matches:</p>
+                             <ul className="list-disc pl-5 mt-1 text-sm">
+                                {q.pairs.map(pair => {
+                                  const userMatch = (userAnswer as any)[pair.item];
+                                  const isPairCorrect = userMatch === pair.match;
+                                  return (
+                                    <li key={pair.item}>
+                                      {pair.item} &rarr; <span className={cn(isPairCorrect ? 'text-green-600' : 'text-destructive', 'font-semibold')}>{userMatch || 'Not answered'}</span>
+                                      {!isPairCorrect && <span className="text-green-600 font-semibold"> (Correct: {pair.match})</span>}
+                                    </li>
+                                  )
+                                })}
+                             </ul>
+                           </div>
+                        )}
+
+
                         <Separator className="my-3" />
                         <p className="text-sm text-muted-foreground"><span className="font-semibold text-foreground">Explanation:</span> {q.explanation}</p>
                       </AccordionContent>
@@ -561,5 +751,3 @@ export default function TakeQuizPage() {
     </div>
   );
 }
-
-    

@@ -27,16 +27,37 @@ const GenerateCustomQuizInputSchema = z.object({
 });
 export type GenerateCustomQuizInput = z.infer<typeof GenerateCustomQuizInputSchema>;
 
+const MCQSchema = z.object({
+  type: z.literal('mcq').describe("The type of the question: Multiple Choice Question."),
+  question: z.string().describe('The quiz question.'),
+  options: z.array(z.string()).describe('The multiple-choice options for the question.'),
+  correctAnswer: z.string().describe('The correct answer to the question.'),
+  explanation: z.string().describe('The explanation for the correct answer.'),
+});
+
+const MatchSchema = z.object({
+  type: z.literal('match').describe("The type of the question: Match the Following."),
+  question: z.string().describe('A title or instruction for the matching question (e.g., "Match the capitals to their countries").'),
+  pairs: z.array(z.object({
+    item: z.string().describe("The item in the first column."),
+    match: z.string().describe("The corresponding correct match in the second column."),
+  })).describe("The pairs to be matched. The 'match' values will be shuffled for the user."),
+  explanation: z.string().describe('An explanation for the correct pairings.'),
+});
+
+const NumericalSchema = z.object({
+  type: z.literal('numerical').describe("The type of the question: Numerical Answer."),
+  question: z.string().describe('The question that requires a numerical answer.'),
+  correctAnswer: z.number().describe('The correct numerical answer.'),
+  explanation: z.string().describe('The explanation for how to arrive at the correct answer.'),
+});
+
+const QuestionSchema = z.union([MCQSchema, MatchSchema, NumericalSchema]);
+
+
 const GenerateCustomQuizOutputSchema = z.object({
-  quiz: z
-    .array(
-      z.object({
-        question: z.string().describe('The quiz question.'),
-        options: z.array(z.string()).describe('The multiple-choice options for the question.'),
-        correctAnswer: z.string().describe('The correct answer to the question.'),
-        explanation: z.string().describe('The explanation for the correct answer.'),
-      })
-    )
+  questions: z
+    .array(QuestionSchema)
     .describe('The generated quiz questions, options, and answers.'),
 });
 export type GenerateCustomQuizOutput = z.infer<typeof GenerateCustomQuizOutputSchema>;
@@ -67,30 +88,40 @@ Curriculum: NCERT
 {{/if}}
 Type: {{{quizType}}}
 
-Generate 5 questions for a 'quiz' and 30 questions for an 'exam'.
+- For a 'quiz', generate 5 Multiple Choice Questions (MCQ).
+- For an 'exam', generate a total of 30 questions with a mix of types: 20 MCQs, 5 Match the Following, and 5 Numerical questions.
 
-The quiz should be in JSON format. The JSON should be an array of objects. Each object should have the following fields:
-- question: The quiz question.
-- options: An array of multiple-choice options for the question.
-- correctAnswer: The correct answer to the question.
-- explanation: The explanation for the correct answer.
+The entire output should be a single JSON object with a "questions" key, which holds an array of question objects. Each question object must have a "type" field ('mcq', 'match', or 'numerical') and other fields appropriate for that type.
 
-Here is an example of the expected JSON format:
+Example of the expected JSON structure:
+{
+  "questions": [
+    {
+      "type": "mcq",
+      "question": "What is the capital of France?",
+      "options": ["London", "Paris", "Berlin", "Rome"],
+      "correctAnswer": "Paris",
+      "explanation": "Paris is the capital and most populous city of France."
+    },
+    {
+      "type": "match",
+      "question": "Match the scientists to their discoveries.",
+      "pairs": [
+        { "item": "Isaac Newton", "match": "Laws of Motion" },
+        { "item": "Albert Einstein", "match": "Theory of Relativity" },
+        { "item": "Marie Curie", "match": "Radioactivity" }
+      ],
+      "explanation": "Newton formulated the laws of motion, Einstein developed the theory of relativity, and Curie pioneered research on radioactivity."
+    },
+    {
+      "type": "numerical",
+      "question": "What is the value of Pi rounded to two decimal places?",
+      "correctAnswer": 3.14,
+      "explanation": "Pi (π) is an irrational number, approximately equal to 3.14159. Rounded to two decimal places, it is 3.14."
+    }
+  ]
+}
 
-[
-  {
-    "question": "What is the capital of France?",
-    "options": ["London", "Paris", "Berlin", "Rome"],
-    "correctAnswer": "Paris",
-    "explanation": "Paris is the capital and most populous city of France."
-  },
-  {
-    "question": "What is the chemical symbol for water?",
-    "options": ["H2O", "CO2", "O2", "N2"],
-    "correctAnswer": "H2O",
-    "explanation": "H2O is the chemical symbol for water, representing two hydrogen atoms and one oxygen atom."
-  }
-]
 
 Ensure that the generated JSON is valid and follows the specified format. Do not include any additional text or explanations outside of the JSON structure.
 `,
