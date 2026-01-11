@@ -6,28 +6,42 @@ import { Button } from './ui/button';
 import { useAuth, useFirestore, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { LogOut, Gem, ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
+import { LogOut, Gem, ShieldCheck, Bell } from 'lucide-react';
 import { useUser } from '@/firebase/auth/use-user';
 import { useDoc } from '@/firebase/firestore/use-doc';
+import { useCollection } from '@/firebase/firestore/use-collection';
 import type { UserProfile } from '@/lib/types';
-import { doc } from 'firebase/firestore';
+import { doc, collection, query, where } from 'firebase/firestore';
+import { Badge } from '@/components/ui/badge';
 
 
 interface HeaderProps {
   title: string;
 }
 
+const ADMIN_EMAIL = 'wizofclassknowledge@gmail.com';
+
+
 export function Header({ title }: HeaderProps) {
     const auth = useAuth();
     const router = useRouter();
     const { user } = useUser();
     const firestore = useFirestore();
+    const isUserAdmin = user?.email === ADMIN_EMAIL;
 
     const userProfileRef = useMemoFirebase(
       () => (firestore && user ? doc(firestore, 'users', user.uid) : null),
       [firestore, user]
     );
     const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+
+    const pendingUsersQuery = useMemoFirebase(
+        () => (firestore && isUserAdmin ? query(collection(firestore, 'users'), where('paymentStatus', '==', 'pending')) : null),
+        [firestore, isUserAdmin]
+    );
+    const { data: pendingUsers } = useCollection<UserProfile>(pendingUsersQuery);
+    const notificationCount = pendingUsers?.length || 0;
 
     const handleSignOut = async () => {
         await signOut(auth);
@@ -56,6 +70,14 @@ export function Header({ title }: HeaderProps) {
             {renderPlanIcon()}
             <span className="text-sm font-medium">{user?.displayName}</span>
        </div>
+       <Button asChild variant="outline" size="icon" className="relative">
+           <Link href="/notifications">
+                <Bell className="h-4 w-4" />
+                {isUserAdmin && notificationCount > 0 && (
+                    <Badge className="absolute -top-2 -right-2 h-5 w-5 justify-center p-0">{notificationCount}</Badge>
+                )}
+           </Link>
+       </Button>
        <Button variant="outline" size="sm" onClick={handleSignOut}>
             <LogOut className="mr-2 h-4 w-4" />
             Sign Out

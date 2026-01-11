@@ -119,19 +119,21 @@ export function SideNav() {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-           <SidebarMenuItem>
-                <SidebarMenuButton
-                asChild
-                isActive={isActive('/notifications')}
-                tooltip={{ children: 'Notifications' }}
-                >
-                <Link href="/notifications">
-                    <Bell />
-                    <span>Notifications</span>
-                    {notificationCount > 0 && <SidebarMenuBadge>{notificationCount}</SidebarMenuBadge>}
-                </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
+           {isUserAdmin && (
+            <SidebarMenuItem>
+                    <SidebarMenuButton
+                    asChild
+                    isActive={isActive('/admin/confirm-payments')}
+                    tooltip={{ children: 'Admin Panel' }}
+                    >
+                    <Link href="/admin/confirm-payments">
+                        <UserShield />
+                        <span>Admin Panel</span>
+                        {notificationCount > 0 && <SidebarMenuBadge>{notificationCount}</SidebarMenuBadge>}
+                    </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            )}
         </SidebarMenu>
       </SidebarContent>
     </Sidebar>
