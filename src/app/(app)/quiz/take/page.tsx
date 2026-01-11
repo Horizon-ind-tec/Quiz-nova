@@ -561,3 +561,5 @@ export default function TakeQuizPage() {
     </div>
   );
 }
+
+    
