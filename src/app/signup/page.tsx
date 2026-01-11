@@ -32,6 +32,11 @@ export default function SignUpPage() {
   const auth = useAuth();
   const firestore = useFirestore();
 
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { name: '', email: '', password: '' },
+  });
+
 
   const createUserProfile = async (user: any, name: string) => {
     if (!firestore) return;
@@ -40,7 +45,7 @@ export default function SignUpPage() {
       id: user.uid,
       email: user.email,
       name: name,
-      createdAt: Date.now(),
+      createdAt: new Date().toISOString(),
       plan: 'free',
     });
   };
@@ -67,7 +72,16 @@ export default function SignUpPage() {
     try {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
-      await createUserProfile(userCredential.user, userCredential.user.displayName || 'Google User');
+      
+      const userDocRef = doc(firestore, 'users', userCredential.user.uid);
+       await setDoc(userDocRef, {
+        id: userCredential.user.uid,
+        email: userCredential.user.email,
+        name: userCredential.user.displayName || 'Google User',
+        createdAt: new Date().toISOString(),
+        plan: 'free',
+      }, { merge: true });
+
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -124,7 +138,7 @@ export default function SignUpPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" />
+                      <Input type="password" placeholder="••••••••" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -168,4 +182,3 @@ export default function SignUpPage() {
     </div>
   );
 }
-
