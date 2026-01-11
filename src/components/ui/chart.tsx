@@ -43,8 +43,7 @@ const ChartContainer = React.forwardRef<
     >["children"]
   }
 >(({ id, className, children, config, ...props }, ref) => {
-  const uniqueId = React.useId()
-  const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`
+  const chartId = `chart-${id || React.useId()}`
 
   return (
     <ChartContext.Provider value={{ config }}>
@@ -363,3 +362,5 @@ export {
   ChartLegendContent,
   ChartStyle,
 }
+
+    

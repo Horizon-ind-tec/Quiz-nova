@@ -14,6 +14,7 @@ import {
   Grid,
 } from 'lucide-react';
 import { useForm, FormProvider } from 'react-hook-form';
+import { v4 as uuidv4 } from 'uuid';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -104,7 +105,7 @@ export default function TakeQuizPage() {
   
   const handlePrevQuestion = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
   };
   
@@ -133,6 +134,7 @@ export default function TakeQuizPage() {
 
     const quizAttempt: QuizAttempt = {
       ...quiz,
+      id: uuidv4(), // Assign a new unique ID for each attempt
       userAnswers,
       score: finalScore,
       completedAt: Date.now(),
@@ -430,3 +432,5 @@ export default function TakeQuizPage() {
     </div>
   );
 }
+
+    
