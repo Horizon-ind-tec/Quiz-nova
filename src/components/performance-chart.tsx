@@ -1,6 +1,5 @@
 'use client';
 
-import { useLocalStorage } from '@/hooks/use-local-storage';
 import type { QuizAttempt } from '@/lib/types';
 import {
   ChartContainer,
@@ -16,10 +15,12 @@ const chartConfig = {
   },
 };
 
-export function PerformanceChart() {
-  const [quizHistory] = useLocalStorage<QuizAttempt[]>('quizHistory', []);
+interface PerformanceChartProps {
+  data: QuizAttempt[];
+}
 
-  const chartData = quizHistory
+export function PerformanceChart({ data }: PerformanceChartProps) {
+  const chartData = data
     .slice() // Create a copy to avoid mutating the original array
     .sort((a, b) => a.completedAt - b.completedAt) // Sort by completion time
     .slice(-10) // Get the last 10 attempts
@@ -28,10 +29,10 @@ export function PerformanceChart() {
       score: attempt.score,
     }));
 
-  if (quizHistory.length === 0) {
+  if (data.length === 0) {
     return (
       <div className="flex h-[350px] w-full items-center justify-center">
-        <p className="text-muted-foreground">Take a quiz to see your performance chart.</p>
+        <p className="text-muted-foreground">Take a quiz or exam to see your performance chart.</p>
       </div>
     );
   }

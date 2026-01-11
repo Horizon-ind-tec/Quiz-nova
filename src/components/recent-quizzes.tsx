@@ -1,6 +1,5 @@
 'use client';
 
-import { useLocalStorage } from '@/hooks/use-local-storage';
 import type { QuizAttempt } from '@/lib/types';
 import {
   Table,
@@ -14,10 +13,12 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
 
-export function RecentQuizzes() {
-  const [quizHistory] = useLocalStorage<QuizAttempt[]>('quizHistory', []);
+interface RecentQuizzesProps {
+  data: QuizAttempt[];
+}
 
-  const recentAttempts = quizHistory
+export function RecentQuizzes({ data }: RecentQuizzesProps) {
+  const recentAttempts = data
     .slice()
     .sort((a, b) => b.completedAt - a.completedAt)
     .slice(0, 5);
@@ -25,7 +26,7 @@ export function RecentQuizzes() {
   if (recentAttempts.length === 0) {
     return (
       <div className="flex h-[350px] items-center justify-center">
-        <p className="text-muted-foreground">Your recent quizzes will appear here.</p>
+        <p className="text-muted-foreground">Your recent attempts will appear here.</p>
       </div>
     );
   }
