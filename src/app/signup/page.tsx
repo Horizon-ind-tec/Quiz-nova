@@ -8,13 +8,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { BrainCircuit, Loader2 } from 'lucide-react';
 import { createUserWithEmailAndPassword, updateProfile, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { setDoc, doc } from 'firebase/firestore';
+
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required.'),
@@ -28,17 +30,27 @@ export default function SignUpPage() {
   const { toast } = useToast();
   const router = useRouter();
   const auth = useAuth();
+  const firestore = useFirestore();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: { name: '', email: '', password: '' },
-  });
+
+  const createUserProfile = async (user: any, name: string) => {
+    if (!firestore) return;
+    const userDocRef = doc(firestore, 'users', user.uid);
+    await setDoc(userDocRef, {
+      id: user.uid,
+      email: user.email,
+      name: name,
+      createdAt: Date.now(),
+      plan: 'free',
+    });
+  };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       await updateProfile(userCredential.user, { displayName: values.name });
+      await createUserProfile(userCredential.user, values.name);
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -54,7 +66,8 @@ export default function SignUpPage() {
     setIsGoogleLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const userCredential = await signInWithPopup(auth, provider);
+      await createUserProfile(userCredential.user, userCredential.user.displayName || 'Google User');
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -111,7 +124,7 @@ export default function SignUpPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input type="password" placeholder="••••••••" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -155,3 +168,4 @@ export default function SignUpPage() {
     </div>
   );
 }
+

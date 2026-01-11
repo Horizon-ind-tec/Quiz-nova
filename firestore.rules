@@ -75,14 +75,20 @@ service cloud.firestore {
      * that matches the document's ID (which is the user's UID).
      */
     function isCreatingOwnProfile(userId) {
-      return request.resource.data.id == userId;
+      let isPlanFree = request.resource.data.plan == 'free';
+      let hasNoPaymentStatus = !('paymentStatus' in request.resource.data);
+      return request.resource.data.id == userId && isPlanFree && hasNoPaymentStatus;
     }
     
     /**
      * Enforces immutability of the User's 'id' field during updates.
+     * Allows user to update their own profile fields, but not plan or payment status.
      */
     function isUpdatingOwnProfile() {
-      return request.resource.data.id == resource.data.id;
+       let changingAllowedFields = request.resource.data.keys().hasAll(['id', 'email', 'name', 'createdAt']) || 
+                                   request.resource.data.keys().hasAll(['id', 'email', 'name', 'createdAt', 'pendingPlan', 'paymentStatus']);
+       let planIsUnchanged = request.resource.data.plan == resource.data.plan;
+       return request.resource.data.id == resource.data.id && planIsUnchanged && changingAllowedFields;
     }
 
     /**
@@ -167,10 +173,10 @@ service cloud.firestore {
      * @principle Restricts access to a user's own data tree and allows self-creation of a profile.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false; // Prevent user enumeration for security and privacy.
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin(); // Only admin can list users (for payment confirmation).
       allow create: if isOwner(userId) && isCreatingOwnProfile(userId);
-      allow update: if isExistingOwner(userId) && isUpdatingOwnProfile();
+      allow update: if (isExistingOwner(userId) && isUpdatingOwnProfile()) || isAdmin(); // Admin can update to confirm payment.
       allow delete: if isExistingOwner(userId);
 
       /**
@@ -220,3 +226,4 @@ service cloud.firestore {
     }
   }
 }
+

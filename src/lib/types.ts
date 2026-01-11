@@ -85,3 +85,14 @@ export interface Chapter {
     name: string;
     subjectId: string;
 }
+
+
+export interface UserProfile {
+    id: string;
+    email: string;
+    name: string;
+    createdAt: number;
+    plan: 'free' | 'premium' | 'ultimate';
+    paymentStatus?: 'pending' | 'confirmed';
+    pendingPlan?: 'premium' | 'ultimate';
+}

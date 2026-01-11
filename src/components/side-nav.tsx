@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BrainCircuit, LayoutDashboard, PlusCircle, TrendingUp, MessageSquareHeart, Gem, BookUser, Wallet } from 'lucide-react';
+import { BrainCircuit, LayoutDashboard, PlusCircle, TrendingUp, MessageSquareHeart, Gem, BookUser, Wallet, ShieldCheck, UserCheck } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -11,11 +11,18 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
+import { useUser } from '@/firebase';
+
+const ADMIN_EMAIL = 'wizofclassknowledge@gmail.com';
+
 
 export function SideNav() {
   const pathname = usePathname();
+  const { user } = useUser();
 
   const isActive = (path: string) => pathname.startsWith(path);
+  const isUserAdmin = user?.email === ADMIN_EMAIL;
+
 
   return (
     <Sidebar>
@@ -111,8 +118,23 @@ export function SideNav() {
                 </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
+            {isUserAdmin && (
+                 <SidebarMenuItem>
+                    <SidebarMenuButton
+                    asChild
+                    isActive={isActive('/admin/confirm-payments')}
+                    tooltip={{ children: 'Confirm Payments' }}
+                    >
+                    <Link href="/admin/confirm-payments">
+                        <UserCheck />
+                        <span>Confirm Payments</span>
+                    </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            )}
         </SidebarMenu>
       </SidebarContent>
     </Sidebar>
   );
 }
+

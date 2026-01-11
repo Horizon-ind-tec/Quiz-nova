@@ -23,13 +23,30 @@
           "type": "string",
           "description": "Timestamp indicating when the user account was created.",
           "format": "date-time"
+        },
+        "plan": {
+          "type": "string",
+          "description": "The user's current subscription plan.",
+          "enum": ["free", "premium", "ultimate"],
+          "default": "free"
+        },
+        "paymentStatus": {
+          "type": "string",
+          "description": "The current status of the user's payment for a plan upgrade.",
+          "enum": ["pending", "confirmed"]
+        },
+        "pendingPlan": {
+           "type": "string",
+           "description": "The plan the user is currently attempting to purchase.",
+           "enum": ["premium", "ultimate"]
         }
       },
       "required": [
         "id",
         "email",
         "name",
-        "createdAt"
+        "createdAt",
+        "plan"
       ]
     },
     "Quiz": {

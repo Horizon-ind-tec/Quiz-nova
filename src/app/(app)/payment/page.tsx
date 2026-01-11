@@ -58,8 +58,6 @@ function PaymentPageContents() {
     if (upiSettings) {
       setQrCodeUrl(upiSettings.qrCodeUrl);
     } else {
-      // If no setting is found in Firestore, initialize it with the default QR code.
-      // This is helpful for the first run.
       const initializeSettings = async () => {
         if(settingsDocRef) {
            const docSnap = await getDoc(settingsDocRef);
@@ -92,7 +90,7 @@ function PaymentPageContents() {
                 const newQrCodeUrl = e.target.result as string;
                 try {
                     await setDoc(settingsDocRef, { qrCodeUrl: newQrCodeUrl });
-                    setQrCodeUrl(newQrCodeUrl); // Optimistically update UI
+                    setQrCodeUrl(newQrCodeUrl); 
                     toast({
                         title: 'QR Code Updated',
                         description: 'The new QR code has been saved successfully.',
@@ -116,6 +114,29 @@ function PaymentPageContents() {
   const handleChangeQrClick = () => {
     fileInputRef.current?.click();
   };
+
+  const handlePaymentConfirmation = async () => {
+      if (!user || !firestore || !plan) {
+          toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to make a payment.'});
+          return;
+      }
+
+      const userDocRef = doc(firestore, 'users', user.uid);
+      try {
+          await setDoc(userDocRef, {
+              paymentStatus: 'pending',
+              pendingPlan: plan,
+          }, { merge: true });
+          router.push('/payment/confirmation');
+      } catch (error) {
+          console.error("Error setting payment status:", error);
+          toast({
+              variant: 'destructive',
+              title: 'Error',
+              description: (error as Error).message || 'Could not initiate payment confirmation.'
+          });
+      }
+  }
 
   if (userLoading || settingsLoading) {
     return (
@@ -163,7 +184,7 @@ function PaymentPageContents() {
                           width={200}
                           height={200}
                           className="rounded-md"
-                          key={qrCodeUrl} // Re-renders the image when URL changes
+                          key={qrCodeUrl}
                         />
                     </div>
                      {isUserAdmin && (
@@ -221,7 +242,7 @@ function PaymentPageContents() {
                     </div>
                 </TabsContent>
               </Tabs>
-              <Button className="w-full mt-8" onClick={() => router.push('/dashboard')}>I have completed the payment</Button>
+              <Button className="w-full mt-8" onClick={handlePaymentConfirmation}>I have completed the payment</Button>
             </CardContent>
           </Card>
         </div>
@@ -241,3 +262,4 @@ export default function PaymentPage() {
         </Suspense>
     )
 }
+
