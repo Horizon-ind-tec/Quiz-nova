@@ -89,6 +89,9 @@ export default function TakeQuizPage() {
 
 
   const handleAnswerSelect = (answer: string) => {
+    // Lock the answer once it's selected.
+    if (userAnswers[currentQuestionIndex] !== '') return;
+
     const newAnswers = [...userAnswers];
     newAnswers[currentQuestionIndex] = answer;
     setUserAnswers(newAnswers);
@@ -173,6 +176,7 @@ export default function TakeQuizPage() {
         if (!quiz) return null;
         const currentQuestion = quiz.questions[currentQuestionIndex];
         const isMarked = markedForReview[currentQuestionIndex];
+        const isAnswered = userAnswers[currentQuestionIndex] !== '';
 
         if (quizState === 'paused') {
           return (
@@ -244,6 +248,7 @@ export default function TakeQuizPage() {
                   value={userAnswers[currentQuestionIndex]}
                   onValueChange={handleAnswerSelect}
                   className="space-y-3"
+                  disabled={isAnswered}
                 >
                   {currentQuestion.options.map((option, index) => (
                     <FormItem key={index}>
@@ -253,8 +258,8 @@ export default function TakeQuizPage() {
                       <FormLabel
                         htmlFor={`option-${index}`}
                         className={cn(
-                          "flex items-center space-x-3 space-y-0 rounded-md border p-4 cursor-pointer transition-colors",
-                          "hover:bg-blue-50",
+                          "flex items-center space-x-3 space-y-0 rounded-md border p-4 transition-colors",
+                          isAnswered ? "cursor-not-allowed" : "cursor-pointer hover:bg-blue-50",
                           userAnswers[currentQuestionIndex] === option ? "border-blue-500 bg-blue-50" : "border-input bg-white"
                         )}
                       >
@@ -287,7 +292,7 @@ export default function TakeQuizPage() {
                      <Button onClick={handleMarkForReview} variant="outline" className="flex-1 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200">
                          Mark for Review
                       </Button>
-                      <Button onClick={handleClearSelection} variant="outline" className="flex-1 bg-blue-500 text-white hover:bg-blue-600">
+                      <Button onClick={handleClearSelection} variant="outline" className="flex-1 bg-blue-500 text-white hover:bg-blue-600" disabled={isAnswered}>
                           Clear Selection
                       </Button>
                   </div>
