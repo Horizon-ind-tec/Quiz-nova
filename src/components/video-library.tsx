@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { useCollection } from '@/firebase';
+import { useCollection, useMemoFirebase } from '@/firebase';
 import type { Video } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -19,9 +19,12 @@ export function VideoLibrary() {
   const [selectedSubCategory, setSelectedSubCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { data: videos, loading: videosLoading } = useCollection<Video>(
-    firestore ? query(collection(firestore, 'videos'), orderBy('createdAt', 'desc')) : null
+  const videosQuery = useMemoFirebase(
+    () => (firestore ? query(collection(firestore, 'videos'), orderBy('createdAt', 'desc')) : null),
+    [firestore]
   );
+
+  const { data: videos, loading: videosLoading } = useCollection<Video>(videosQuery);
 
   const subjectOptions = SUBJECTS_DATA;
   const subCategoryOptions = useMemo(() => {

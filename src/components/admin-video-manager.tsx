@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 import type { Video } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -46,9 +46,12 @@ export function AdminVideoManager() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingVideo, setEditingVideo] = useState<Video | null>(null);
 
-  const { data: videos, loading: videosLoading } = useCollection<Video>(
-    firestore ? query(collection(firestore, 'videos'), orderBy('createdAt', 'desc')) : null
+  const videosQuery = useMemoFirebase(
+    () => (firestore ? query(collection(firestore, 'videos'), orderBy('createdAt', 'desc')) : null),
+    [firestore]
   );
+  const { data: videos, loading: videosLoading } = useCollection<Video>(videosQuery);
+
 
   const form = useForm<VideoFormData>({
     resolver: zodResolver(videoSchema),
