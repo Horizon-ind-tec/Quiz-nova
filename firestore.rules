@@ -45,6 +45,13 @@ service cloud.firestore {
     function isSignedIn() {
       return request.auth != null;
     }
+    
+    /**
+     * Checks if the currently authenticated user is the admin.
+     */
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email == 'wizofclassknowledge@gmail.com';
+    }
 
     /**
      * Checks if the currently authenticated user is the owner of the resource
@@ -127,6 +134,18 @@ service cloud.firestore {
     //-------------------------------------------------------------------------
     // Collection Rules
     //-------------------------------------------------------------------------
+    
+    /**
+     * @description Manages video coaching content.
+     * @path /videos/{videoId}
+     * @allow (read) Any authenticated user can read video information.
+     * @allow (write) Only the admin user can create, update, or delete videos.
+     * @principle Public read access for educational content, with centralized admin control.
+     */
+    match /videos/{videoId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
 
     /**
      * @description Manages user profile documents.
@@ -189,3 +208,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
