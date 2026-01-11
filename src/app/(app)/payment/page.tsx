@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense } from 'react';
@@ -15,13 +16,17 @@ const plansDetails = {
     name: 'Premium Plan',
     price: '₹500',
     priceDescription: '/ month',
+    amount: '500',
   },
   ultimate: {
     name: 'Ultimate Plan',
     price: '₹1000',
     priceDescription: '/ month',
+    amount: '1000',
   },
 };
+
+const UPI_ID = '8638366294@fam';
 
 function PaymentPageContents() {
   const searchParams = useSearchParams();
@@ -29,7 +34,9 @@ function PaymentPageContents() {
   const { toast } = useToast();
   const plan = searchParams.get('plan') as keyof typeof plansDetails;
 
-  const selectedPlan = plansDetails[plan] || { name: 'Plan', price: '₹---' };
+  const selectedPlan = plansDetails[plan] || { name: 'Plan', price: '₹---', amount: '0' };
+  
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=${UPI_ID}&pn=QuizNova&am=${selectedPlan.amount}&cu=INR`;
   
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -64,7 +71,7 @@ function PaymentPageContents() {
                   <div className="flex flex-col items-center text-center">
                     <p className="mb-4 text-muted-foreground">Scan the QR code with your UPI app.</p>
                     <Image 
-                      src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=payments@quiznova&pn=QuizNova&am=500&cu=INR" 
+                      src={qrCodeUrl}
                       alt="UPI QR Code"
                       width={200}
                       height={200}
@@ -72,9 +79,9 @@ function PaymentPageContents() {
                      <p className="my-4 text-muted-foreground">Or pay using the UPI ID below:</p>
                      <div 
                         className="flex items-center gap-2 rounded-lg bg-muted p-3 cursor-pointer hover:bg-accent"
-                        onClick={() => copyToClipboard('payments@quiznova')}
+                        onClick={() => copyToClipboard(UPI_ID)}
                     >
-                       <span className="font-mono text-lg">payments@quiznova</span>
+                       <span className="font-mono text-lg">{UPI_ID}</span>
                        <Copy className="h-4 w-4" />
                     </div>
                   </div>
