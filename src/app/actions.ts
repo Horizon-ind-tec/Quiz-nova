@@ -20,14 +20,9 @@ import { notifyAdminOfPayment, NotifyAdminOfPaymentInput } from '@/ai/flows/noti
 
 
 export async function generateQuizAction(
-  input: Omit<GenerateCustomQuizInput, 'subCategory'> & { subCategory?: string }
+  input: GenerateCustomQuizInput,
 ): Promise<GenerateCustomQuizOutput> {
-  // The AI prompt expects a single string for subCategory, so we join the array.
-  const processedInput: GenerateCustomQuizInput = {
-    ...input,
-    subCategory: Array.isArray(input.subCategories) ? input.subCategories.join(', ') : undefined,
-  };
-  return await generateCustomQuiz(processedInput);
+  return await generateCustomQuiz(input);
 }
 
 

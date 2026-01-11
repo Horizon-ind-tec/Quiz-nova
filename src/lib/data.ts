@@ -14,8 +14,8 @@ export const SUBJECTS_DATA: {
     name: 'Mathematics', 
     icon: Calculator,
     subCategories: [
-      { name: 'Math', description: 'Core concepts and fundamentals.' },
-      { name: 'Advance Math', description: 'Complex topics and problem-solving.' }
+      { name: 'Basic', description: 'Core concepts and fundamentals.' },
+      { name: 'Advance', description: 'Complex topics and problem-solving.' }
     ]
   },
   {
