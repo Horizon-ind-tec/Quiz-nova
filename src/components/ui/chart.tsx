@@ -43,16 +43,12 @@ const ChartContainer = React.forwardRef<
     >["children"]
   }
 >(({ id, className, children, config, ...props }, ref) => {
-  const [isMounted, setIsMounted] = React.useState(false);
   const chartId = `chart-${id || React.useId()}`
+  const [isMounted, setIsMounted] = React.useState(false)
 
   React.useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) {
-    return <div ref={ref} className={cn("flex aspect-video justify-center items-center", className)} {...props}></div>;
-  }
+    setIsMounted(true)
+  }, [])
 
   return (
     <ChartContext.Provider value={{ config }}>
@@ -66,9 +62,15 @@ const ChartContainer = React.forwardRef<
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
-        <RechartsPrimitive.ResponsiveContainer>
-          {children}
-        </RechartsPrimitive.ResponsiveContainer>
+        {isMounted ? (
+          <RechartsPrimitive.ResponsiveContainer>
+            {children}
+          </RechartsPrimitive.ResponsiveContainer>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            {/* You can add a loader here if you want */}
+          </div>
+        )}
       </div>
     </ChartContext.Provider>
   )
