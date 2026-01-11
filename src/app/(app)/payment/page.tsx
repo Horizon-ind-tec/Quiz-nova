@@ -9,8 +9,9 @@ import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Copy } from 'lucide-react';
+import { ArrowLeft, Copy, Loader2, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/firebase';
 
 const plansDetails = {
   premium: {
@@ -28,11 +29,13 @@ const plansDetails = {
 };
 
 const UPI_ID = '8638366294@fam';
+const ADMIN_EMAIL = 'wizofclassknowledge@gmail.com';
 
 function PaymentPageContents() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
+  const { user, loading } = useUser();
   const plan = searchParams.get('plan') as keyof typeof plansDetails;
 
   const selectedPlan = plansDetails[plan] || { name: 'Plan', price: '₹---', amount: '0' };
@@ -46,6 +49,16 @@ function PaymentPageContents() {
       description: text,
     });
   };
+
+  if (loading) {
+    return (
+        <div className="flex h-48 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+    )
+  }
+
+  const isUserAdmin = user?.email === ADMIN_EMAIL;
 
   return (
     <div className="flex flex-col">
@@ -71,12 +84,20 @@ function PaymentPageContents() {
                 <TabsContent value="upi" className="mt-6">
                   <div className="flex flex-col items-center text-center">
                     <p className="mb-4 text-muted-foreground">Scan the QR code with your UPI app.</p>
-                    <Image 
-                      src={qrCodeUrl}
-                      alt="UPI QR Code"
-                      width={200}
-                      height={200}
-                    />
+                    <div className="flex items-center gap-4">
+                        <Image 
+                          src={qrCodeUrl}
+                          alt="UPI QR Code"
+                          width={200}
+                          height={200}
+                        />
+                        {isUserAdmin && (
+                            <Button variant="outline">
+                                <ShieldCheck className="mr-2 h-4 w-4" />
+                                Verify Payment
+                            </Button>
+                        )}
+                    </div>
                      <p className="my-4 text-muted-foreground">Or pay using the UPI ID below:</p>
                      <div 
                         className="flex items-center gap-2 rounded-lg bg-muted p-3 cursor-pointer hover:bg-accent"
