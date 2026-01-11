@@ -106,18 +106,6 @@ export function SideNav() {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton
-                asChild
-                isActive={isActive('/payment')}
-                tooltip={{ children: 'Payment' }}
-                >
-                <Link href="/payment">
-                    <Wallet />
-                    <span>Payment</span>
-                </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
             {isUserAdmin && (
                  <SidebarMenuItem>
                     <SidebarMenuButton
@@ -137,4 +125,3 @@ export function SideNav() {
     </Sidebar>
   );
 }
-

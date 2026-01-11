@@ -87,20 +87,13 @@ service cloud.firestore {
      * Allows a user to set their payment to 'pending' but not to change their plan directly.
      */
     function isUpdatingOwnProfile(userId) {
-       // A user can initiate a payment by setting status to 'pending' and defining a 'pendingPlan'.
-       let isInitiatingPayment = request.resource.data.paymentStatus == 'pending' 
-                                 && 'pendingPlan' in request.resource.data;
-
-       // Ensure core immutable fields are not changed by the user.
-       let idIsUnchanged = request.resource.data.id == resource.data.id;
-       let emailIsUnchanged = request.resource.data.email == resource.data.email;
-       let creationDateIsUnchanged = request.resource.data.createdAt == resource.data.createdAt;
-       
-       // Ensure the user's current plan is not being changed in this transaction.
-       let planIsUnchanged = request.resource.data.plan == resource.data.plan;
-
-       // The user must be the owner, be initiating a payment, and not changing immutable fields.
-       return isOwner(userId) && isInitiatingPayment && idIsUnchanged && emailIsUnchanged && creationDateIsUnchanged && planIsUnchanged;
+        let isInitiatingPayment = request.resource.data.paymentStatus == 'pending' && 'pendingPlan' in request.resource.data;
+        let idIsUnchanged = request.resource.data.id == resource.data.id;
+        let emailIsUnchanged = request.resource.data.email == resource.data.email;
+        let creationDateIsUnchanged = request.resource.data.createdAt == resource.data.createdAt;
+        let planIsUnchanged = request.resource.data.plan == resource.data.plan;
+        
+        return isOwner(userId) && isInitiatingPayment && idIsUnchanged && emailIsUnchanged && creationDateIsUnchanged && planIsUnchanged;
     }
 
     /**

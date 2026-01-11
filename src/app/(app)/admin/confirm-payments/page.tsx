@@ -22,7 +22,7 @@ export default function AdminConfirmPaymentsPage() {
         [firestore]
     );
 
-    const { data: pendingUsers, loading: usersLoading } = useCollection<UserProfile>(pendingUsersQuery);
+    const { data: pendingUsers, isLoading: usersLoading } = useCollection<UserProfile>(pendingUsersQuery);
     
     const handleConfirmPayment = async (userId: string, plan: 'premium' | 'ultimate') => {
         if (!firestore) return;
@@ -109,4 +109,3 @@ export default function AdminConfirmPaymentsPage() {
         </div>
     );
 }
-
