@@ -50,6 +50,23 @@ const ChartContainer = React.forwardRef<
     setIsMounted(true)
   }, [])
 
+  if (!isMounted) {
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          "flex aspect-video h-[350px] w-full items-center justify-center",
+          className
+        )}
+        {...props}
+      >
+        <div className="flex h-full w-full items-center justify-center">
+            {/* You can add a loader here if you want */}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <ChartContext.Provider value={{ config }}>
       <div
@@ -62,15 +79,9 @@ const ChartContainer = React.forwardRef<
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
-        {isMounted ? (
-          <RechartsPrimitive.ResponsiveContainer>
-            {children}
-          </RechartsPrimitive.ResponsiveContainer>
-        ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            {/* You can add a loader here if you want */}
-          </div>
-        )}
+        <RechartsPrimitive.ResponsiveContainer>
+          {children}
+        </RechartsPrimitive.ResponsiveContainer>
       </div>
     </ChartContext.Provider>
   )
