@@ -3,11 +3,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Camera, Check, CircleDotDashed, Loader2, Send, Trash2, Upload } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import type { Quiz, GradeExamOutput } from '@/lib/types';
+import type { Quiz, GradeExamOutput, QuizAttempt, UserAnswers } from '@/lib/types';
 import { gradeExamAction } from '@/app/actions';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -23,6 +24,7 @@ export default function GradeExamPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [quiz] = useLocalStorage<Quiz | null>('currentQuiz', null);
+  const [, setQuizHistory] = useLocalStorage<QuizAttempt[]>('quizHistory', []);
 
   const [gradingState, setGradingState] = useState<GradingState>('capturing');
   const [capturedImages, setCapturedImages] = useState<string[]>([]);
@@ -127,6 +129,21 @@ export default function GradeExamPage() {
         answerSheetImages: capturedImages,
         questions: quiz.questions,
       });
+
+      const userAnswers: UserAnswers = {};
+      result.gradedAnswers.forEach(ga => {
+        userAnswers[ga.questionIndex] = ga.userAnswer;
+      });
+
+      const newExamAttempt: QuizAttempt = {
+        ...quiz,
+        id: uuidv4(), // Ensure a new unique ID for the attempt
+        userAnswers,
+        score: result.score,
+        completedAt: Date.now(),
+      };
+      setQuizHistory(prev => [newExamAttempt, ...prev]);
+
       setGradingResult(result);
       setGradingState('results');
 

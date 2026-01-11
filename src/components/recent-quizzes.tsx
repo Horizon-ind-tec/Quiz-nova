@@ -49,8 +49,8 @@ export function RecentQuizzes({ data }: RecentQuizzesProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {recentAttempts.map((attempt) => (
-            <TableRow key={attempt.id}>
+          {recentAttempts.map((attempt, index) => (
+            <TableRow key={`${attempt.id}-${index}`}>
               <TableCell className="font-medium">{attempt.subject}</TableCell>
               <TableCell className="capitalize">{attempt.difficulty}</TableCell>
               <TableCell>{format(new Date(attempt.completedAt), 'PP')}</TableCell>
