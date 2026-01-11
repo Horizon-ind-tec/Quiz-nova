@@ -17,7 +17,7 @@
     }
   },
   "auth": {
-    "providers": ["anonymous", "google.com"]
+    "providers": ["password", "google.com"]
   },
   "firestore": {
     "/videos/{videoId}": {
