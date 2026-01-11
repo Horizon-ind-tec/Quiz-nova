@@ -1,0 +1,122 @@
+/**
+ * Core Philosophy: This ruleset implements a strict Role-Based Access Control (RBAC) model.
+ * Public content collections (videos, subjects, chapters) are readable by anyone, ensuring
+ * broad access for students. However, all write operations (create, update, delete) on these
+ * collections are exclusively restricted to users designated as administrators.
+ *
+ * Data Structure: The data is organized into logical, top-level collections. `videos` and `subjects`
+ * are top-level. `chapters` are nested within their respective `subjects`. A dedicated, non-public
+ * collection, `/roles_admin`, is used to manage administrative privileges. A document's existence
+ * in this collection signifies that the user is an admin.
+ *
+ * Key Security Decisions:
+ * - Admin-Only Writes: All content creation and modification is gated by an `isAdmin()` check.
+ * - Public Reads: All educational content is publicly readable to support the app's core function
+ *   without requiring student sign-in for browsing.
+ * - Admin Role Secrecy: The `/roles_admin` collection is completely locked down. It cannot be read,
+ *   queried, or written to by any client. This prevents users from discovering who the admins are
+ *   or attempting to elevate their own privileges. Admin roles must be managed directly in the
+ *   Firebase Console.
+ * - Prototyping Flexibility: Data shape and type validation are intentionally omitted to allow for
+ *   rapid development. The focus is solely on authorization—who can do what—not the specific
+ *   schema of the data being written.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --------------------
+    // Helper Functions
+    // --------------------
+
+    /**
+     * Checks if a user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the authenticated user has administrative privileges.
+     * An admin is defined as a signed-in user whose UID exists as a document
+     * in the `/roles_admin` collection OR who has the hardcoded admin email.
+     */
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
+        || request.auth.token.email == 'wizofclassknowledge@gmail.com'
+      );
+    }
+
+    /**
+     * Enforces immutability for the chapter's link to its parent subject during an update.
+     */
+    function isSubjectIdImmutable() {
+      return request.resource.data.subjectId == resource.data.subjectId;
+    }
+
+    // --------------------
+    // Collection Rules
+    // --------------------
+
+    /**
+     * @description Manages video resources. Anyone can view videos, but only admins can manage them.
+     * @path /videos/{videoId}
+     * @allow (get) Any user, signed in or not, retrieving a specific video document.
+     * @deny (create) A non-admin user attempting to add a new video.
+     * @principle Public read access for content, with writes restricted by a centralized admin role.
+     */
+    match /videos/{videoId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Manages subject categories. Anyone can view subjects, but only admins can manage them.
+     * @path /subjects/{subjectId}
+     * @allow (list) Any user, signed in or not, listing all available subjects for filtering.
+     * @deny (update) A non-admin user attempting to rename a subject.
+     * @principle Public read access for content, with writes restricted by a centralized admin role.
+     */
+    match /subjects/{subjectId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
+
+      /**
+       * @description Manages chapters within a subject. Publicly viewable, admin-managed.
+       * @path /subjects/{subjectId}/chapters/{chapterId}
+       * @allow (create) An admin creating a new chapter with a `subjectId` that matches the path.
+       * @deny (update) An admin trying to move a chapter by changing its `subjectId` field.
+       * @principle Enforces relational integrity by ensuring a subcollection document correctly and immutably references its parent.
+       */
+      match /chapters/{chapterId} {
+        allow get: if true;
+        allow list: if true;
+        allow create: if isAdmin() && request.resource.data.subjectId == subjectId;
+        allow update: if isAdmin() && resource != null && isSubjectIdImmutable();
+        allow delete: if isAdmin() && resource != null;
+      }
+    }
+
+    /**
+     * @description Stores admin role grants. This collection is used for `exists()` checks in rules.
+     * @path /roles_admin/{userId}
+     * @allow No operations are permitted from the client.
+     * @deny (get) Any user, including an admin, attempting to read a role document directly.
+     * @principle Secures authorization metadata by making it inaccessible from the client-side to prevent enumeration or modification of roles.
+     */
+    match /roles_admin/{userId} {
+      allow get: if false;
+      allow list: if false;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}

@@ -62,3 +62,25 @@ export interface GradeExamOutput {
   gradedAnswers: GradedAnswer[];
   generalFeedback: string;
 }
+
+// Video Coaching Types
+export interface Video {
+    id: string;
+    class: string;
+    subjectId: string;
+    chapterId: string;
+    title: string;
+    youtubeUrl: string;
+    createdAt: number;
+}
+
+export interface Subject {
+    id: string;
+    name: string;
+}
+
+export interface Chapter {
+    id: string;
+    name: string;
+    subjectId: string;
+}

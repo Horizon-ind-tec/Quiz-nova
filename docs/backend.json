@@ -1,0 +1,54 @@
+{
+  "entities": {
+    "Video": {
+      "title": "Video",
+      "description": "Represents a single coaching video.",
+      "type": "object",
+      "properties": {
+        "class": { "type": "string", "description": "The class the video is for (e.g., '10th')." },
+        "subjectId": { "type": "string", "description": "The ID of the subject this video belongs to." },
+        "chapterId": { "type": "string", "description": "The ID of the chapter this video belongs to." },
+        "title": { "type": "string", "description": "The title of the video." },
+        "youtubeUrl": { "type": "string", "format": "uri", "description": "The full YouTube URL of the video." },
+        "createdAt": { "type": "number", "description": "Timestamp of when the video was added." }
+      },
+      "required": ["class", "subjectId", "chapterId", "title", "youtubeUrl", "createdAt"]
+    },
+    "Subject": {
+      "title": "Subject",
+      "description": "Represents a subject category for videos and quizzes.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the subject (e.g., 'Physics')." }
+      },
+      "required": ["name"]
+    },
+    "Chapter": {
+      "title": "Chapter",
+      "description": "Represents a chapter within a subject.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the chapter." },
+        "subjectId": { "type": "string", "description": "The ID of the parent subject." }
+      },
+      "required": ["name", "subjectId"]
+    }
+  },
+  "auth": {
+    "providers": ["anonymous", "google.com"]
+  },
+  "firestore": {
+    "/videos/{videoId}": {
+      "schema": { "$ref": "#/entities/Video" },
+      "description": "Collection of all video coaching resources."
+    },
+    "/subjects/{subjectId}": {
+      "schema": { "$ref": "#/entities/Subject" },
+      "description": "Collection of all subjects."
+    },
+    "/subjects/{subjectId}/chapters/{chapterId}": {
+      "schema": { "$ref": "#/entities/Chapter" },
+      "description": "Sub-collection of chapters for a given subject."
+    }
+  }
+}

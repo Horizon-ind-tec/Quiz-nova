@@ -1,28 +1,50 @@
 'use client';
 
+import { useState } from 'react';
+import { useUser } from '@/firebase';
 import { Header } from '@/components/header';
+import { VideoLibrary } from '@/components/video-library';
+import { AdminVideoManager } from '@/components/admin-video-manager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookUser } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+const ADMIN_EMAIL = 'wizofclassknowledge@gmail.com';
 
 export default function CoachingPage() {
+  const { user, loading } = useUser();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  const isUserAdmin = user?.email === ADMIN_EMAIL;
+
   return (
     <div className="flex flex-col">
-      <Header title="Coaching" />
-      <main className="flex-1 flex items-center justify-center p-4 md:p-8">
-        <Card className="max-w-md w-full">
-          <CardHeader className="items-center text-center">
-            <BookUser className="h-12 w-12 text-primary" />
-            <CardTitle className="text-2xl mt-4">Coaching Feature Coming Soon!</CardTitle>
-            <CardDescription>
-              We're working hard to bring you personalized coaching to help you reach your learning goals. Stay tuned!
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-muted-foreground text-sm">
-                This new section will offer one-on-one guidance, tailored study plans, and expert support.
-            </p>
-          </CardContent>
-        </Card>
+      <Header title="Video Coaching" />
+      <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
+        {isUserAdmin ? (
+          <Tabs defaultValue="library">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="library">Student View</TabsTrigger>
+              <TabsTrigger value="admin">Admin Panel</TabsTrigger>
+            </TabsList>
+            <TabsContent value="library">
+              <VideoLibrary />
+            </TabsContent>
+            <TabsContent value="admin">
+              <AdminVideoManager />
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <VideoLibrary />
+        )}
       </main>
     </div>
   );
