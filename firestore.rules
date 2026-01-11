@@ -67,28 +67,28 @@ service cloud.firestore {
      * non-existent data.
      */
     function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
+      return isOwner(userId) && exists(/databases/$(database)/documents/users/$(userId));
     }
 
     /**
      * Validates that the User document being created has an 'id' field
-     * that matches the document's ID (which is the user's UID).
+     * that matches the document's ID (which is the user's UID), and starts with a free plan.
      */
     function isCreatingOwnProfile(userId) {
       let isPlanFree = request.resource.data.plan == 'free';
       let hasNoPaymentStatus = !('paymentStatus' in request.resource.data);
-      return request.resource.data.id == userId && isPlanFree && hasNoPaymentStatus;
+      return isOwner(userId) && request.resource.data.id == userId && isPlanFree && hasNoPaymentStatus;
     }
     
     /**
-     * Enforces immutability of the User's 'id' field during updates.
-     * Allows user to update their own profile fields, but not plan or payment status.
+     * Enforces immutability of core fields during a user's own profile update.
+     * Allows a user to set their payment to 'pending' but not to change their plan.
      */
     function isUpdatingOwnProfile() {
-       let changingAllowedFields = request.resource.data.keys().hasAll(['id', 'email', 'name', 'createdAt']) || 
-                                   request.resource.data.keys().hasAll(['id', 'email', 'name', 'createdAt', 'pendingPlan', 'paymentStatus']);
+       let isInitiatingPayment = request.resource.data.paymentStatus == 'pending' && 'pendingPlan' in request.resource.data;
        let planIsUnchanged = request.resource.data.plan == resource.data.plan;
-       return request.resource.data.id == resource.data.id && planIsUnchanged && changingAllowedFields;
+       let idIsUnchanged = request.resource.data.id == resource.data.id;
+       return idIsUnchanged && planIsUnchanged && isInitiatingPayment;
     }
 
     /**
@@ -169,14 +169,16 @@ service cloud.firestore {
      * @description Manages user profile documents.
      * @path /users/{userId}
      * @allow (create) A newly authenticated user creating their own profile document.
-     * @deny (list) An authenticated user trying to list all users in the system.
-     * @principle Restricts access to a user's own data tree and allows self-creation of a profile.
+     * @allow (get) A user reading their own profile, or an admin reading any profile.
+     * @allow (list) An admin listing users (e.g., to find pending payments).
+     * @allow (update) A user updating their own profile to initiate payment, or an admin updating any profile to confirm payment.
+     * @principle Restricts access to a user's own data tree but grants full access to admins.
      */
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
-      allow list: if isAdmin(); // Only admin can list users (for payment confirmation).
-      allow create: if isOwner(userId) && isCreatingOwnProfile(userId);
-      allow update: if (isExistingOwner(userId) && isUpdatingOwnProfile()) || isAdmin(); // Admin can update to confirm payment.
+      allow list: if isAdmin(); 
+      allow create: if isCreatingOwnProfile(userId);
+      allow update: if (isOwner(userId) && isUpdatingOwnProfile()) || isAdmin();
       allow delete: if isExistingOwner(userId);
 
       /**
@@ -226,4 +228,3 @@ service cloud.firestore {
     }
   }
 }
-
