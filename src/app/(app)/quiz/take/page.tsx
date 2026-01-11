@@ -144,7 +144,7 @@ export default function TakeQuizPage() {
   
   const handlePrevQuestion = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
     }
   };
   
@@ -199,15 +199,27 @@ export default function TakeQuizPage() {
     const finalScore = calculateScore();
     setScore(finalScore);
 
-    const quizAttempt: QuizAttempt = {
-      ...quiz,
-      userAnswers,
-      score: finalScore,
-      completedAt: Date.now(),
-      id: uuidv4(), // Ensure a new unique ID is generated for the attempt
+    const newQuizAttempt: QuizAttempt = {
+        // Copy all properties from the original quiz
+        subject: quiz.subject,
+        subCategory: quiz.subCategory,
+        difficulty: quiz.difficulty,
+        class: quiz.class,
+        board: quiz.board,
+        chapter: quiz.chapter,
+        quizType: quiz.quizType,
+        ncert: quiz.ncert,
+        questions: quiz.questions,
+        createdAt: quiz.createdAt,
+        // Add attempt-specific data
+        userAnswers,
+        score: finalScore,
+        completedAt: Date.now(),
+        // MOST IMPORTANT: Generate a new unique ID for this attempt
+        id: uuidv4(),
     };
 
-    setQuizHistory(prev => [quizAttempt, ...prev]);
+    setQuizHistory(prev => [newQuizAttempt, ...prev]);
     setQuizState('results');
   };
 
@@ -480,7 +492,12 @@ export default function TakeQuizPage() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => router.push('/quiz/grade')}>Proceed</AlertDialogAction>
+                    <AlertDialogAction onClick={() => {
+                        if (quiz?.quizType === 'exam') {
+                           setQuizState('results'); // Move to results to show review
+                        }
+                        router.push('/quiz/grade');
+                    }}>Proceed</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
