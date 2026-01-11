@@ -2,15 +2,11 @@
 
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import type { QuizAttempt } from '@/lib/types';
-import { Card, CardContent } from '@/components/ui/card';
 import {
   ChartContainer,
-  ChartTooltip,
   ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
 } from '@/components/ui/chart';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { format } from 'date-fns';
 
 const chartConfig = {
@@ -42,7 +38,7 @@ export function PerformanceChart() {
 
   return (
     <ChartContainer config={chartConfig} className="h-[350px] w-full">
-      <LineChart
+      <BarChart
         accessibilityLayer
         data={chartData}
         margin={{
@@ -68,21 +64,14 @@ export function PerformanceChart() {
         />
         <Tooltip
           cursor={false}
-          content={<ChartTooltipContent indicator="line" />}
+          content={<ChartTooltipContent indicator="dot" />}
         />
-        <Line
+        <Bar
           dataKey="score"
-          type="monotone"
-          stroke="var(--color-score)"
-          strokeWidth={2}
-          dot={{
-            fill: 'var(--color-score)',
-          }}
-          activeDot={{
-            r: 6,
-          }}
+          fill="var(--color-score)"
+          radius={4}
         />
-      </LineChart>
+      </BarChart>
     </ChartContainer>
   );
 }
