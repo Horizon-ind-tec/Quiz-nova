@@ -88,18 +88,20 @@ service cloud.firestore {
      * They cannot change their existing 'plan' or other core fields.
      */
     function isUpdatingOwnProfileForPayment(userId) {
+        let incomingData = request.resource.data;
+        let existingData = resource.data;
         // Ensure the user is the owner
         return isOwner(userId)
             // They are setting status to 'pending'
-            && request.resource.data.paymentStatus == 'pending'
+            && incomingData.paymentStatus == 'pending'
             // They are setting which plan they are paying for
-            && 'pendingPlan' in request.resource.data
+            && 'pendingPlan' in incomingData
             // They are NOT changing their current plan directly
-            && request.resource.data.plan == resource.data.plan
+            && incomingData.plan == existingData.plan
             // They are not modifying immutable fields
-            && request.resource.data.id == resource.data.id
-            && request.resource.data.email == resource.data.email
-            && request.resource.data.createdAt == resource.data.createdAt;
+            && incomingData.id == existingData.id
+            && incomingData.email == existingData.email
+            && incomingData.createdAt == existingData.createdAt;
     }
 
     /**
