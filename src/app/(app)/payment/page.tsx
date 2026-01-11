@@ -65,7 +65,7 @@ function PaymentPageContents() {
             <CardContent>
               <Tabs defaultValue="upi" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="upi">UPI / QR Code</TabsTrigger>
+                  <TabsTrigger value="upi">UPI</TabsTrigger>
                   <TabsTrigger value="bank">Bank Transfer</TabsTrigger>
                 </TabsList>
                 <TabsContent value="upi" className="mt-6">
