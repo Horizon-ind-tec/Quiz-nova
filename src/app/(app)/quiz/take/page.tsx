@@ -151,8 +151,19 @@ export default function TakeQuizPage() {
   };
 
   const totalQuestions = quiz?.questions.length ?? 0;
-  const answeredQuestions = userAnswers.filter(a => a !== '').length;
-  const progress = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
+
+  const progress = useMemo(() => {
+    if (!quiz || totalQuestions === 0) return 0;
+    
+    let correctSoFar = 0;
+    userAnswers.forEach((answer, index) => {
+      if (answer && answer === quiz.questions[index].correctAnswer) {
+        correctSoFar++;
+      }
+    });
+    
+    return (correctSoFar / totalQuestions) * 100;
+  }, [userAnswers, quiz, totalQuestions]);
 
 
   const renderContent = () => {
