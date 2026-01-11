@@ -124,7 +124,7 @@ export default function TakeQuizPage() {
         const q = quiz?.questions[questionIndex];
         if (!q) return prev;
 
-        if (quiz.quizType === 'quiz') {
+        if (quiz?.quizType === 'quiz') {
             const isAnswered = prev[questionIndex] !== '' && prev[questionIndex] !== undefined;
              if (q.type === 'mcq' && isAnswered) return prev;
         }
@@ -227,34 +227,37 @@ export default function TakeQuizPage() {
 
   const progress = useMemo(() => {
     if (!quiz || totalQuestions === 0) return 0;
-    
-    let correctAnswers = 0;
-    quiz.questions.forEach((q, index) => {
-      const userAnswer = userAnswers[index];
-       if (userAnswer === undefined || userAnswer === '' || (typeof userAnswer === 'object' && Object.keys(userAnswer).length === 0)) {
-        return;
-      }
-      
-      if (q.type === 'mcq' && userAnswer === q.correctAnswer) {
-        correctAnswers++;
-      } else if (q.type === 'numerical' && Number(userAnswer) === q.correctAnswer) {
-        correctAnswers++;
-      } else if (q.type === 'match') {
-        const userMatches = userAnswer as { [key: string]: string };
-        if (userMatches && q.pairs.every(p => userMatches[p.item] === p.match)) {
-          correctAnswers++;
-        }
-      }
-    });
-    
-    return (correctAnswers / totalQuestions) * 100;
-  }, [userAnswers, quiz, totalQuestions]);
-  
 
-  const renderMCQ = (q: MCQ, questionIndex: number) => {
+    const answeredCount = Object.values(userAnswers).filter(answer => {
+      if (answer === null || answer === '') return false;
+      if (typeof answer === 'object' && Object.keys(answer).length === 0) return false;
+      return true;
+    }).length;
+
+    return (answeredCount / totalQuestions) * 100;
+  }, [userAnswers, totalQuestions, quiz]);
+
+  const renderMCQ = (q: MCQ, questionIndex: number, isExam: boolean) => {
     const userAnswer = userAnswers[questionIndex] as string;
     const isAnswered = userAnswer !== '' && userAnswer !== undefined;
     const inQuizMode = quiz?.quizType === 'quiz';
+
+    if (isExam) {
+      return (
+        <div>
+          <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
+            {q.options.map((option, index) => (
+              <div key={index} className="flex items-center">
+                <span className="mr-2 font-semibold">({String.fromCharCode(65 + index)})</span>
+                <span>{option}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     return (
         <>
             <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
@@ -302,11 +305,37 @@ export default function TakeQuizPage() {
     );
   };
 
-  const renderMatch = (q: Match, questionIndex: number) => {
+  const renderMatch = (q: Match, questionIndex: number, isExam: boolean) => {
     const userMatches = userAnswers[questionIndex] as { [key: string]: string } || {};
     const items = q.pairs.map(p => p.item);
     const options = shuffledMatches[questionIndex] || [];
   
+    if (isExam) {
+      return (
+        <div>
+          <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+            <div>
+              <div className="font-semibold border-b pb-2 mb-2">Column A</div>
+              <ul className="list-decimal list-inside space-y-2">
+                {items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <div className="font-semibold border-b pb-2 mb-2">Column B</div>
+               <ul className="list-[upper-alpha] list-inside space-y-2">
+                {options.map((option) => (
+                  <li key={option}>{option}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div>
         <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
@@ -339,8 +368,18 @@ export default function TakeQuizPage() {
     );
   };
   
-  const renderNumerical = (q: Numerical, questionIndex: number) => {
+  const renderNumerical = (q: Numerical, questionIndex: number, isExam: boolean) => {
     const userAnswer = userAnswers[questionIndex] as string;
+
+    if (isExam) {
+        return (
+            <div>
+                <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
+                <p className="text-muted-foreground mt-2">Answer: ____________</p>
+            </div>
+        )
+    }
+
     return (
       <div>
         <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
@@ -355,11 +394,11 @@ export default function TakeQuizPage() {
     );
   };
 
-  const renderQuestion = (q: Question, index: number) => {
+  const renderQuestion = (q: Question, index: number, isExam = false) => {
     switch (q.type) {
-        case 'mcq': return renderMCQ(q, index);
-        case 'match': return renderMatch(q, index);
-        case 'numerical': return renderNumerical(q, index);
+        case 'mcq': return renderMCQ(q, index, isExam);
+        case 'match': return renderMatch(q, index, isExam);
+        case 'numerical': return renderNumerical(q, index, isExam);
         default: return <p>Unsupported question type.</p>;
     }
   }
@@ -373,8 +412,7 @@ export default function TakeQuizPage() {
     const numericals = quiz.questions.filter(q => q.type === 'numerical');
 
     return (
-      <FormProvider {...form}>
-       <div className="bg-white shadow-lg rounded-lg">
+     <div className="bg-white shadow-lg rounded-lg">
         <div className="p-4 sm:p-8">
             <div className="text-center p-2 bg-red-500 text-white font-semibold rounded-t-md">
                 Nova learning help you achieve your achievements
@@ -399,7 +437,7 @@ export default function TakeQuizPage() {
                         <li>This test paper consists of {totalQuestions} questions.</li>
                         <li>Each question carries +4 marks for correct answer and -1 mark for wrong answer.</li>
                         <li>Attempt all questions.</li>
-                        <li>Mark your answers in the provided interface. For MCQs, once an answer is selected, it cannot be changed.</li>
+                        <li>This is a static paper. To submit, click the "FINISH & VIEW RESULTS" button at the bottom.</li>
                     </ol>
                 </div>
             </div>
@@ -416,7 +454,7 @@ export default function TakeQuizPage() {
                         <h2 className="text-center font-bold text-lg bg-gray-200 p-2 rounded-md mb-4 uppercase">{section.title}</h2>
                         {section.questions.map(q => (
                             <div key={quiz.questions.indexOf(q)} className="mb-8 pb-4 border-b border-gray-200">
-                               {renderQuestion(q, quiz.questions.indexOf(q))}
+                               {renderQuestion(q, quiz.questions.indexOf(q), true)}
                             </div>
                         ))}
                     </div>
@@ -427,24 +465,23 @@ export default function TakeQuizPage() {
         <div className="p-4 sm:p-8 flex justify-center">
              <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 text-lg">SUBMIT EXAM</Button>
+                  <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 text-lg">FINISH & VIEW RESULTS</Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure you want to submit?</AlertDialogTitle>
+                    <AlertDialogTitle>Are you ready to view your results?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will end the exam and calculate your score. You cannot undo this action.
+                      This will end the exam. You won't be able to change your answers.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={finishQuiz}>Submit</AlertDialogAction>
+                    <AlertDialogAction onClick={() => setQuizState('results')}>View Results</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
         </div>
     </div>
-    </FormProvider>
     )
   }
 
@@ -623,6 +660,67 @@ export default function TakeQuizPage() {
         );
       case 'results':
         if (!quiz) return null;
+
+        // Because the exam is not interactive, we can't calculate a score.
+        // We will just show the questions and their correct answers.
+        if (quiz.quizType === 'exam') {
+            return (
+                <Card>
+                    <CardHeader className="items-center text-center">
+                        <CardTitle className="text-3xl">Exam Paper Review</CardTitle>
+                        <CardDescription>Review the questions and their correct answers.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Accordion type="single" collapsible className="w-full">
+                            {quiz.questions.map((q, index) => (
+                                <AccordionItem value={`item-${index}`} key={index}>
+                                    <AccordionTrigger className="hover:no-underline">
+                                        <div className="flex items-center gap-3 flex-1">
+                                            <span className="text-left font-medium">Question {index + 1} ({q.type})</span>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="p-4 bg-secondary/30 rounded-md">
+                                        <p className="font-semibold">{q.question}</p>
+                                        
+                                        {q.type === 'mcq' && (
+                                            <p className="mt-2 text-sm">
+                                                Correct answer: <span className="font-semibold text-green-600">{q.correctAnswer}</span>
+                                            </p>
+                                        )}
+
+                                        {q.type === 'numerical' && (
+                                            <p className="mt-2 text-sm">
+                                                Correct answer: <span className="font-semibold text-green-600">{q.correctAnswer}</span>
+                                            </p>
+                                        )}
+
+                                        {q.type === 'match' && (
+                                           <div>
+                                             <p className="mt-2 text-sm font-semibold">Correct pairings:</p>
+                                             <ul className="list-disc pl-5 mt-1 text-sm">
+                                                {q.pairs.map(pair => (
+                                                    <li key={pair.item}>
+                                                        {pair.item} &rarr; <span className="font-semibold text-green-600">{pair.match}</span>
+                                                    </li>
+                                                ))}
+                                             </ul>
+                                           </div>
+                                        )}
+
+                                        <Separator className="my-3" />
+                                        <p className="text-sm text-muted-foreground"><span className="font-semibold text-foreground">Explanation:</span> {q.explanation}</p>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
+                        <Button onClick={restartQuiz} className="w-full mt-6">
+                            Create Another Quiz
+                        </Button>
+                    </CardContent>
+                </Card>
+            );
+        }
+
         return (
           <FormProvider {...form}>
           <Card>
