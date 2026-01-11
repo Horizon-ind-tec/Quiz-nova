@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useCollection } from '@/firebase';
-import type { Video, Subject, Chapter } from '@/lib/types';
+import type { Video } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -15,50 +15,38 @@ import { CLASSES, SUBJECTS_DATA } from '@/lib/data';
 export function VideoLibrary() {
   const firestore = useFirestore();
   const [selectedClass, setSelectedClass] = useState('all');
-  const [selectedSubjectId, setSelectedSubjectId] = useState('all');
-  const [selectedChapterId, setSelectedChapterId] = useState('all');
+  const [selectedSubject, setSelectedSubject] = useState('all');
+  const [selectedSubCategory, setSelectedSubCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: videos, loading: videosLoading } = useCollection<Video>(
     firestore ? query(collection(firestore, 'videos'), orderBy('createdAt', 'desc')) : null
   );
-  const { data: subjects, loading: subjectsLoading } = useCollection<Subject>(
-    firestore ? collection(firestore, 'subjects') : null
-  );
-  const { data: chapters, loading: chaptersLoading } = useCollection<Chapter>(
-    firestore && selectedSubjectId && selectedSubjectId !== 'all' ? collection(firestore, `subjects/${selectedSubjectId}/chapters`) : null
-  );
 
-  const subjectMap = useMemo(() => {
-    return subjects?.reduce((acc, subject) => {
-      acc[subject.id] = subject.name;
-      return acc;
-    }, {} as Record<string, string>) || {};
-  }, [subjects]);
-
-  const chapterMap = useMemo(() => {
-    return chapters?.reduce((acc, chapter) => {
-      acc[chapter.id] = chapter.name;
-      return acc;
-    }, {} as Record<string, string>) || {};
-  }, [chapters]);
-
+  const subjectOptions = SUBJECTS_DATA;
+  const subCategoryOptions = useMemo(() => {
+    if (selectedSubject === 'all') return [];
+    return SUBJECTS_DATA.find(s => s.name === selectedSubject)?.subCategories || [];
+  }, [selectedSubject]);
 
   const filteredVideos = useMemo(() => {
     return (videos || []).filter(video => {
       const classMatch = selectedClass !== 'all' ? video.class === selectedClass : true;
-      const subjectMatch = selectedSubjectId !== 'all' ? video.subjectId === selectedSubjectId : true;
-      const chapterMatch = selectedChapterId !== 'all' ? video.chapterId === selectedChapterId : true;
+      const subjectMatch = selectedSubject !== 'all' ? video.subject === selectedSubject : true;
+      const subCategoryMatch = selectedSubCategory !== 'all' ? video.subCategory === selectedSubCategory : true;
+      
       const searchMatch = searchTerm
         ? video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (subjectMap[video.subjectId] || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (chapterMap[video.chapterId] || '').toLowerCase().includes(searchTerm.toLowerCase())
+          video.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (video.subCategory || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          video.chapter.toLowerCase().includes(searchTerm.toLowerCase())
         : true;
-      return classMatch && subjectMatch && chapterMatch && searchMatch;
+        
+      return classMatch && subjectMatch && subCategoryMatch && searchMatch;
     });
-  }, [videos, selectedClass, selectedSubjectId, selectedChapterId, searchTerm, subjectMap, chapterMap]);
+  }, [videos, selectedClass, selectedSubject, selectedSubCategory, searchTerm]);
 
-  const isLoading = videosLoading || subjectsLoading;
+  const isLoading = videosLoading;
 
   return (
     <Card>
@@ -75,19 +63,18 @@ export function VideoLibrary() {
               {CLASSES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Select value={selectedSubjectId} onValueChange={(value) => { setSelectedSubjectId(value); setSelectedChapterId('all'); }}>
+          <Select value={selectedSubject} onValueChange={(value) => { setSelectedSubject(value); setSelectedSubCategory('all'); }}>
             <SelectTrigger><SelectValue placeholder="Filter by Subject..." /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Subjects</SelectItem>
-              {subjects?.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+              {subjectOptions.map(s => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Select value={selectedChapterId} onValueChange={setSelectedChapterId} disabled={selectedSubjectId === 'all'}>
-            <SelectTrigger><SelectValue placeholder="Filter by Chapter..." /></SelectTrigger>
+          <Select value={selectedSubCategory} onValueChange={setSelectedSubCategory} disabled={subCategoryOptions.length === 0}>
+            <SelectTrigger><SelectValue placeholder="Filter by Category..." /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Chapters</SelectItem>
-              {chaptersLoading && <SelectItem value="loading" disabled>Loading...</SelectItem>}
-              {chapters?.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              <SelectItem value="all">All Categories</SelectItem>
+              {subCategoryOptions.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
           <Input
@@ -111,7 +98,7 @@ export function VideoLibrary() {
                 <div className="p-4">
                   <h3 className="font-semibold">{video.title}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {subjectMap[video.subjectId]} - {chapterMap[video.chapterId]} ({video.class})
+                    {video.subject} {video.subCategory ? `- ${video.subCategory}`: ''} - {video.chapter} ({video.class})
                   </p>
                 </div>
               </Card>

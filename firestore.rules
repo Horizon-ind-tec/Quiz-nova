@@ -1,11 +1,11 @@
 /**
  * Core Philosophy: This ruleset implements a strict Role-Based Access Control (RBAC) model.
- * Public content collections (videos, subjects, chapters) are readable by anyone, ensuring
+ * Public content collections (videos) are readable by anyone, ensuring
  * broad access for students. However, all write operations (create, update, delete) on these
  * collections are exclusively restricted to users designated as administrators.
  *
- * Data Structure: The data is organized into logical, top-level collections. `videos` and `subjects`
- * are top-level. `chapters` are nested within their respective `subjects`. A dedicated, non-public
+ * Data Structure: The data is organized into logical, top-level collections. `videos`
+ * is the main top-level collection. A dedicated, non-public
  * collection, `/roles_admin`, is used to manage administrative privileges. A document's existence
  * in this collection signifies that the user is an admin.
  *
@@ -48,13 +48,6 @@ service cloud.firestore {
       );
     }
 
-    /**
-     * Enforces immutability for the chapter's link to its parent subject during an update.
-     */
-    function isSubjectIdImmutable() {
-      return request.resource.data.subjectId == resource.data.subjectId;
-    }
-
     // --------------------
     // Collection Rules
     // --------------------
@@ -73,37 +66,7 @@ service cloud.firestore {
       allow update: if isAdmin() && resource != null;
       allow delete: if isAdmin() && resource != null;
     }
-
-    /**
-     * @description Manages subject categories. Anyone can view subjects, but only admins can manage them.
-     * @path /subjects/{subjectId}
-     * @allow (list) Any user, signed in or not, listing all available subjects for filtering.
-     * @deny (update) A non-admin user attempting to rename a subject.
-     * @principle Public read access for content, with writes restricted by a centralized admin role.
-     */
-    match /subjects/{subjectId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin() && resource != null;
-      allow delete: if isAdmin() && resource != null;
-
-      /**
-       * @description Manages chapters within a subject. Publicly viewable, admin-managed.
-       * @path /subjects/{subjectId}/chapters/{chapterId}
-       * @allow (create) An admin creating a new chapter with a `subjectId` that matches the path.
-       * @deny (update) An admin trying to move a chapter by changing its `subjectId` field.
-       * @principle Enforces relational integrity by ensuring a subcollection document correctly and immutably references its parent.
-       */
-      match /chapters/{chapterId} {
-        allow get: if true;
-        allow list: if true;
-        allow create: if isAdmin() && request.resource.data.subjectId == subjectId;
-        allow update: if isAdmin() && resource != null && isSubjectIdImmutable();
-        allow delete: if isAdmin() && resource != null;
-      }
-    }
-
+    
     /**
      * @description Stores admin role grants. This collection is used for `exists()` checks in rules.
      * @path /roles_admin/{userId}

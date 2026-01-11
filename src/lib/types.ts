@@ -67,8 +67,9 @@ export interface GradeExamOutput {
 export interface Video {
     id: string;
     class: string;
-    subjectId: string;
-    chapterId: string;
+    subject: string;
+    subCategory?: string;
+    chapter: string;
     title: string;
     youtubeUrl: string;
     createdAt: number;

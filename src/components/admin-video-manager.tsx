@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCollection, useFirestore } from '@/firebase';
-import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
-import type { Video, Subject, Chapter } from '@/lib/types';
+import { collection, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
+import type { Video } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -32,8 +32,9 @@ const videoSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters.'),
   youtubeUrl: z.string().url('Must be a valid YouTube URL.'),
   class: z.string().min(1, 'Please select a class.'),
-  subjectId: z.string().min(1, 'Please select a subject.'),
-  chapterId: z.string().min(1, 'Please select a chapter.'),
+  subject: z.string().min(1, 'Please select a subject.'),
+  subCategory: z.string().optional(),
+  chapter: z.string().min(1, 'Chapter is required.'),
 });
 
 type VideoFormData = z.infer<typeof videoSchema>;
@@ -48,19 +49,14 @@ export function AdminVideoManager() {
   const { data: videos, loading: videosLoading } = useCollection<Video>(
     firestore ? query(collection(firestore, 'videos'), orderBy('createdAt', 'desc')) : null
   );
-  const { data: subjects, loading: subjectsLoading } = useCollection<Subject>(
-     firestore ? query(collection(firestore, 'subjects'), orderBy('name')) : null
-  );
-  
+
   const form = useForm<VideoFormData>({
     resolver: zodResolver(videoSchema),
-    defaultValues: { title: '', youtubeUrl: '', class: '', subjectId: '', chapterId: '' },
+    defaultValues: { title: '', youtubeUrl: '', class: '', subject: '', subCategory: '', chapter: '' },
   });
 
-  const selectedSubjectId = form.watch('subjectId');
-  const { data: chapters, loading: chaptersLoading } = useCollection<Chapter>(
-    firestore && selectedSubjectId ? query(collection(firestore, `subjects/${selectedSubjectId}/chapters`), orderBy('name')) : null
-  );
+  const selectedSubjectName = form.watch('subject');
+  const selectedSubject = SUBJECTS_DATA.find(s => s.name === selectedSubjectName);
 
   useEffect(() => {
     if (editingVideo) {
@@ -68,11 +64,12 @@ export function AdminVideoManager() {
         title: editingVideo.title,
         youtubeUrl: editingVideo.youtubeUrl,
         class: editingVideo.class,
-        subjectId: editingVideo.subjectId,
-        chapterId: editingVideo.chapterId,
+        subject: editingVideo.subject,
+        subCategory: editingVideo.subCategory || '',
+        chapter: editingVideo.chapter,
       });
     } else {
-      form.reset({ title: '', youtubeUrl: '', class: '', subjectId: '', chapterId: '' });
+      form.reset({ title: '', youtubeUrl: '', class: '', subject: '', subCategory: '', chapter: '' });
     }
   }, [editingVideo, form]);
   
@@ -82,24 +79,9 @@ export function AdminVideoManager() {
      }
   }, [isDialogOpen])
   
-   // Reset chapter when subject changes
   useEffect(() => {
-    form.setValue('chapterId', '');
-  }, [selectedSubjectId, form]);
-
-  const subjectMap = React.useMemo(() => {
-    return subjects?.reduce((acc, subject) => {
-      acc[subject.id] = subject.name;
-      return acc;
-    }, {} as Record<string, string>) || {};
-  }, [subjects]);
-
-  const chapterMap = React.useMemo(() => {
-    return chapters?.reduce((acc, chapter) => {
-      acc[chapter.id] = chapter.name;
-      return acc;
-    }, {} as Record<string, string>) || {};
-  }, [chapters]);
+    form.setValue('subCategory', '');
+  }, [selectedSubjectName, form]);
 
   const onSubmit = async (data: VideoFormData) => {
     if (!firestore) return;
@@ -107,7 +89,7 @@ export function AdminVideoManager() {
     try {
       if (editingVideo) {
         const videoRef = doc(firestore, 'videos', editingVideo.id);
-        await updateDoc(videoRef, data);
+        await updateDoc(videoRef, data as any); // Cast to any to avoid type issues with optional fields
         toast({ title: 'Success', description: 'Video updated successfully.' });
       } else {
         await addDoc(collection(firestore, 'videos'), {
@@ -137,7 +119,7 @@ export function AdminVideoManager() {
     }
   };
 
-  const isLoading = videosLoading || subjectsLoading;
+  const isLoading = videosLoading;
 
   return (
     <Card>
@@ -189,29 +171,40 @@ export function AdminVideoManager() {
                          <FormMessage />
                        </FormItem>
                      )} />
-                    <FormField control={form.control} name="subjectId" render={({ field }) => (
+                    <FormField control={form.control} name="subject" render={({ field }) => (
                        <FormItem>
                          <FormLabel>Subject</FormLabel>
                          <Select onValueChange={field.onChange} value={field.value}>
                            <FormControl><SelectTrigger><SelectValue placeholder="Select subject..." /></SelectTrigger></FormControl>
-                           <SelectContent>{subjects?.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                           <SelectContent>{SUBJECTS_DATA.map(s => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}</SelectContent>
                          </Select>
                          <FormMessage />
                        </FormItem>
                      )} />
                  </div>
-                 <FormField control={form.control} name="chapterId" render={({ field }) => (
+                 {selectedSubject && selectedSubject.subCategories && (
+                    <FormField control={form.control} name="subCategory" render={({ field }) => (
+                       <FormItem>
+                         <FormLabel>{selectedSubject.name} Category</FormLabel>
+                         <Select onValueChange={field.onChange} value={field.value}>
+                           <FormControl><SelectTrigger><SelectValue placeholder={`Select ${selectedSubject.name} category...`} /></SelectTrigger></FormControl>
+                           <SelectContent>{selectedSubject.subCategories.map(sc => <SelectItem key={sc.name} value={sc.name}>{sc.name}</SelectItem>)}</SelectContent>
+                         </Select>
+                         <FormMessage />
+                       </FormItem>
+                     )} />
+                 )}
+                 <FormField
+                  control={form.control}
+                  name="chapter"
+                  render={({ field }) => (
                     <FormItem>
                       <FormLabel>Chapter</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value} disabled={!selectedSubjectId || chaptersLoading}>
-                        <FormControl><SelectTrigger>
-                            <SelectValue placeholder={chaptersLoading ? "Loading..." : "Select chapter..."} />
-                        </SelectTrigger></FormControl>
-                        <SelectContent>{chapters?.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-                      </Select>
+                      <FormControl><Input placeholder="e.g., Photosynthesis" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
-                  )} />
+                  )}
+                />
                 <DialogFooter>
                   <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
                   <Button type="submit" disabled={isSubmitting}>
@@ -238,7 +231,7 @@ export function AdminVideoManager() {
                             <div>
                                 <p className="font-semibold">{video.title}</p>
                                 <p className="text-sm text-muted-foreground">
-                                    {subjectMap[video.subjectId]} - {video.class}
+                                    {video.subject} {video.subCategory ? `- ${video.subCategory}` : ''} - {video.class}
                                 </p>
                             </div>
                         </div>
