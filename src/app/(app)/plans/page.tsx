@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Header } from '@/components/header';
@@ -31,7 +32,7 @@ const plans = [
     icon: Gem,
     price: '₹500',
     priceDescription: '/ month',
-    description: 'Full learning without AI assistant.',
+    description: 'The ultimate learning experience with unlimited AI.',
     features: [
       'Unlimited quiz generation (free)',
       'Unlimited exam generation (free)',
@@ -41,12 +42,12 @@ const plans = [
       'Full progress & analytics',
       'Chapter-wise mastery system',
       'No ads',
+      'Unlimited AI assistant access',
+      'Unlimited Coins',
+      'Handwritten Exam Grading',
+      'Adaptive Quiz Generation',
     ],
     isPopular: true,
-    exclusions: [
-        'No AI assistant access',
-        'No coins required',
-    ]
   },
   {
     name: 'Ultimate Plan',
@@ -139,7 +140,7 @@ export default function PlansPage() {
                         </div>
                         <div className="p-4 rounded-lg bg-muted">
                             <p className="font-semibold">Premium Plan</p>
-                            <p className="text-sm text-muted-foreground">Not available</p>
+                            <p className="text-sm text-muted-foreground">Unlimited</p>
                         </div>
                          <div className="p-4 rounded-lg bg-muted">
                             <p className="font-semibold">Ultimate Plan</p>
