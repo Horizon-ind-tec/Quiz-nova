@@ -200,23 +200,22 @@ export default function TakeQuizPage() {
     setScore(finalScore);
 
     const newQuizAttempt: QuizAttempt = {
-        // Copy all properties from the original quiz
-        subject: quiz.subject,
-        subCategory: quiz.subCategory,
-        difficulty: quiz.difficulty,
-        class: quiz.class,
-        board: quiz.board,
-        chapter: quiz.chapter,
-        quizType: quiz.quizType,
-        ncert: quiz.ncert,
-        questions: quiz.questions,
-        createdAt: quiz.createdAt,
-        // Add attempt-specific data
-        userAnswers,
-        score: finalScore,
-        completedAt: Date.now(),
-        // MOST IMPORTANT: Generate a new unique ID for this attempt
-        id: uuidv4(),
+      // Base quiz data
+      subject: quiz.subject,
+      subCategory: quiz.subCategory,
+      difficulty: quiz.difficulty,
+      class: quiz.class,
+      board: quiz.board,
+      chapter: quiz.chapter,
+      quizType: quiz.quizType,
+      ncert: quiz.ncert,
+      questions: quiz.questions,
+      createdAt: quiz.createdAt,
+      // Attempt-specific data
+      id: uuidv4(), // CRITICAL: Ensure a new unique ID for the attempt
+      userAnswers: userAnswers,
+      score: finalScore,
+      completedAt: Date.now(),
     };
 
     setQuizHistory(prev => [newQuizAttempt, ...prev]);
