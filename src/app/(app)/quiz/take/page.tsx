@@ -195,17 +195,18 @@ export default function TakeQuizPage() {
 
   const finishQuiz = () => {
     if (!quiz) return;
-    
+
     const finalScore = calculateScore();
     setScore(finalScore);
 
     const quizAttempt: QuizAttempt = {
       ...quiz,
-      id: uuidv4(),
       userAnswers,
       score: finalScore,
       completedAt: Date.now(),
+      id: uuidv4(), // Ensure a new unique ID is generated for the attempt
     };
+
     setQuizHistory(prev => [quizAttempt, ...prev]);
     setQuizState('results');
   };
@@ -227,14 +228,16 @@ export default function TakeQuizPage() {
 
   const progress = useMemo(() => {
     if (!quiz || totalQuestions === 0) return 0;
-    let correctCount = 0;
+    let answeredCount = 0;
     quiz.questions.forEach((q, index) => {
       const userAnswer = userAnswers[index];
-      if (q.type === 'mcq' && userAnswer === q.correctAnswer) {
-        correctCount++;
+      if (q.type === 'mcq' || q.type === 'numerical') {
+        if (userAnswer) answeredCount++;
+      } else if (q.type === 'match') {
+        if (Object.keys(userAnswer).length > 0) answeredCount++;
       }
     });
-    return (correctCount / totalQuestions) * 100;
+    return (answeredCount / totalQuestions) * 100;
   }, [userAnswers, quiz, totalQuestions]);
 
   const renderMCQ = (q: MCQ, questionIndex: number, isExam: boolean) => {
