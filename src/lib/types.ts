@@ -1,3 +1,4 @@
+
 export interface MCQ {
   type: 'mcq';
   question: string;
@@ -41,6 +42,7 @@ export interface Quiz {
   ncert?: boolean;
   questions: Question[];
   createdAt: number;
+  numberOfQuestions: number;
 }
 
 export interface QuizAttempt extends Quiz {

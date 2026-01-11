@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -21,7 +22,7 @@ const GenerateCustomQuizInputSchema = z.object({
   difficulty: z.enum(['easy', 'medium', 'hard']).describe('The difficulty level of the quiz.'),
   board: z.string().describe('The educational board for the quiz (e.g., CBSE, ICSE, State Board).'),
   chapter: z.string().optional().describe('The specific chapter or topic for the quiz.'),
-  quizType: z.enum(['quiz', 'exam']).describe('The type of assessment (quiz or exam).'),
+  numberOfQuestions: z.number().describe('The total number of questions to generate for the quiz.'),
   ncert: z.boolean().optional().describe('Whether the quiz should be based on the NCERT curriculum.'),
   class: z.string().optional().describe('The class of the student.'),
 });
@@ -72,7 +73,7 @@ const generateCustomQuizPrompt = ai.definePrompt({
   name: 'generateCustomQuizPrompt',
   input: {schema: GenerateCustomQuizInputSchema},
   output: {schema: GenerateCustomQuizOutputSchema},
-  prompt: `You are an expert quiz generator for students. Generate a quiz based on the following criteria:
+  prompt: `You are an expert quiz generator for students. Generate a quiz with exactly {{{numberOfQuestions}}} questions based on the following criteria:
 
 Subject: {{{subject}}}
 {{#if subCategory}}
@@ -86,10 +87,9 @@ Chapter/Topic: {{{chapter}}}
 {{#if ncert}}
 Curriculum: NCERT
 {{/if}}
-Type: {{{quizType}}}
 
-- For a 'quiz', generate 5 Multiple Choice Questions (MCQ).
-- For an 'exam', generate a total of 30 questions with a mix of types: 20 MCQs, 5 Match the Following, and 5 Numerical questions.
+- Generate a mix of question types (MCQ, Match the Following, Numerical) if the total number of questions is large (e.g., >15). Otherwise, prioritize MCQs.
+- Ensure you generate exactly {{{numberOfQuestions}}} questions in total.
 
 The entire output should be a single JSON object with a "questions" key, which holds an array of question objects. Each question object must have a "type" field ('mcq', 'match', or 'numerical') and other fields appropriate for that type.
 

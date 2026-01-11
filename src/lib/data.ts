@@ -1,3 +1,4 @@
+
 import type { LucideIcon } from 'lucide-react';
 import { Calculator, Atom, FlaskConical, Leaf, Scroll, Globe, Scale, Landmark, Rocket, Microscope, Presentation, Plane, Cpu, BrainCircuit, Palette, Briefcase } from 'lucide-react';
 
@@ -79,8 +80,4 @@ export const DIFFICULTIES = [
   { value: 'easy', label: 'Easy' },
   { value: 'medium', label: 'Medium' },
   { value: 'hard', label: 'Hard' },
-];
-export const QUIZ_TYPES = [
-  { value: 'quiz', label: 'Quiz (5 Questions)' },
-  { value: 'exam', label: 'Exam (30 Questions)' },
 ];

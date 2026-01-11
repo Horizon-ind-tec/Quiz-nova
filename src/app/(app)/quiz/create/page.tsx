@@ -22,7 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 
 import { generateQuizAction } from '@/app/actions';
-import { CLASSES, SUBJECTS_DATA, BOARDS, DIFFICULTIES, QUIZ_TYPES } from '@/lib/data';
+import { CLASSES, SUBJECTS_DATA, BOARDS, DIFFICULTIES } from '@/lib/data';
 import type { Quiz } from '@/lib/types';
 import type { GenerateCustomQuizOutput } from '@/ai/flows/generate-custom-quiz';
 import { useUser } from '@/firebase';
@@ -34,7 +34,7 @@ const formSchema = z.object({
   board: z.string().min(1, 'Please select an educational board.'),
   chapter: z.string().optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']),
-  quizType: z.enum(['quiz', 'exam']),
+  numberOfQuestions: z.coerce.number().min(1, "You must have at least 1 question.").max(50, "You can have at most 50 questions."),
   ncert: z.boolean().optional(),
 });
 
@@ -56,7 +56,7 @@ export default function CreateQuizPage() {
       board: '',
       chapter: '',
       difficulty: 'medium',
-      quizType: 'quiz',
+      numberOfQuestions: 5,
       ncert: false,
     },
   });
@@ -80,6 +80,7 @@ export default function CreateQuizPage() {
         const newQuiz: Quiz = {
           id: uuidv4(),
           ...data,
+          quizType: data.numberOfQuestions > 10 ? 'exam' : 'quiz', // Determine type based on length
           questions: result.questions,
           createdAt: Date.now(),
         };
@@ -244,38 +245,21 @@ export default function CreateQuizPage() {
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    name="quizType"
+
+                   <FormField
                     control={form.control}
+                    name="numberOfQuestions"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Type</FormLabel>
+                        <FormLabel>Number of Questions</FormLabel>
                         <FormControl>
-                          <RadioGroup
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                            className="flex space-x-1"
-                          >
-                            {QUIZ_TYPES.map(d => (
-                              <FormItem key={d.value} className="flex-1">
-                                <FormControl>
-                                  <RadioGroupItem value={d.value} className="sr-only" />
-                                </FormControl>
-                                <FormLabel
-                                  className={cn(
-                                    "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
-                                  )}
-                                >
-                                  {d.label}
-                                </FormLabel>
-                              </FormItem>
-                            ))}
-                          </RadioGroup>
+                          <Input type="number" min="1" max="50" placeholder="e.g., 10" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
                   <FormField name="difficulty" control={form.control} render={({ field }) => (
                     <FormItem>
                       <FormLabel>Difficulty</FormLabel>

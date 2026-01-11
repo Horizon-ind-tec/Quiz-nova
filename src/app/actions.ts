@@ -1,3 +1,4 @@
+
 'use server';
 
 import {
@@ -18,9 +19,13 @@ import {
 
 
 export async function generateQuizAction(
-  input: GenerateCustomQuizInput
+  input: Omit<GenerateCustomQuizInput, 'quizType'>
 ): Promise<GenerateCustomQuizOutput> {
-  return await generateCustomQuiz(input);
+  const flowInput: GenerateCustomQuizInput = {
+    ...input,
+    quizType: input.numberOfQuestions > 10 ? 'exam' : 'quiz',
+  };
+  return await generateCustomQuiz(flowInput);
 }
 
 
