@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   Bookmark,
   Grid,
+  BrainCircuit,
 } from 'lucide-react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { v4 as uuidv4 } from 'uuid';
@@ -89,13 +90,12 @@ export default function TakeQuizPage() {
   }, [quizState, timeRemaining]);
 
 
-  const handleAnswerSelect = (answer: string) => {
-    const isAnswered = userAnswers[currentQuestionIndex] !== '';
-    if (isAnswered) return;
-
+  const handleAnswerSelect = (questionIndex: number, answer: string) => {
     const newAnswers = [...userAnswers];
-    newAnswers[currentQuestionIndex] = answer;
-    setUserAnswers(newAnswers);
+    if (newAnswers[questionIndex] === '') { // Lock answer after first selection
+        newAnswers[questionIndex] = answer;
+        setUserAnswers(newAnswers);
+    }
   };
 
   const handleNextQuestion = () => {
@@ -150,9 +150,10 @@ export default function TakeQuizPage() {
   };
 
   const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
   const totalQuestions = quiz?.questions.length ?? 0;
@@ -171,6 +172,129 @@ export default function TakeQuizPage() {
 
     return (correctSoFar / totalQuestions) * 100;
   }, [userAnswers, quiz, totalQuestions]);
+  
+  const renderExamPaper = () => {
+    if (!quiz) return null;
+
+    const sections = quiz.subCategory ? [quiz.subCategory] : [quiz.subject];
+    const questionsPerSection = Math.ceil(quiz.questions.length / sections.length);
+
+    return (
+       <div className="bg-white shadow-lg rounded-lg">
+        <div className="p-4 sm:p-8">
+            <div className="text-center p-2 bg-red-500 text-white font-semibold rounded-t-md">
+                Nova learning help you achieve your achievements
+            </div>
+            <div className="border-2 border-dashed border-gray-400 p-4 sm:p-6 text-center">
+                <h1 className="text-xl sm:text-2xl font-bold text-red-600">
+                    {`QuizNova (${quiz.board}) ${new Date().getFullYear()}`}
+                </h1>
+                <h2 className="text-lg sm:text-xl font-semibold mt-1">Question Paper</h2>
+                <p className="text-sm sm:text-base mt-1">({quiz.subject}{quiz.subCategory ? ` - ${quiz.subCategory}` : ''})</p>
+                <p className="text-sm sm:text-base font-bold text-blue-600 mt-2">{new Date(quiz.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                
+                <div className="flex justify-between text-sm font-semibold mt-4">
+                    <span>Time: {formatTime(totalTime)}</span>
+                    <span>M.M: {totalQuestions * 4}</span>
+                </div>
+
+                <div className="text-left mt-6">
+                    <h3 className="font-bold text-red-600 border-b-2 border-red-600 pb-1 inline-block">IMPORTANT INSTRUCTIONS:</h3>
+                    <ol className="list-decimal list-inside text-xs sm:text-sm space-y-2 mt-2">
+                        <li>The test is of {formatTime(totalTime)} duration.</li>
+                        <li>This test paper consists of {totalQuestions} questions.</li>
+                        <li>Each question carries +4 marks for correct answer and -1 mark for wrong answer.</li>
+                        <li>Attempt all questions.</li>
+                        <li>Mark your answers in the provided interface. Once an answer is selected, it cannot be changed.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <div className="p-4 sm:p-8">
+            {sections.map((section, secIndex) => (
+                <div key={secIndex}>
+                    <h2 className="text-center font-bold text-lg bg-gray-200 p-2 rounded-md mb-4 uppercase">{section}</h2>
+                    {quiz.questions.slice(secIndex * questionsPerSection, (secIndex + 1) * questionsPerSection).map((q, qIndex) => {
+                        const questionNumber = secIndex * questionsPerSection + qIndex + 1;
+                        const userAnswer = userAnswers[questionNumber - 1];
+                        const isAnswered = userAnswer !== '';
+
+                        return (
+                            <div key={questionNumber} className="mb-8 pb-4 border-b border-gray-200">
+                                <p className="font-semibold mb-4">{questionNumber}. {q.question}</p>
+                                <RadioGroup
+                                  value={userAnswer}
+                                  onValueChange={(value) => handleAnswerSelect(questionNumber - 1, value)}
+                                  className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+                                >
+                                    {q.options.map((option, index) => {
+                                        const isCorrect = option === q.correctAnswer;
+                                        const isSelected = option === userAnswer;
+
+                                        const getOptionStyle = () => {
+                                            if (!isAnswered) return "border-gray-300 hover:border-blue-500 hover:bg-blue-50";
+                                            if (isSelected) {
+                                                return isCorrect ? "border-green-500 bg-green-100 text-green-900 font-semibold" : "border-red-500 bg-red-100 text-red-900 font-semibold";
+                                            }
+                                            if (isCorrect) {
+                                                return "border-green-500 bg-green-100 text-green-900";
+                                            }
+                                            return "border-gray-300 opacity-70 cursor-not-allowed";
+                                        };
+
+                                        return (
+                                            <FormItem key={index}>
+                                                <FormControl>
+                                                    <RadioGroupItem value={option} id={`q${questionNumber}-option-${index}`} className="sr-only" />
+                                                </FormControl>
+                                                <FormLabel
+                                                    htmlFor={`q${questionNumber}-option-${index}`}
+                                                    className={cn(
+                                                        "flex items-center space-x-3 space-y-0 rounded-md border p-3 transition-all cursor-pointer",
+                                                        getOptionStyle(),
+                                                    )}
+                                                >
+                                                    <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0">
+                                                        {index + 1}
+                                                    </div>
+                                                    <span className="flex-1">{option}</span>
+                                                    {isAnswered && isSelected && isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
+                                                    {isAnswered && isSelected && !isCorrect && <XCircle className="h-5 w-5 text-red-600" />}
+                                                </FormLabel>
+                                            </FormItem>
+                                        );
+                                    })}
+                                </RadioGroup>
+                            </div>
+                        );
+                    })}
+                </div>
+            ))}
+        </div>
+        
+        <div className="p-4 sm:p-8 flex justify-center">
+             <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 text-lg">SUBMIT EXAM</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure you want to submit?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will end the exam and calculate your score. You cannot undo this action.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={finishQuiz}>Submit</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+        </div>
+    </div>
+    )
+  }
 
 
   const renderContent = () => {
@@ -178,6 +302,11 @@ export default function TakeQuizPage() {
       case 'taking':
       case 'paused':
         if (!quiz) return null;
+        
+        if (quiz.quizType === 'exam') {
+            return renderExamPaper();
+        }
+
         const currentQuestion = quiz.questions[currentQuestionIndex];
         const isAnswered = userAnswers[currentQuestionIndex] !== '';
         const userAnswer = userAnswers[currentQuestionIndex];
@@ -250,7 +379,7 @@ export default function TakeQuizPage() {
 
                 <RadioGroup
                   value={userAnswer}
-                  onValueChange={handleAnswerSelect}
+                  onValueChange={(value) => handleAnswerSelect(currentQuestionIndex, value)}
                   className="space-y-3"
                 >
                   {currentQuestion.options.map((option, index) => {
@@ -425,12 +554,10 @@ export default function TakeQuizPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
        <main className="flex-1 p-2 pt-4 md:p-6 flex justify-center items-start">
-        <div className="w-full max-w-2xl pb-20 md:pb-0">
+        <div className="w-full max-w-4xl pb-20 md:pb-0">
           {renderContent()}
         </div>
       </main>
     </div>
   );
 }
-
-    
