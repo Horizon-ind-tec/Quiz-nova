@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { PlusCircle, BrainCircuit, Gem } from 'lucide-react';
+import { PlusCircle, BrainCircuit, Gem, BookUser } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Header } from '@/components/header';
@@ -40,6 +40,12 @@ export default function Dashboard() {
                 <Link href="/plans">
                     <Gem className="mr-2 h-4 w-4" />
                     Upgrade to Premium
+                </Link>
+             </Button>
+             <Button asChild variant="outline">
+                <Link href="/coaching">
+                    <BookUser className="mr-2 h-4 w-4" />
+                    Coaching
                 </Link>
              </Button>
             <Button asChild>
