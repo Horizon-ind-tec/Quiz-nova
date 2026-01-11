@@ -1,17 +1,28 @@
 'use client';
 
-import { useLocalStorage } from '@/hooks/use-local-storage';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import type { QuizAttempt } from '@/lib/types';
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { collection, query, orderBy } from 'firebase/firestore';
+import { Loader2 } from 'lucide-react';
 
 export default function PerformancePage() {
-  const [quizHistory] = useLocalStorage<QuizAttempt[]>('quizHistory', []);
-
-  const sortedHistory = quizHistory.slice().sort((a, b) => b.completedAt - a.completedAt);
+  const { user } = useUser();
+  const firestore = useFirestore();
+  
+  const quizHistoryQuery = useMemoFirebase(
+    () =>
+      firestore && user
+        ? query(collection(firestore, 'users', user.uid, 'quiz_results'), orderBy('completedAt', 'desc'))
+        : null,
+    [firestore, user]
+  );
+  
+  const { data: sortedHistory, isLoading: historyLoading } = useCollection<QuizAttempt>(quizHistoryQuery);
 
   const getScoreVariant = (score: number) => {
     if (score < 40) return 'destructive';
@@ -29,7 +40,11 @@ export default function PerformancePage() {
             <CardDescription>A complete log of all your quizzes.</CardDescription>
           </CardHeader>
           <CardContent>
-            {sortedHistory.length > 0 ? (
+            {historyLoading ? (
+              <div className="flex h-48 items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : sortedHistory && sortedHistory.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>

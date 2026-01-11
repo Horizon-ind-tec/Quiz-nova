@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Bot, Loader2, Send, User, Sparkles } from 'lucide-react';
-import { useLocalStorage } from '@/hooks/use-local-storage';
 import type { QuizAttempt } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,6 +12,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Header } from '@/components/header';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
+
 
 interface Message {
   role: 'user' | 'assistant';
@@ -20,7 +22,19 @@ interface Message {
 }
 
 export default function ReportPage() {
-  const [quizHistory] = useLocalStorage<QuizAttempt[]>('quizHistory', []);
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const quizHistoryQuery = useMemoFirebase(
+    () =>
+      firestore && user
+        ? query(collection(firestore, 'users', user.uid, 'quiz_results'), orderBy('completedAt', 'desc'))
+        : null,
+    [firestore, user]
+  );
+  
+  const { data: quizHistory } = useCollection<QuizAttempt>(quizHistoryQuery);
+
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
@@ -53,7 +67,7 @@ export default function ReportPage() {
 
     try {
       const result = await getPerformanceReportAction({
-        quizHistory,
+        quizHistory: quizHistory || [],
         userQuestion: input,
       });
 

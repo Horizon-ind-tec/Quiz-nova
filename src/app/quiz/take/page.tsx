@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { v4 as uuidv4 } from 'uuid';
+import { addDoc, collection } from 'firebase/firestore';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,8 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useFirestore, useUser } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 
 type QuizState = 'loading' | 'taking' | 'paused' | 'results';
@@ -55,9 +58,11 @@ export default function TakeQuizPage() {
   const [userAnswers, setUserAnswers] = useState<UserAnswers>({});
   const [markedForReview, setMarkedForReview] = useState<boolean[]>([]);
   const [score, setScore] = useState(0);
-  const [quizHistory, setQuizHistory] = useLocalStorage<QuizAttempt[]>('quizHistory', []);
   const router = useRouter();
   const form = useForm();
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const { toast } = useToast();
   
   const [shuffledMatches, setShuffledMatches] = useState<{[key: number]: string[]}>({});
   
@@ -144,7 +149,7 @@ export default function TakeQuizPage() {
   
   const handlePrevQuestion = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
     }
   };
   
@@ -193,8 +198,15 @@ export default function TakeQuizPage() {
   }, [quiz, userAnswers]);
 
 
-  const finishQuiz = () => {
-    if (!quiz) return;
+  const finishQuiz = async () => {
+    if (!quiz || !user || !firestore) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not save quiz results. User not logged in.',
+      });
+      return;
+    }
 
     const finalScore = calculateScore();
     setScore(finalScore);
@@ -205,9 +217,21 @@ export default function TakeQuizPage() {
       userAnswers: userAnswers,
       score: finalScore,
       completedAt: Date.now(),
+      userId: user.uid,
     };
+    
+    try {
+        const quizResultsRef = collection(firestore, 'users', user.uid, 'quiz_results');
+        await addDoc(quizResultsRef, newQuizAttempt);
+    } catch(error) {
+        console.error("Error saving quiz result:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Save Error',
+            description: "Could not save your quiz result to your profile."
+        })
+    }
 
-    setQuizHistory(prev => [newQuizAttempt, ...prev]);
     setQuizState('results');
   };
 
@@ -662,7 +686,7 @@ export default function TakeQuizPage() {
                   </div>
                   
                   <Button onClick={handleNextQuestion} variant="default" disabled={currentQuestionIndex === quiz.questions.length - 1} className="md:flex-1 md:ml-2">
-                     <span className="hidden md:inline">Next</span>
+                     <span className="hidden md:inline">Save & Next</span>
                     <ArrowRight className="h-5 w-5 md:ml-2" />
                   </Button>
             </div>

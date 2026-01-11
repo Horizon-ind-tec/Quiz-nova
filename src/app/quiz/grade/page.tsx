@@ -13,6 +13,8 @@ import { gradeExamAction } from '@/app/actions';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import Image from 'next/image';
+import { useFirestore, useUser } from '@/firebase';
+import { addDoc, collection } from 'firebase/firestore';
 
 
 type GradingState = 'capturing' | 'grading' | 'results';
@@ -24,7 +26,9 @@ export default function GradeExamPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [quiz] = useLocalStorage<Quiz | null>('currentQuiz', null);
-  const [, setQuizHistory] = useLocalStorage<QuizAttempt[]>('quizHistory', []);
+  const { user } = useUser();
+  const firestore = useFirestore();
+
 
   const [gradingState, setGradingState] = useState<GradingState>('capturing');
   const [capturedImages, setCapturedImages] = useState<string[]>([]);
@@ -121,6 +125,14 @@ export default function GradeExamPage() {
       });
       return;
     }
+     if (!user || !firestore) {
+      toast({
+        variant: 'destructive',
+        title: 'Not Logged In',
+        description: 'You must be logged in to save exam results.',
+      });
+      return;
+    }
     
     setGradingState('grading');
     
@@ -141,8 +153,11 @@ export default function GradeExamPage() {
         userAnswers,
         score: result.score,
         completedAt: Date.now(),
+        userId: user.uid,
       };
-      setQuizHistory(prev => [newExamAttempt, ...prev]);
+
+      const quizResultsRef = collection(firestore, 'users', user.uid, 'quiz_results');
+      await addDoc(quizResultsRef, newExamAttempt);
 
       setGradingResult(result);
       setGradingState('results');

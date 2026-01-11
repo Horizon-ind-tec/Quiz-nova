@@ -24,6 +24,7 @@ import { generateQuizAction } from '@/app/actions';
 import { CLASSES, SUBJECTS_DATA, BOARDS, DIFFICULTIES, QUIZ_TYPES } from '@/lib/data';
 import type { Quiz } from '@/lib/types';
 import type { GenerateCustomQuizOutput } from '@/ai/flows/generate-custom-quiz';
+import { useUser } from '@/firebase';
 
 const formSchema = z.object({
   class: z.string().min(1, 'Please select a class.'),
@@ -43,6 +44,7 @@ export default function CreateQuizPage() {
   const { toast } = useToast();
   const [, setQuiz] = useLocalStorage<Quiz | null>('currentQuiz', null);
   const router = useRouter();
+  const { user } = useUser();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -62,6 +64,14 @@ export default function CreateQuizPage() {
   const selectedSubject = SUBJECTS_DATA.find(s => s.name === selectedSubjectName);
 
   const onSubmit = async (data: FormValues) => {
+    if (!user) {
+        toast({
+            variant: 'destructive',
+            title: 'Not logged in',
+            description: 'You need to be logged in to create a quiz.',
+        });
+        return;
+    }
     setIsLoading(true);
     try {
       const result: GenerateCustomQuizOutput = await generateQuizAction(data);

@@ -33,9 +33,9 @@ export async function gradeExamAction(
     questions: input.questions.map(q => {
       // The AI prompt expects the correctAnswer structure for matching questions to be the pairs array
       if (q.type === 'match') {
-        return { ...q, correctAnswer: q.pairs };
+        return { ...q, correctAnswer: q.pairs as any };
       }
-      return q;
+      return q as any;
     })
   };
   return await gradeExam(gradeInput);
@@ -44,5 +44,13 @@ export async function gradeExamAction(
 export async function getPerformanceReportAction(
   input: { quizHistory: QuizAttempt[], userQuestion: string }
 ): Promise<GetPerformanceReportOutput> {
-  return await getPerformanceReport(input);
+  const mappedHistory = input.quizHistory.map(h => ({
+      subject: h.subject,
+      subCategory: h.subCategory,
+      difficulty: h.difficulty,
+      score: h.score,
+      quizType: h.quizType,
+      completedAt: h.completedAt,
+  }));
+  return await getPerformanceReport({ ...input, quizHistory: mappedHistory });
 }

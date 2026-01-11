@@ -9,26 +9,35 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Header } from '@/components/header';
 import { PerformanceChart } from '@/components/performance-chart';
 import { RecentQuizzes } from '@/components/recent-quizzes';
-import { useLocalStorage } from '@/hooks/use-local-storage';
 import type { QuizAttempt } from '@/lib/types';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { Loader2 } from 'lucide-react';
+import { collection, query, where } from 'firebase/firestore';
 
 type ViewType = 'quiz' | 'exam';
 
 export default function Dashboard() {
   const [view, setView] = useState<ViewType>('quiz');
-  const [quizHistory] = useLocalStorage<QuizAttempt[]>('quizHistory', []);
   const { user, loading } = useUser();
   const router = useRouter();
+  const firestore = useFirestore();
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
     }
   }, [user, loading, router]);
+  
+  const quizHistoryQuery = useMemoFirebase(
+    () =>
+      firestore && user
+        ? query(collection(firestore, 'users', user.uid, 'quiz_results'), where('quizType', '==', view))
+        : null,
+    [firestore, user, view]
+  );
 
+  const { data: quizHistory, isLoading: historyLoading } = useCollection<QuizAttempt>(quizHistoryQuery);
 
   if (loading || !user) {
     return (
@@ -37,8 +46,6 @@ export default function Dashboard() {
       </div>
     );
   }
-
-  const filteredHistory = quizHistory.filter(attempt => attempt.quizType === view);
 
   return (
     <div className="flex flex-col">
@@ -90,7 +97,7 @@ export default function Dashboard() {
                     <CardDescription>Your recent quiz scores.</CardDescription>
                   </CardHeader>
                   <CardContent className="pl-2">
-                    <PerformanceChart data={filteredHistory} />
+                     {historyLoading ? <Loader2 className="mx-auto h-8 w-8 animate-spin" /> : <PerformanceChart data={quizHistory || []} />}
                   </CardContent>
                 </Card>
                 <Card className="col-span-4 lg:col-span-3">
@@ -99,7 +106,7 @@ export default function Dashboard() {
                     <CardDescription>A log of your most recent quiz attempts.</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <RecentQuizzes data={filteredHistory} />
+                    {historyLoading ? <Loader2 className="mx-auto h-8 w-8 animate-spin" /> : <RecentQuizzes data={quizHistory || []} />}
                   </CardContent>
                 </Card>
               </div>
@@ -112,7 +119,7 @@ export default function Dashboard() {
                     <CardDescription>Your recent exam scores.</CardDescription>
                   </CardHeader>
                   <CardContent className="pl-2">
-                    <PerformanceChart data={filteredHistory} />
+                    {historyLoading ? <Loader2 className="mx-auto h-8 w-8 animate-spin" /> : <PerformanceChart data={quizHistory || []} />}
                   </CardContent>
                 </Card>
                 <Card className="col-span-4 lg:col-span-3">
@@ -121,7 +128,7 @@ export default function Dashboard() {
                     <CardDescription>A log of your most recent exam attempts.</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <RecentQuizzes data={filteredHistory} />
+                    {historyLoading ? <Loader2 className="mx-auto h-8 w-8 animate-spin" /> : <RecentQuizzes data={quizHistory || []} />}
                   </CardContent>
                 </Card>
               </div>

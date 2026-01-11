@@ -44,6 +44,7 @@ export interface Quiz {
 }
 
 export interface QuizAttempt extends Quiz {
+  userId: string;
   score: number;
   userAnswers: UserAnswers;
   completedAt: number;
