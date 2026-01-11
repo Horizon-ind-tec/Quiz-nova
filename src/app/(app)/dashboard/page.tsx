@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { PlusCircle, BrainCircuit } from 'lucide-react';
+import { PlusCircle, BrainCircuit, Gem } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Header } from '@/components/header';
@@ -34,6 +34,12 @@ export default function Dashboard() {
                 <Link href="/report">
                     <BrainCircuit className="mr-2 h-4 w-4" />
                     AI Learning Report
+                </Link>
+             </Button>
+              <Button asChild className="bg-gradient-to-r from-yellow-400 to-amber-500 text-white shadow-lg hover:from-yellow-500 hover:to-amber-600">
+                <Link href="/plans">
+                    <Gem className="mr-2 h-4 w-4" />
+                    Upgrade to Premium
                 </Link>
              </Button>
             <Button asChild>
