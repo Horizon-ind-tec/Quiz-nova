@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Copy, Loader2, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 
 const plansDetails = {
@@ -123,10 +123,10 @@ function PaymentPageContents() {
 
       const userDocRef = doc(firestore, 'users', user.uid);
       try {
-          await updateDoc(userDocRef, {
+          await setDoc(userDocRef, {
               paymentStatus: 'pending',
               pendingPlan: plan,
-          });
+          }, { merge: true });
           router.push('/payment/confirmation');
       } catch (error) {
           console.error("Error setting payment status:", error);
