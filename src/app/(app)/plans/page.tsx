@@ -4,7 +4,7 @@
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Coins, Gem, X } from 'lucide-react';
+import { Check, Coins, Gem, X, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const plans = [
@@ -34,33 +34,34 @@ const plans = [
     priceDescription: '/ month',
     description: 'The ultimate learning experience with unlimited AI.',
     features: [
-      'Unlimited quiz generation (free)',
-      'Unlimited exam generation (free)',
-      'Access to Classes 7-12',
-      'All subjects unlocked',
-      'All question types',
-      'Full progress & analytics',
-      'Chapter-wise mastery system',
-      'No ads',
-      'Unlimited AI assistant access',
-      'Unlimited Coins',
-      'Handwritten Exam Grading',
-      'Adaptive Quiz Generation',
+        'Unlimited quiz generation',
+        'Unlimited exam generation',
+        'Access to all classes 7-12',
+        'All subjects unlocked',
+        'All question types',
+        'Full progress & analytics',
+        'Chapter-wise mastery system',
+        'No ads',
+        'Unlimited AI assistant access',
+        'Unlimited Coins',
+        'Handwritten Exam Grading',
+        'Adaptive Quiz Generation',
     ],
     isPopular: true,
   },
   {
     name: 'Ultimate Plan',
-    price: 'Coming Soon',
-    priceDescription: '',
-    description: 'The ultimate learning experience with unlimited AI.',
+    icon: ShieldCheck,
+    price: '₹1000',
+    priceDescription: '/ month',
+    description: 'For students who want personalized coaching and every possible advantage.',
     features: [
       'Everything in Premium',
-      'Access to all classes 7-12',
-      'Unlimited AI Assistant access',
-      'Unlimited Coins',
-      'Handwritten Exam Grading',
-      'Adaptive Quiz Generation',
+      'Personalized AI Study Plans',
+      '1-on-1 AI Tutor Sessions',
+      'Priority Support',
+      'Advanced Performance Analytics',
+      'Exclusive Beta Features Access',
     ],
     isPopular: false,
   },
