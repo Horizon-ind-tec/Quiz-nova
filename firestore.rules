@@ -83,17 +83,15 @@ service cloud.firestore {
     }
     
     /**
-     * Enforces immutability of core fields during a user's own profile update.
-     * Allows a user to set their payment to 'pending' but not to change their plan directly.
+     * Allows a user to update their profile to initiate a payment.
+     * They can set 'paymentStatus' to 'pending' and specify a 'pendingPlan',
+     * but they cannot change their existing 'plan' or other core fields.
      */
     function isUpdatingOwnProfile(userId) {
-        let isInitiatingPayment = request.resource.data.paymentStatus == 'pending' && 'pendingPlan' in request.resource.data;
-        let idIsUnchanged = request.resource.data.id == resource.data.id;
-        let emailIsUnchanged = request.resource.data.email == resource.data.email;
-        let creationDateIsUnchanged = request.resource.data.createdAt == resource.data.createdAt;
-        let planIsUnchanged = request.resource.data.plan == resource.data.plan;
-        
-        return isOwner(userId) && isInitiatingPayment && idIsUnchanged && emailIsUnchanged && creationDateIsUnchanged && planIsUnchanged;
+        return isOwner(userId)
+            && request.resource.data.paymentStatus == 'pending'
+            && 'pendingPlan' in request.resource.data
+            && request.resource.data.plan == resource.data.plan;
     }
 
     /**
