@@ -28,7 +28,7 @@ const GenerateCustomQuizInputSchema = z.object({
 export type GenerateCustomQuizInput = z.infer<typeof GenerateCustomQuizInputSchema>;
 
 const MCQSchema = z.object({
-  type: z.literal('mcq').describe("The type of the question: Multiple Choice Question."),
+  type: z.enum(['mcq']).describe("The type of the question: Multiple Choice Question."),
   question: z.string().describe('The quiz question.'),
   options: z.array(z.string()).describe('The multiple-choice options for the question.'),
   correctAnswer: z.string().describe('The correct answer to the question.'),
@@ -36,7 +36,7 @@ const MCQSchema = z.object({
 });
 
 const MatchSchema = z.object({
-  type: z.literal('match').describe("The type of the question: Match the Following."),
+  type: z.enum(['match']).describe("The type of the question: Match the Following."),
   question: z.string().describe('A title or instruction for the matching question (e.g., "Match the capitals to their countries").'),
   pairs: z.array(z.object({
     item: z.string().describe("The item in the first column."),
@@ -46,7 +46,7 @@ const MatchSchema = z.object({
 });
 
 const NumericalSchema = z.object({
-  type: z.literal('numerical').describe("The type of the question: Numerical Answer."),
+  type: z.enum(['numerical']).describe("The type of the question: Numerical Answer."),
   question: z.string().describe('The question that requires a numerical answer.'),
   correctAnswer: z.number().describe('The correct numerical answer.'),
   explanation: z.string().describe('The explanation for how to arrive at the correct answer.'),
