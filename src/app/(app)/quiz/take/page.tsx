@@ -89,7 +89,6 @@ export default function TakeQuizPage() {
 
 
   const handleAnswerSelect = (answer: string) => {
-    // Lock the answer once it's selected.
     if (userAnswers[currentQuestionIndex] !== '') return;
 
     const newAnswers = [...userAnswers];
@@ -165,7 +164,10 @@ export default function TakeQuizPage() {
       }
     });
     
-    return (correctSoFar / totalQuestions) * 100;
+    const answeredCount = userAnswers.filter(a => a !== '').length;
+    if (answeredCount === 0) return 0;
+
+    return (correctSoFar / answeredCount) * 100;
   }, [userAnswers, quiz, totalQuestions]);
 
 
@@ -175,8 +177,8 @@ export default function TakeQuizPage() {
       case 'paused':
         if (!quiz) return null;
         const currentQuestion = quiz.questions[currentQuestionIndex];
-        const isMarked = markedForReview[currentQuestionIndex];
         const isAnswered = userAnswers[currentQuestionIndex] !== '';
+        const userAnswer = userAnswers[currentQuestionIndex];
 
         if (quizState === 'paused') {
           return (
@@ -245,34 +247,67 @@ export default function TakeQuizPage() {
                 <p className="text-base font-medium mb-6">{currentQuestion.question}</p>
 
                 <RadioGroup
-                  value={userAnswers[currentQuestionIndex]}
+                  value={userAnswer}
                   onValueChange={handleAnswerSelect}
                   className="space-y-3"
                   disabled={isAnswered}
                 >
-                  {currentQuestion.options.map((option, index) => (
-                    <FormItem key={index}>
-                      <FormControl>
-                        <RadioGroupItem value={option} id={`option-${index}`} className="sr-only" />
-                      </FormControl>
-                      <FormLabel
-                        htmlFor={`option-${index}`}
-                        className={cn(
-                          "flex items-center space-x-3 space-y-0 rounded-md border p-4 transition-colors",
-                          isAnswered ? "cursor-not-allowed" : "cursor-pointer hover:bg-blue-50",
-                          userAnswers[currentQuestionIndex] === option ? "border-blue-500 bg-blue-50" : "border-input bg-white"
-                        )}
-                      >
-                         <div className={cn(
-                           "w-6 h-6 rounded-full border flex items-center justify-center shrink-0",
-                           userAnswers[currentQuestionIndex] === option ? "border-blue-500 bg-blue-500 text-white" : "border-gray-400 bg-white text-gray-600"
-                           )}>
-                           {String.fromCharCode(65 + index)}
-                         </div>
-                        <span className="font-normal flex-1">{option}</span>
-                      </FormLabel>
-                    </FormItem>
-                  ))}
+                  {currentQuestion.options.map((option, index) => {
+                    const isCorrect = option === currentQuestion.correctAnswer;
+                    const isSelected = option === userAnswer;
+                    
+                    const getOptionStyle = () => {
+                      if (!isAnswered) return "cursor-pointer hover:bg-accent";
+                      if (isSelected) {
+                        return isCorrect ? "border-green-500 bg-green-100 text-green-800" : "border-red-500 bg-red-100 text-red-800";
+                      }
+                      if (isCorrect) {
+                        return "border-green-500 bg-green-100 text-green-800";
+                      }
+                      return "cursor-not-allowed opacity-70";
+                    };
+
+                    const getIndicatorStyle = () => {
+                       if (!isAnswered) return "border-gray-400 bg-white text-gray-600";
+                       if (isSelected) {
+                         return isCorrect ? "border-green-500 bg-green-500 text-white" : "border-red-500 bg-red-500 text-white";
+                       }
+                       if (isCorrect) {
+                         return "border-green-500 bg-green-500 text-white";
+                       }
+                       return "border-gray-400 bg-white text-gray-600";
+                    };
+
+                    return (
+                      <FormItem key={index}>
+                        <FormControl>
+                          <RadioGroupItem value={option} id={`option-${index}`} className="sr-only" />
+                        </FormControl>
+                        <FormLabel
+                          htmlFor={`option-${index}`}
+                          className={cn(
+                            "flex items-center space-x-3 space-y-0 rounded-md border p-4 transition-colors",
+                             getOptionStyle(),
+                          )}
+                        >
+                           <div className={cn(
+                             "w-6 h-6 rounded-full border flex items-center justify-center shrink-0",
+                             getIndicatorStyle()
+                             )}>
+                             {String.fromCharCode(65 + index)}
+                           </div>
+                          <span className="font-normal flex-1">{option}</span>
+                          {isAnswered && (
+                            <>
+                              {isSelected && isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
+                              {isSelected && !isCorrect && <XCircle className="h-5 w-5 text-red-600" />}
+                              {!isSelected && isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
+                            </>
+                          )}
+                        </FormLabel>
+                      </FormItem>
+                    );
+                  })}
                 </RadioGroup>
                 
                 <div className="mt-6 flex items-center justify-start">
@@ -292,12 +327,12 @@ export default function TakeQuizPage() {
                      <Button onClick={handleMarkForReview} variant="outline" className="flex-1 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200">
                          Mark for Review
                       </Button>
-                      <Button onClick={handleClearSelection} variant="outline" className="flex-1 bg-blue-500 text-white hover:bg-blue-600" disabled={isAnswered}>
-                          Clear Selection
+                      <Button onClick={handleClearSelection} variant="outline" className="flex-1 bg-red-100 text-red-700 border-red-200 hover:bg-red-200" disabled={isAnswered}>
+                          Clear
                       </Button>
                   </div>
                   
-                  <Button onClick={handleNextQuestion} variant="outline" disabled={currentQuestionIndex === quiz.questions.length - 1} className="md:flex-1 md:ml-2">
+                  <Button onClick={handleNextQuestion} variant="default" disabled={currentQuestionIndex === quiz.questions.length - 1} className="md:flex-1 md:ml-2">
                      <span className="hidden md:inline">Next</span>
                     <ArrowRight className="h-5 w-5 md:ml-2" />
                   </Button>
