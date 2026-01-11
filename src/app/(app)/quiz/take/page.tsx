@@ -90,7 +90,8 @@ export default function TakeQuizPage() {
 
 
   const handleAnswerSelect = (answer: string) => {
-    if (userAnswers[currentQuestionIndex] !== '') return;
+    const isAnswered = userAnswers[currentQuestionIndex] !== '';
+    if (isAnswered) return;
 
     const newAnswers = [...userAnswers];
     newAnswers[currentQuestionIndex] = answer;
@@ -105,7 +106,7 @@ export default function TakeQuizPage() {
   
   const handlePrevQuestion = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
     }
   };
   
@@ -251,7 +252,6 @@ export default function TakeQuizPage() {
                   value={userAnswer}
                   onValueChange={handleAnswerSelect}
                   className="space-y-3"
-                  disabled={isAnswered}
                 >
                   {currentQuestion.options.map((option, index) => {
                     const isCorrect = option === currentQuestion.correctAnswer;
@@ -432,5 +432,3 @@ export default function TakeQuizPage() {
     </div>
   );
 }
-
-    
