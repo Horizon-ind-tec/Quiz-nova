@@ -1,9 +1,10 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { PlusCircle, BrainCircuit, Gem, BookUser } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { PlusCircle, BrainCircuit, Gem, BookUser, PartyPopper, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Header } from '@/components/header';
@@ -14,14 +15,19 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 import { collection, query, where } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 type ViewType = 'quiz' | 'exam';
 
-export default function Dashboard() {
+function DashboardContent() {
   const [view, setView] = useState<ViewType>('quiz');
   const { user, loading } = useUser();
   const router = useRouter();
   const firestore = useFirestore();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
+
 
   useEffect(() => {
     if (!loading && !user) {
@@ -29,6 +35,29 @@ export default function Dashboard() {
     }
   }, [user, loading, router]);
   
+  useEffect(() => {
+    const status = searchParams.get('status');
+    if (status === 'success') {
+      const plan = searchParams.get('plan');
+      toast({
+        title: 'Plan Activated!',
+        description: `Your ${plan} plan is now active. Enjoy your new features!`,
+        duration: 5000,
+      });
+      // Clean the URL
+      router.replace('/dashboard', { scroll: false });
+    } else if (status === 'error') {
+       toast({
+        variant: 'destructive',
+        title: 'Activation Failed',
+        description: 'There was an issue activating your plan. Please contact support.',
+        duration: 5000,
+      });
+      // Clean the URL
+       router.replace('/dashboard', { scroll: false });
+    }
+  }, [searchParams, router, toast]);
+
   const quizHistoryQuery = useMemoFirebase(
     () =>
       firestore && user
@@ -137,4 +166,17 @@ export default function Dashboard() {
       </main>
     </div>
   );
+}
+
+
+export default function Dashboard() {
+    return (
+        <Suspense fallback={
+             <div className="flex h-screen w-full items-center justify-center">
+                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            </div>
+        }>
+            <DashboardContent />
+        </Suspense>
+    )
 }

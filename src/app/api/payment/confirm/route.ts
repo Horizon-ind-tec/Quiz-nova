@@ -1,24 +1,22 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp } from 'firebase-admin/app';
+import { initializeApp, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import { getAuth as getAdminAuth } from 'firebase-admin/auth';
 import { firebaseConfig } from '@/firebase/config';
-import { initFirestore } from 'firebase-admin/firestore';
+import { notifyAdminOfPayment } from '@/ai/flows/notify-admin-of-payment';
 
-// Initialize Firebase Admin SDK
-// This ensures we only initialize it once.
-const adminApp = initializeApp({
-    credential: {
-        projectId: firebaseConfig.projectId,
-        clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL!,
-        privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY!.replace(/\\n/g, '\n'),
-    }
-}, 'payment-confirmation');
+// Ensure Firebase Admin is initialized only once
+if (!getApps().some(app => app.name === 'payment-confirmation')) {
+    initializeApp({
+        credential: {
+            projectId: firebaseConfig.projectId,
+            clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL!,
+            privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY!.replace(/\\n/g, '\n'),
+        }
+    }, 'payment-confirmation');
+}
 
-const adminDb = getFirestore(adminApp);
-const adminAuth = getAdminAuth(adminApp);
-
+const adminDb = getFirestore('payment-confirmation');
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -43,11 +41,21 @@ export async function GET(request: NextRequest) {
     if (action === 'approve') {
         if (userData.pendingPlan) {
             await userRef.update({
-                plan: userData.pendingPlan,
                 paymentStatus: 'confirmed',
-                pendingPlan: null,
             });
-            message = `Successfully approved plan upgrade for ${userData.name}.`;
+            
+            // Trigger the notification flow to send the activation email to the user
+            await notifyAdminOfPayment({
+                userId: userId,
+                userName: userData.name,
+                userEmail: userData.email,
+                planName: userData.pendingPlan,
+                planPrice: userData.pendingPlan === 'premium' ? '₹500' : '₹1000',
+                transactionId: `Nova${userData.pendingPlan === 'premium' ? '+' : '$'}${userId.slice(0,9).toLowerCase()}`,
+                isApproval: true,
+            });
+
+            message = `Successfully approved plan upgrade for ${userData.name}. An activation email has been sent to them.`;
         } else {
             message = `User ${userData.name} had no pending plan to approve.`;
         }
@@ -68,9 +76,8 @@ export async function GET(request: NextRequest) {
                 </div>
             </body>
         </html>`, 
-        { headers: { 'Content-Type': 'text/html' } 
-    });
-
+        { headers: { 'Content-Type': 'text/html' } }
+    );
 
   } catch (error) {
     console.error('Error processing payment confirmation:', error);
@@ -78,5 +85,3 @@ export async function GET(request: NextRequest) {
     return new NextResponse(`<html><body><h1>Error</h1><p>${errorMessage}</p></body></html>`, { status: 500, headers: { 'Content-Type': 'text/html' } });
   }
 }
-
-    

@@ -4,13 +4,15 @@
 import { useEffect } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import { collection, query, where, doc } from 'firebase/firestore';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Loader2, UserCheck, ShieldQuestion } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Header } from '@/components/header';
+import { notifyAdminOfPaymentAction } from '@/app/actions';
 
 const ADMIN_EMAIL = 'wizofclassknowledge@gmail.com';
 
@@ -25,7 +27,7 @@ export default function ConfirmPaymentsPage() {
     [firestore]
   );
   
-  const { data: pendingUsers, loading: pendingUsersLoading, error } = useCollection<UserProfile>(pendingUsersQuery);
+  const { data: pendingUsers, isLoading: pendingUsersLoading, error } = useCollection<UserProfile>(pendingUsersQuery);
 
   useEffect(() => {
     if (!userLoading && (!user || user.email !== ADMIN_EMAIL)) {
@@ -36,35 +38,39 @@ export default function ConfirmPaymentsPage() {
   const handlePaymentAction = async (targetUser: UserProfile, action: 'approve' | 'deny') => {
     if (!firestore) return;
     
-    const batch = writeBatch(firestore);
     const userRef = doc(firestore, 'users', targetUser.id);
     
     if (action === 'approve') {
-       batch.update(userRef, {
-            plan: targetUser.pendingPlan,
-            paymentStatus: 'confirmed',
-            pendingPlan: null
-        });
-    } else { // deny
-        batch.update(userRef, {
-            paymentStatus: null,
-            pendingPlan: null
-        });
-    }
+       if (targetUser.pendingPlan) {
+            updateDocumentNonBlocking(userRef, {
+                paymentStatus: 'confirmed',
+            });
 
-    try {
-        await batch.commit();
-        toast({
-            title: `Payment ${action === 'approve' ? 'Approved' : 'Denied'}`,
-            description: `The plan for ${targetUser.name} has been updated.`,
+             // This will now send the confirmation email to the user.
+            await notifyAdminOfPaymentAction({
+                userId: targetUser.id,
+                userName: targetUser.name,
+                userEmail: targetUser.email,
+                planName: targetUser.pendingPlan,
+                planPrice: targetUser.pendingPlan === 'premium' ? '₹500' : '₹1000',
+                transactionId: `Nova${targetUser.pendingPlan === 'premium' ? '+' : '$'}${targetUser.id.slice(0,9).toLowerCase()}`,
+                isApproval: true, // Flag this as an approval action
+            });
+
+            toast({
+                title: 'Payment Approved',
+                description: `A confirmation email has been sent to ${targetUser.name}.`,
+            });
+       }
+    } else { // deny
+        updateDocumentNonBlocking(userRef, {
+            paymentStatus: null,
+            pendingPlan: null,
         });
-    } catch(err) {
-        console.error("Error updating payment status:", err);
-        toast({
-            variant: 'destructive',
-            title: 'Update Failed',
-            description: (err as Error).message || 'Could not update payment status.',
-        })
+         toast({
+            title: 'Payment Denied',
+            description: `The plan for ${targetUser.name} has been rejected.`,
+        });
     }
   };
 
@@ -118,5 +124,3 @@ export default function ConfirmPaymentsPage() {
     </div>
   );
 }
-
-    

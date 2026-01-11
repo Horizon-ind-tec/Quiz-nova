@@ -1,3 +1,4 @@
+
 'use client';
 
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -37,7 +38,7 @@ export function Header({ title }: HeaderProps) {
         if (!userProfile) return null;
 
         if (userProfile.plan === 'premium') {
-            return <Gem className="h-4 w-4 text-yellow-500" />;
+            return <Gem className="h-4 w-4 text-yellow-400" />;
         }
         if (userProfile.plan === 'ultimate') {
             return <ShieldCheck className="h-4 w-4 text-blue-500" />;

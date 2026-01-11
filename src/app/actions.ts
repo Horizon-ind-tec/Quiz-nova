@@ -16,7 +16,7 @@ import {
   getPerformanceReport,
   GetPerformanceReportOutput
 } from '@/ai/flows/get-performance-report';
-import { notifyAdminOfPayment, NotifyAdminOfPaymentInput } from '@/ai/flows/notify-admin-of-payment';
+import { notifyAdminOfPayment, type NotifyAdminOfPaymentInput } from '@/ai/flows/notify-admin-of-payment';
 
 
 export async function generateQuizAction(
@@ -61,5 +61,3 @@ export async function getPerformanceReportAction(
 export async function notifyAdminOfPaymentAction(input: NotifyAdminOfPaymentInput): Promise<void> {
     await notifyAdminOfPayment(input);
 }
-
-    
