@@ -2,14 +2,14 @@
 
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useState, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Copy, Loader2, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Copy, Loader2, ShieldCheck, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 
@@ -37,10 +37,12 @@ function PaymentPageContents() {
   const { toast } = useToast();
   const { user, loading } = useUser();
   const plan = searchParams.get('plan') as keyof typeof plansDetails;
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedPlan = plansDetails[plan] || { name: 'Plan', price: '₹---', amount: '0' };
   
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=${UPI_ID}&pn=QuizNova&am=${selectedPlan.amount}&cu=INR`;
+  const initialQrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=${UPI_ID}&pn=QuizNova&am=${selectedPlan.amount}&cu=INR`;
+  const [qrCodeUrl, setQrCodeUrl] = useState(initialQrCodeUrl);
   
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -48,6 +50,27 @@ function PaymentPageContents() {
       title: 'Copied to clipboard!',
       description: text,
     });
+  };
+
+  const handleQrCodeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            if (e.target?.result) {
+                setQrCodeUrl(e.target.result as string);
+                toast({
+                    title: 'QR Code Updated',
+                    description: 'The QR code has been changed successfully.',
+                });
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+  };
+
+  const handleChangeQrClick = () => {
+    fileInputRef.current?.click();
   };
 
   if (loading) {
@@ -90,12 +113,22 @@ function PaymentPageContents() {
                           alt="UPI QR Code"
                           width={200}
                           height={200}
+                          key={qrCodeUrl}
                         />
                         {isUserAdmin && (
-                            <Button variant="outline">
-                                <ShieldCheck className="mr-2 h-4 w-4" />
-                                Verify Payment
-                            </Button>
+                            <>
+                                <Button variant="outline" onClick={handleChangeQrClick}>
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    Change QR Code
+                                </Button>
+                                <input
+                                  type="file"
+                                  ref={fileInputRef}
+                                  onChange={handleQrCodeChange}
+                                  className="hidden"
+                                  accept="image/png, image/jpeg, image/gif"
+                                />
+                            </>
                         )}
                     </div>
                      <p className="my-4 text-muted-foreground">Or pay using the UPI ID below:</p>
