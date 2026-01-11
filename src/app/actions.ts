@@ -16,12 +16,18 @@ import {
   getPerformanceReport,
   GetPerformanceReportOutput
 } from '@/ai/flows/get-performance-report';
+import { notifyAdminOfPayment, NotifyAdminOfPaymentInput } from '@/ai/flows/notify-admin-of-payment';
 
 
 export async function generateQuizAction(
   input: Omit<GenerateCustomQuizInput, 'subCategory'> & { subCategory?: string }
 ): Promise<GenerateCustomQuizOutput> {
-  return await generateCustomQuiz(input);
+  // The AI prompt expects a single string for subCategory, so we join the array.
+  const processedInput: GenerateCustomQuizInput = {
+    ...input,
+    subCategory: Array.isArray(input.subCategories) ? input.subCategories.join(', ') : undefined,
+  };
+  return await generateCustomQuiz(processedInput);
 }
 
 
@@ -54,4 +60,9 @@ export async function getPerformanceReportAction(
       completedAt: h.completedAt,
   }));
   return await getPerformanceReport({ ...input, quizHistory: mappedHistory });
+}
+
+
+export async function notifyAdminOfPaymentAction(input: NotifyAdminOfPaymentInput): Promise<void> {
+    await notifyAdminOfPayment(input);
 }
