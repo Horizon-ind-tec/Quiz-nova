@@ -21,11 +21,12 @@ const NotifyAdminOfPaymentInputSchema = z.object({
   userEmail: z.string().email().describe("The email of the user."),
   planName: z.string().describe("The name of the plan the user is purchasing (e.g., 'Premium Plan')."),
   planPrice: z.string().describe("The price of the plan (e.g., '₹500')."),
+  transactionId: z.string().describe("The unique ID for this transaction."),
 });
 export type NotifyAdminOfPaymentInput = z.infer<typeof NotifyAdminOfPaymentInputSchema>;
 
 export async function notifyAdminOfPayment(input: NotifyAdminOfPaymentInput): Promise<void> {
-  return notifyAdminOfPaymentFlow(input);
+  await notifyAdminOfPaymentFlow(input);
 }
 
 const notifyAdminOfPaymentFlow = ai.defineFlow(
@@ -35,7 +36,7 @@ const notifyAdminOfPaymentFlow = ai.defineFlow(
     outputSchema: z.void(),
   },
   async (input) => {
-    const { userName, userEmail, planName, planPrice } = input;
+    const { userName, userEmail, planName, planPrice, transactionId } = input;
 
     const subject = `New Payment on QuizNova: ${userName}`;
     const htmlBody = `
@@ -43,6 +44,10 @@ const notifyAdminOfPaymentFlow = ai.defineFlow(
         <h2 style="color: #333;">Payment Confirmation</h2>
         <p>A user has successfully upgraded their plan.</p>
         <hr style="border: 0; border-top: 1px solid #eee;" />
+        <h3>Transaction Details:</h3>
+        <ul>
+            <li><strong>Transaction ID:</strong> ${transactionId}</li>
+        </ul>
         <h3>User Details:</h3>
         <ul>
           <li><strong>Name:</strong> ${userName}</li>

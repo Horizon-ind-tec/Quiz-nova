@@ -8,7 +8,7 @@ import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Copy, Loader2, Upload } from 'lucide-react';
+import { ArrowLeft, Copy, Loader2, Upload, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -56,12 +56,18 @@ function PaymentPageContents() {
   const [qrCodeUrl, setQrCodeUrl] = useState(defaultQrCodeUrl);
   const [isUploading, setIsUploading] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [transactionId, setTransactionId] = useState('');
+
   
   useEffect(() => {
     if (!userLoading && !user) {
       router.push('/login');
     }
-  }, [user, userLoading, router]);
+     if (user && plan) {
+      const uniqueId = `NOVA-${plan.slice(0, 3).toUpperCase()}-${user.uid.slice(0, 8).toUpperCase()}`;
+      setTransactionId(uniqueId);
+    }
+  }, [user, userLoading, router, plan]);
 
   useEffect(() => {
     if (upiSettings) {
@@ -154,6 +160,7 @@ function PaymentPageContents() {
         userEmail: user.email || 'N/A',
         planName: selectedPlan.name,
         planPrice: selectedPlan.price,
+        transactionId: transactionId,
       }).catch(err => {
          // Log the error but don't block the user flow
          console.error("Failed to send admin notification:", err);
@@ -277,6 +284,28 @@ function PaymentPageContents() {
                   </div>
                 </TabsContent>
               </Tabs>
+
+               {transactionId && (
+                <div className="mt-8 border-t pt-6">
+                  <div className="flex flex-col items-center text-center">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-primary" />
+                      Your Transaction ID
+                    </h3>
+                    <p className="text-muted-foreground text-sm mt-1 mb-3">
+                      Please use this ID in any communication regarding this payment.
+                    </p>
+                    <div 
+                      className="flex items-center gap-2 rounded-lg bg-muted p-3 cursor-pointer hover:bg-accent"
+                      onClick={() => copyToClipboard(transactionId)}
+                    >
+                      <span className="font-mono text-lg">{transactionId}</span>
+                      <Copy className="h-4 w-4" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <Button className="w-full mt-8" onClick={handlePaymentConfirmation} disabled={isConfirming}>
                 {isConfirming ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 {isConfirming ? 'Processing...' : 'I have completed the payment'}
