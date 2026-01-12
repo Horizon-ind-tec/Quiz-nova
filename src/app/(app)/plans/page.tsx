@@ -105,14 +105,14 @@ export default function PlansPage() {
                 </div>
                 <ul className="space-y-3">
                   {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-3">
-                      <Check className="h-5 w-5 text-green-500" />
+                    <li key={feature} className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-green-500 mt-1 shrink-0" />
                       <span className="text-muted-foreground">{feature}</span>
                     </li>
                   ))}
                   {plan.exclusions && plan.exclusions.map((exclusion) => (
-                     <li key={exclusion} className="flex items-center gap-3">
-                        <X className="h-5 w-5 text-red-500" />
+                     <li key={exclusion} className="flex items-start gap-3">
+                        <X className="h-5 w-5 text-red-500 mt-1 shrink-0" />
                         <span className="text-muted-foreground">{exclusion}</span>
                      </li>
                   ))}
@@ -143,7 +143,7 @@ export default function PlansPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid grid-cols-3 gap-4 text-center">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
                         <div className="p-4 rounded-lg bg-muted">
                             <p className="font-semibold">Free Plan</p>
                             <p className="text-sm text-muted-foreground">5,000 coins (1 day)</p>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
@@ -49,9 +50,9 @@ export default function PerformancePage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Subject</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Class</TableHead>
-                    <TableHead>Board</TableHead>
+                    <TableHead className="hidden sm:table-cell">Category</TableHead>
+                    <TableHead className="hidden md:table-cell">Class</TableHead>
+                    <TableHead className="hidden lg:table-cell">Board</TableHead>
                     <TableHead>Difficulty</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead className="text-right">Score</TableHead>
@@ -61,11 +62,11 @@ export default function PerformancePage() {
                   {sortedHistory.map((attempt) => (
                     <TableRow key={attempt.id}>
                       <TableCell className="font-medium">{attempt.subject}</TableCell>
-                      <TableCell>{attempt.subCategory || '-'}</TableCell>
-                      <TableCell>{attempt.class}</TableCell>
-                      <TableCell>{attempt.board}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{attempt.subCategory || '-'}</TableCell>
+                      <TableCell className="hidden md:table-cell">{attempt.class}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{attempt.board}</TableCell>
                       <TableCell className="capitalize">{attempt.difficulty}</TableCell>
-                      <TableCell>{format(new Date(attempt.completedAt), 'PPp')}</TableCell>
+                      <TableCell>{format(new Date(attempt.completedAt), 'PP')}</TableCell>
                       <TableCell className="text-right">
                         <Badge variant={getScoreVariant(attempt.score)}>{attempt.score}%</Badge>
                       </TableCell>

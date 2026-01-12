@@ -85,7 +85,7 @@ function DashboardContent() {
             <h2 className="text-3xl font-bold tracking-tight">Welcome back, {user.displayName || 'Student'}!</h2>
             <p className="text-muted-foreground">Your personalized learning hub.</p>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
              <Button asChild className="bg-blue-600 hover:bg-blue-700">
                 <Link href="/report">
                     <BrainCircuit className="mr-2 h-4 w-4" />

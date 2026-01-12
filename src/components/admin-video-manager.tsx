@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -228,9 +229,9 @@ export function AdminVideoManager() {
          ): (
             <div className="space-y-2">
                 {videos && videos.length > 0 ? videos.map(video => (
-                    <div key={video.id} className="flex items-center justify-between rounded-md border p-3">
+                    <div key={video.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between rounded-md border p-3 gap-2">
                         <div className="flex items-center gap-3">
-                            <Youtube className="h-6 w-6 text-red-500" />
+                            <Youtube className="h-6 w-6 text-red-500 flex-shrink-0" />
                             <div>
                                 <p className="font-semibold">{video.title}</p>
                                 <p className="text-sm text-muted-foreground">
@@ -238,7 +239,7 @@ export function AdminVideoManager() {
                                 </p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 self-end sm:self-center">
                             <Button variant="ghost" size="icon" onClick={() => { setEditingVideo(video); setIsDialogOpen(true); }}>
                                 <Edit className="h-4 w-4" />
                             </Button>
