@@ -19,25 +19,29 @@ import {
 } from '@/ai/flows/get-performance-report';
 import { notifyAdminOfPayment, type NotifyAdminOfPaymentInput } from '@/ai/flows/notify-admin-of-payment';
 
-import { initializeApp, getApps, App, applicationDefault } from 'firebase-admin/app';
+import { initializeApp, getApps, App, applicationDefault, getApp as getAdminApp } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { firebaseConfig } from '@/firebase/config';
 
 let adminDb: Firestore;
 let adminApp: App;
 
-// Initialize Firebase Admin SDK only if env vars are present
-if (process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
-  if (!getApps().some(app => app.name === 'actions')) {
-      adminApp = initializeApp({
-          credential: applicationDefault(),
-          projectId: firebaseConfig.projectId,
-      }, 'actions');
-  } else {
-      adminApp = getApps().find(app => app.name === 'actions')!;
-  }
-  adminDb = getFirestore(adminApp);
+function initializeAdminSDK() {
+    if (process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
+        if (!getApps().some(app => app.name === 'admin')) {
+            adminApp = initializeApp({
+                credential: applicationDefault(),
+                projectId: firebaseConfig.projectId,
+            }, 'admin');
+        } else {
+            adminApp = getAdminApp('admin');
+        }
+        adminDb = getFirestore(adminApp);
+    }
 }
+
+// Call initialization once
+initializeAdminSDK();
 
 
 export async function generateQuizAction(

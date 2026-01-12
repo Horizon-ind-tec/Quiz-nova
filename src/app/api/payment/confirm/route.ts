@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, App, applicationDefault } from 'firebase-admin/app';
+import { initializeApp, getApps, App, applicationDefault, getApp as getAdminApp } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { firebaseConfig } from '@/firebase/config';
 import { notifyAdminOfPayment } from '@/ai/flows/notify-admin-of-payment';
@@ -8,17 +8,23 @@ require('dotenv').config({ path: require('path').resolve(process.cwd(), '.env') 
 
 
 let adminDb: Firestore;
+let adminApp: App;
 
-// Ensure Firebase Admin is initialized only once
-if (process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
-    if (!getApps().some(app => app.name === 'payment-confirmation')) {
-        initializeApp({
-            credential: applicationDefault(),
-            projectId: firebaseConfig.projectId,
-        }, 'payment-confirmation');
+function initializeAdminSDK() {
+    if (process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
+        if (!getApps().some(app => app.name === 'admin-confirm')) {
+            adminApp = initializeApp({
+                credential: applicationDefault(),
+                projectId: firebaseConfig.projectId,
+            }, 'admin-confirm');
+        } else {
+            adminApp = getAdminApp('admin-confirm');
+        }
+        adminDb = getFirestore(adminApp);
     }
-    adminDb = getFirestore(getApps().find(app => app.name === 'payment-confirmation'));
 }
+
+initializeAdminSDK();
 
 
 export async function GET(request: NextRequest) {
