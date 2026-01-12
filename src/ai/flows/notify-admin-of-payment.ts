@@ -49,9 +49,10 @@ const notifyAdminOfPaymentFlow = ai.defineFlow(
       const htmlBody = `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; text-align: center; padding: 20px;">
           <h2 style="color: #4A90E2;">Payment Verified!</h2>
-          <p>Hello ${userName},</p>
-          <p>Your payment for the <strong>${planName}</strong> has been successfully verified by our team.</p>
-          <p>Click the button below to activate your new plan and unlock all your new features.</p>
+          <p>Hey ${userName} (User ID: ${userId}),</p>
+          <p>We have successfully approved your payment for the <strong>${planName}</strong>.</p>
+          <p>You will be getting your services from now until the validity end date.</p>
+          <p>Please click the button below to activate your new plan and unlock all your new features.</p>
           <div style="margin: 30px 0;">
             <a href="${activationUrl}" style="background-color: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px;">Activate My Plan</a>
           </div>
