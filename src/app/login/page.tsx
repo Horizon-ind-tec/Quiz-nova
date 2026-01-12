@@ -22,7 +22,7 @@ const formSchema = z.object({
   password: z.string().min(1, 'Password is required.'),
 });
 
-const ALLOWED_DOMAINS = ['nova.com', 'edito.vom'];
+const ALLOWED_DOMAINS = ['nova.com', 'edito.com'];
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -44,7 +44,7 @@ export default function LoginPage() {
         toast({
             variant: 'destructive',
             title: 'Login Failed',
-            description: 'Only users with a @nova.com or @edito.vom email can log in.',
+            description: 'Only users with a @nova.com or @edito.com email can log in.',
         });
         setIsLoading(false);
         return;
@@ -76,7 +76,7 @@ export default function LoginPage() {
         toast({
             variant: 'destructive',
             title: 'Sign-In Failed',
-            description: 'Only users with a @nova.com or @edito.vom email can sign in.',
+            description: 'Only users with a @nova.com or @edito.com email can sign in.',
         });
         setIsGoogleLoading(false);
         return;

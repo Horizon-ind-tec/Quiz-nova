@@ -24,7 +24,7 @@ const formSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters long.'),
 });
 
-const ALLOWED_DOMAINS = ['nova.com', 'edito.vom'];
+const ALLOWED_DOMAINS = ['nova.com', 'edito.com'];
 
 export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -59,7 +59,7 @@ export default function SignUpPage() {
         toast({
             variant: 'destructive',
             title: 'Sign Up Failed',
-            description: 'Only users with a @nova.com or @edito.vom email can sign up.',
+            description: 'Only users with a @nova.com or @edito.com email can sign up.',
         });
         setIsLoading(false);
         return;
@@ -95,7 +95,7 @@ export default function SignUpPage() {
         toast({
             variant: 'destructive',
             title: 'Sign-In Failed',
-            description: 'Only users with a @nova.com or @edito.vom email can sign up.',
+            description: 'Only users with a @nova.com or @edito.com email can sign up.',
         });
         setIsGoogleLoading(false);
         return;
