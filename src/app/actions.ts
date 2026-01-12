@@ -1,5 +1,6 @@
 
 'use server';
+require('dotenv').config({ path: './.env' });
 
 import {
   generateCustomQuiz,

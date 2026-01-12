@@ -4,6 +4,8 @@ import { initializeApp, getApps, App } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { firebaseConfig } from '@/firebase/config';
 import { notifyAdminOfPayment } from '@/ai/flows/notify-admin-of-payment';
+require('dotenv').config({ path: './.env' });
+
 
 let adminDb: Firestore;
 

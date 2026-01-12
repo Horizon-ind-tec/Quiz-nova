@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { initializeApp, getApps, App } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { firebaseConfig } from '@/firebase/config';
+require('dotenv').config({ path: './.env' });
+
 
 let adminDb: Firestore;
 
