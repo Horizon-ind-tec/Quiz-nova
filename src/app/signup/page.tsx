@@ -24,6 +24,8 @@ const formSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters long.'),
 });
 
+const ALLOWED_DOMAINS = ['nova.com', 'edito.vom'];
+
 export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -52,6 +54,17 @@ export default function SignUpPage() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
+    const domain = values.email.split('@')[1];
+    if (!ALLOWED_DOMAINS.includes(domain)) {
+        toast({
+            variant: 'destructive',
+            title: 'Sign Up Failed',
+            description: 'Only users with a @nova.com or @edito.vom email can sign up.',
+        });
+        setIsLoading(false);
+        return;
+    }
+
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       await updateProfile(userCredential.user, { displayName: values.name });
@@ -72,6 +85,21 @@ export default function SignUpPage() {
     try {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
+      
+      const email = userCredential.user.email;
+      const domain = email?.split('@')[1];
+
+      if (!email || !domain || !ALLOWED_DOMAINS.includes(domain)) {
+        // If domain is not allowed, delete the created user and show an error.
+        await userCredential.user.delete();
+        toast({
+            variant: 'destructive',
+            title: 'Sign-In Failed',
+            description: 'Only users with a @nova.com or @edito.vom email can sign up.',
+        });
+        setIsGoogleLoading(false);
+        return;
+      }
       
       const userDocRef = doc(firestore, 'users', userCredential.user.uid);
        await setDoc(userDocRef, {

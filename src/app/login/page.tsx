@@ -14,12 +14,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 const formSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
   password: z.string().min(1, 'Password is required.'),
 });
+
+const ALLOWED_DOMAINS = ['nova.com', 'edito.vom'];
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +30,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   const router = useRouter();
   const auth = useAuth();
+  const firestore = useFirestore();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -35,6 +39,16 @@ export default function LoginPage() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
+    const domain = values.email.split('@')[1];
+    if (!ALLOWED_DOMAINS.includes(domain)) {
+        toast({
+            variant: 'destructive',
+            title: 'Login Failed',
+            description: 'Only users with a @nova.com or @edito.vom email can log in.',
+        });
+        setIsLoading(false);
+        return;
+    }
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       router.push('/dashboard');
@@ -52,7 +66,31 @@ export default function LoginPage() {
     setIsGoogleLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const userCredential = await signInWithPopup(auth, provider);
+
+      const email = userCredential.user.email;
+      const domain = email?.split('@')[1];
+
+      if (!email || !domain || !ALLOWED_DOMAINS.includes(domain)) {
+        await userCredential.user.delete();
+        toast({
+            variant: 'destructive',
+            title: 'Sign-In Failed',
+            description: 'Only users with a @nova.com or @edito.vom email can sign in.',
+        });
+        setIsGoogleLoading(false);
+        return;
+      }
+      
+      const userDocRef = doc(firestore, 'users', userCredential.user.uid);
+       await setDoc(userDocRef, {
+        id: userCredential.user.uid,
+        email: userCredential.user.email,
+        name: userCredential.user.displayName || 'Google User',
+        createdAt: new Date().toISOString(),
+        plan: 'free',
+      }, { merge: true });
+      
       router.push('/dashboard');
     } catch (error: any) {
       toast({
