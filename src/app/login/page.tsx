@@ -22,8 +22,6 @@ const formSchema = z.object({
   password: z.string().min(1, 'Password is required.'),
 });
 
-const ALLOWED_DOMAINS = ['nova.com', 'edito.com'];
-
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -39,16 +37,6 @@ export default function LoginPage() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
-    const domain = values.email.split('@')[1];
-    if (!ALLOWED_DOMAINS.includes(domain)) {
-        toast({
-            variant: 'destructive',
-            title: 'Login Failed',
-            description: 'Only users with a @nova.com or @edito.com email can log in.',
-        });
-        setIsLoading(false);
-        return;
-    }
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       router.push('/dashboard');
@@ -64,24 +52,19 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
+    if (!auth || !firestore) {
+        toast({
+            variant: 'destructive',
+            title: 'Google Sign-In Failed',
+            description: 'Firebase not initialized. Please try again later.',
+        });
+        setIsGoogleLoading(false);
+        return;
+    }
     try {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
 
-      const email = userCredential.user.email;
-      const domain = email?.split('@')[1];
-
-      if (!email || !domain || !ALLOWED_DOMAINS.includes(domain)) {
-        await userCredential.user.delete();
-        toast({
-            variant: 'destructive',
-            title: 'Sign-In Failed',
-            description: 'Only users with a @nova.com or @edito.com email can sign in.',
-        });
-        setIsGoogleLoading(false);
-        return;
-      }
-      
       const userDocRef = doc(firestore, 'users', userCredential.user.uid);
        await setDoc(userDocRef, {
         id: userCredential.user.uid,
