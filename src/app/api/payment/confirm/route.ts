@@ -1,10 +1,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, App } from 'firebase-admin/app';
+import { initializeApp, getApps, App, applicationDefault } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { firebaseConfig } from '@/firebase/config';
 import { notifyAdminOfPayment } from '@/ai/flows/notify-admin-of-payment';
-require('dotenv').config({ path: './.env' });
+require('dotenv').config({ path: require('path').resolve(process.cwd(), '.env') });
 
 
 let adminDb: Firestore;
@@ -13,11 +13,8 @@ let adminDb: Firestore;
 if (process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
     if (!getApps().some(app => app.name === 'payment-confirmation')) {
         initializeApp({
-            credential: {
-                projectId: firebaseConfig.projectId,
-                clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-                privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, '\n'),
-            }
+            credential: applicationDefault(),
+            projectId: firebaseConfig.projectId,
         }, 'payment-confirmation');
     }
     adminDb = getFirestore(getApps().find(app => app.name === 'payment-confirmation'));

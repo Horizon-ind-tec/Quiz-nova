@@ -1,6 +1,6 @@
 
 'use server';
-require('dotenv').config({ path: './.env' });
+require('dotenv').config({ path: require('path').resolve(process.cwd(), '.env') });
 
 import {
   generateCustomQuiz,
@@ -19,7 +19,7 @@ import {
 } from '@/ai/flows/get-performance-report';
 import { notifyAdminOfPayment, type NotifyAdminOfPaymentInput } from '@/ai/flows/notify-admin-of-payment';
 
-import { initializeApp, getApps, App } from 'firebase-admin/app';
+import { initializeApp, getApps, App, applicationDefault } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { firebaseConfig } from '@/firebase/config';
 
@@ -30,11 +30,8 @@ let adminApp: App;
 if (process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
   if (!getApps().some(app => app.name === 'actions')) {
       adminApp = initializeApp({
-          credential: {
-              projectId: firebaseConfig.projectId,
-              clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-              privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, '\n'),
-          }
+          credential: applicationDefault(),
+          projectId: firebaseConfig.projectId,
       }, 'actions');
   } else {
       adminApp = getApps().find(app => app.name === 'actions')!;
