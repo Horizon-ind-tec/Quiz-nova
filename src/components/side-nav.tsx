@@ -50,6 +50,7 @@ export function SideNav() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
+              size="lg"
               isActive={isActive('/dashboard')}
               tooltip={{ children: 'Dashboard' }}
             >
@@ -62,6 +63,7 @@ export function SideNav() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
+              size="lg"
               isActive={isActive('/quiz')}
               tooltip={{ children: 'New Quiz' }}
             >
@@ -74,6 +76,7 @@ export function SideNav() {
            <SidebarMenuItem>
             <SidebarMenuButton
               asChild
+              size="lg"
               isActive={isActive('/report')}
               tooltip={{ children: 'AI Report' }}
             >
@@ -86,6 +89,7 @@ export function SideNav() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
+              size="lg"
               isActive={isActive('/coaching')}
               tooltip={{ children: 'Coaching' }}
             >
@@ -98,6 +102,7 @@ export function SideNav() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
+              size="lg"
               isActive={isActive('/performance')}
               tooltip={{ children: 'Performance' }}
             >
@@ -110,6 +115,7 @@ export function SideNav() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
+              size="lg"
               isActive={isActive('/plans')}
               tooltip={{ children: 'Upgrade' }}
             >
@@ -123,6 +129,7 @@ export function SideNav() {
             <SidebarMenuItem>
                     <SidebarMenuButton
                     asChild
+                    size="lg"
                     isActive={isActive('/admin/confirm-payments')}
                     tooltip={{ children: 'Admin Panel' }}
                     >

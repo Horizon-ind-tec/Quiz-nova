@@ -260,25 +260,25 @@ function PaymentPageContents() {
                   <div className="space-y-4">
                     <p className="text-muted-foreground">Transfer the amount to the following bank account:</p>
                     <div className="rounded-lg border p-4 space-y-3">
-                      <div className="flex justify-between items-center">
+                      <div className="flex flex-col sm:flex-row justify-between sm:items-center">
                         <span className="text-muted-foreground">Account Name:</span>
                         <span className="font-semibold">QuizNova EduTech</span>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex flex-col sm:flex-row justify-between sm:items-center">
                         <span className="text-muted-foreground">Account Number:</span>
                         <div className="flex items-center gap-2 cursor-pointer" onClick={() => copyToClipboard('123456789012')}>
                           <span className="font-mono">123456789012</span>
                           <Copy className="h-4 w-4" />
                         </div>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex flex-col sm:flex-row justify-between sm:items-center">
                         <span className="text-muted-foreground">IFSC Code:</span>
                         <div className="flex items-center gap-2 cursor-pointer" onClick={() => copyToClipboard('QUIZ0001234')}>
                           <span className="font-mono">QUIZ0001234</span>
                           <Copy className="h-4 w-4" />
                         </div>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex flex-col sm:flex-row justify-between sm:items-center">
                         <span className="text-muted-foreground">Bank Name:</span>
                         <span className="font-semibold">Learners Bank of India</span>
                       </div>

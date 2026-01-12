@@ -211,7 +211,7 @@ export default function CreateQuizPage() {
                             <FormLabel>{selectedSubject.name} Category</FormLabel>
                             <FormControl>
                                 {selectedSubject.multiSelect ? (
-                                    <div className="grid grid-cols-2 gap-2">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                         {selectedSubject.subCategories?.map(sub => (
                                             <FormItem key={sub.name} className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                                                 <FormControl>
@@ -234,7 +234,7 @@ export default function CreateQuizPage() {
                                     <RadioGroup
                                         onValueChange={(value) => field.onChange([value])}
                                         value={field.value?.[0]}
-                                        className="grid grid-cols-2 gap-2"
+                                        className="grid grid-cols-1 sm:grid-cols-2 gap-2"
                                     >
                                         {selectedSubject.subCategories?.map(sub => (
                                             <FormItem key={sub.name} className="flex-1">
