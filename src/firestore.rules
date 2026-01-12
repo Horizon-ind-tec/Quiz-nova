@@ -96,7 +96,7 @@ service cloud.firestore {
             // They are setting status to 'pending'
             && incomingData.paymentStatus == 'pending'
             // They are setting which plan they are paying for
-            && incomingData.pendingPlan in ['premium', 'ultimate']
+            && 'pendingPlan' in incomingData
             // They are NOT changing their current plan directly
             && incomingData.plan == existingData.plan
             // They are not modifying immutable fields
@@ -184,13 +184,13 @@ service cloud.firestore {
      * @path /users/{userId}
      * @allow (create) A newly authenticated user creating their own profile document.
      * @allow (get) A user reading their own profile, or an admin reading any profile.
-     * @allow (list) No one can list all users.
+     * @allow (list) An admin listing users (e.g., to find pending payments).
      * @allow (update) A user updating their own profile to initiate payment, or an admin updating any profile to confirm payment.
      * @principle Restricts access to a user's own data tree but grants full access to admins.
      */
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
-      allow list: if false; 
+      allow list: if isAdmin(); 
       allow create: if isCreatingOwnProfile(userId);
       allow update: if isUpdatingToInitiatePayment(userId) || isAdmin();
       allow delete: if isExistingOwner(userId);
