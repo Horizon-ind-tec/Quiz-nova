@@ -262,14 +262,21 @@ export default function TakeQuizPage() {
   const progress = useMemo(() => {
     if (!quiz || totalQuestions === 0) return 0;
     let answeredCount = 0;
-    Object.values(userAnswers).forEach(answer => {
-      if (typeof answer === 'string' && answer) {
-        answeredCount++;
-      } else if (typeof answer === 'object' && answer && Object.keys(answer).length > 0) {
-        answeredCount++;
-      } else if (typeof answer === 'number') {
-        answeredCount++;
-      }
+    Object.keys(userAnswers).forEach(key => {
+        const questionIndex = parseInt(key);
+        const answer = userAnswers[questionIndex];
+        const question = quiz.questions[questionIndex];
+
+        if (question && question.type === 'match') {
+            if (answer && typeof answer === 'object' && Object.keys(answer).length > 0) {
+                 const allItemsMatched = question.pairs.every(pair => Object.keys(answer).includes(pair.item));
+                 if (allItemsMatched) {
+                    answeredCount++;
+                 }
+            }
+        } else if (answer) {
+            answeredCount++;
+        }
     });
     return (answeredCount / totalQuestions) * 100;
   }, [userAnswers, totalQuestions, quiz]);
@@ -355,16 +362,16 @@ export default function TakeQuizPage() {
             <div>
               <div className="font-semibold border-b pb-2 mb-2">Column A</div>
               <ul className="list-decimal list-inside space-y-2">
-                {items.map((item) => (
-                  <li key={item}>{item}</li>
+                {items.map((item, index) => (
+                  <li key={item + index}>{item}</li>
                 ))}
               </ul>
             </div>
             <div>
               <div className="font-semibold border-b pb-2 mb-2">Column B</div>
                <ul className="list-[upper-alpha] list-inside space-y-2">
-                {options.map((option) => (
-                  <li key={option}>{option}</li>
+                {options.map((option, index) => (
+                  <li key={option + index}>{option}</li>
                 ))}
               </ul>
             </div>
@@ -379,8 +386,8 @@ export default function TakeQuizPage() {
         <div className="grid grid-cols-2 gap-x-8 gap-y-4">
           <div className="font-semibold">Column A</div>
           <div className="font-semibold">Column B</div>
-          {items.map((item) => (
-            <React.Fragment key={item}>
+          {items.map((item, index) => (
+            <React.Fragment key={item + index}>
               <div className="p-3 border rounded-md bg-gray-50 flex items-center">{item}</div>
               <Select
                 value={userMatches[item] || ''}
@@ -393,8 +400,8 @@ export default function TakeQuizPage() {
                   <SelectValue placeholder="Select a match" />
                 </SelectTrigger>
                 <SelectContent>
-                  {options.map(option => (
-                    <SelectItem key={option} value={option}>{option}</SelectItem>
+                  {options.map((option, optionIndex) => (
+                    <SelectItem key={option + optionIndex} value={option}>{option}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
