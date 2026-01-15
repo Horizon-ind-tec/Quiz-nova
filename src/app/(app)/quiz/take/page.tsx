@@ -561,8 +561,6 @@ export default function TakeQuizPage() {
           )
         }
         
-        const currentMCQ = q as MCQ;
-
         return (
           <FormProvider {...form}>
             <Card className="w-full">
@@ -607,7 +605,7 @@ export default function TakeQuizPage() {
                   </div>
                </div>
 
-              <CardContent className="p-4">
+              <CardContent className="p-6">
                 <div className="flex justify-between items-center mb-4">
                   <p className="text-sm font-semibold text-muted-foreground">
                     Question {currentQuestionIndex + 1}/{quiz.questions.length}
@@ -615,72 +613,21 @@ export default function TakeQuizPage() {
                    <div className="text-xs font-semibold bg-gray-200 text-gray-700 px-2 py-1 rounded-md">+4.0 / -1.0</div>
                 </div>
 
-                <p className="text-base font-medium mb-6">{currentMCQ.question}</p>
-
-                <RadioGroup
-                  value={userAnswers[currentQuestionIndex] as string}
-                  onValueChange={(value) => handleAnswerSelect(currentQuestionIndex, value)}
-                  className="space-y-3"
-                  disabled={isAnswered}
-                >
-                  {currentMCQ.options.map((option, index) => {
-                    const isCorrect = option === currentMCQ.correctAnswer;
-                    const isSelected = option === userAnswers[currentQuestionIndex];
-                    
-                    const getOptionStyle = () => {
-                      if (!isAnswered) return "cursor-pointer hover:bg-accent";
-                      if (isSelected) {
-                        return isCorrect ? "border-green-500 bg-green-100 text-green-800" : "border-red-500 bg-red-100 text-red-800";
-                      }
-                      if (isCorrect) {
-                        return "border-green-500 bg-green-100 text-green-800";
-                      }
-                      return "cursor-not-allowed opacity-70";
-                    };
-
-                    const getIndicatorStyle = () => {
-                       if (!isAnswered) return "border-gray-400 bg-white text-gray-600";
-                       if (isSelected) {
-                         return isCorrect ? "border-green-500 bg-green-500 text-white" : "border-red-500 bg-red-500 text-white";
-                       }
-                       if (isCorrect) {
-                         return "border-green-500 bg-green-500 text-white";
-                       }
-                       return "border-gray-400 bg-white text-gray-600";
-                    };
-
-                    return (
-                      <FormItem key={index}>
-                        <FormControl>
-                          <RadioGroupItem value={option} id={`option-${index}`} className="sr-only" />
-                        </FormControl>
-                        <FormLabel
-                          htmlFor={`option-${index}`}
-                          className={cn(
-                            "flex items-center space-x-3 space-y-0 rounded-md border p-4 transition-colors",
-                             getOptionStyle(),
-                          )}
-                        >
-                           <div className={cn(
-                             "w-6 h-6 rounded-full border flex items-center justify-center shrink-0",
-                             getIndicatorStyle()
-                             )}>
-                             {String.fromCharCode(65 + index)}
-                           </div>
-                          <span className="font-normal flex-1">{option}</span>
-                          {isAnswered && (
-                            <>
-                              {isSelected && isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
-                              {isSelected && !isCorrect && <XCircle className="h-5 w-5 text-red-600" />}
-                              {!isSelected && isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
-                            </>
-                          )}
-                        </FormLabel>
-                      </FormItem>
-                    );
-                  })}
-                </RadioGroup>
+                <div className="mb-6">
+                  {renderQuestion(q, currentQuestionIndex, false)}
+                </div>
                 
+                {quiz.quizType === 'quiz' && isAnswered && (
+                  <Accordion type="single" collapsible className="w-full mt-4">
+                    <AccordionItem value="explanation">
+                      <AccordionTrigger>View Explanation</AccordionTrigger>
+                      <AccordionContent>
+                        {q.explanation}
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                )}
+
                 <div className="mt-6 flex items-center justify-start">
                     <Button variant="ghost" size="sm" className="text-muted-foreground hover:bg-transparent">
                         <AlertTriangle className="mr-2 h-4 w-4" /> Report
