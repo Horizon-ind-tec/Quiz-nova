@@ -1,9 +1,9 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Camera, Check, CircleDotDashed, Loader2, Send, Trash2, Upload } from 'lucide-react';
+import { Camera, Check, CircleDotDashed, Loader2, Send, Trash2, Upload, SwitchCamera } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,9 @@ export default function GradeExamPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
+  const [currentDeviceIndex, setCurrentDeviceIndex] = useState(0);
 
   const [timer, setTimer] = useState(GRADING_TIME);
   const [gradingResult, setGradingResult] = useState<GradeExamOutput | null>(null);
@@ -46,32 +49,70 @@ export default function GradeExamPage() {
       router.replace('/quiz/create');
     }
   }, [quiz, router]);
-  
-  useEffect(() => {
-    const getCameraPermission = async () => {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-         setHasCameraPermission(false);
-         return;
-      }
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        setHasCameraPermission(true);
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
+
+  const stopStream = useCallback(() => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+    if (videoRef.current) {
+        videoRef.current.srcObject = null;
+    }
+  }, [stream]);
+
+  const getCamerasAndStartStream = useCallback(async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+      setHasCameraPermission(false);
+      return;
+    }
+    try {
+      // First, get user permission
+      const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      setHasCameraPermission(true);
+      tempStream.getTracks().forEach(track => track.stop()); // Stop the temporary stream
+
+      // Then, enumerate devices
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const availableVideoDevices = devices.filter(device => device.kind === 'videoinput');
+      setVideoDevices(availableVideoDevices);
+
+      if (availableVideoDevices.length > 0) {
+        // Try to find a back camera first
+        let initialDeviceIndex = availableVideoDevices.findIndex(device => device.label.toLowerCase().includes('back'));
+        if (initialDeviceIndex === -1) {
+            initialDeviceIndex = 0; // Default to the first camera
         }
-      } catch (error) {
-        console.error('Error accessing camera:', error);
-        setHasCameraPermission(false);
+        setCurrentDeviceIndex(initialDeviceIndex);
+      } else {
+         setHasCameraPermission(false);
       }
-    };
-    getCameraPermission();
-     return () => {
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
-      }
-    };
+
+    } catch (error) {
+      console.error('Error accessing camera or enumerating devices:', error);
+      setHasCameraPermission(false);
+    }
   }, []);
+
+  useEffect(() => {
+    getCamerasAndStartStream();
+    return () => stopStream();
+  }, [getCamerasAndStartStream, stopStream]);
+
+  useEffect(() => {
+      if (hasCameraPermission && videoDevices.length > 0) {
+          const startStream = async () => {
+              stopStream();
+              const deviceId = videoDevices[currentDeviceIndex].deviceId;
+              const newStream = await navigator.mediaDevices.getUserMedia({
+                  video: { deviceId: { exact: deviceId } }
+              });
+              setStream(newStream);
+              if (videoRef.current) {
+                  videoRef.current.srcObject = newStream;
+              }
+          };
+          startStream();
+      }
+  }, [currentDeviceIndex, videoDevices, hasCameraPermission, stopStream]);
 
   useEffect(() => {
     if (gradingState === 'grading' && timer > 0) {
@@ -81,6 +122,12 @@ export default function GradeExamPage() {
       return () => clearInterval(interval);
     }
   }, [gradingState, timer]);
+
+  const handleSwitchCamera = () => {
+      if (videoDevices.length > 1) {
+          setCurrentDeviceIndex(prevIndex => (prevIndex + 1) % videoDevices.length);
+      }
+  };
 
   const handleCapture = () => {
     if (videoRef.current && canvasRef.current && capturedImages.length < MAX_IMAGES) {
@@ -198,6 +245,16 @@ export default function GradeExamPage() {
               <div className="absolute inset-0 flex items-center justify-center">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
+           )}
+           {videoDevices.length > 1 && (
+             <Button
+                variant="outline"
+                size="icon"
+                className="absolute bottom-2 right-2 rounded-full"
+                onClick={handleSwitchCamera}
+              >
+                <SwitchCamera className="h-5 w-5" />
+              </Button>
            )}
         </div>
        
@@ -323,3 +380,5 @@ export default function GradeExamPage() {
     </div>
   );
 }
+
+    
