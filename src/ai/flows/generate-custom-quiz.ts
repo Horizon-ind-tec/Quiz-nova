@@ -26,6 +26,7 @@ const GenerateCustomQuizInputSchema = z.object({
   quizType: z.enum(['quiz', 'exam']).describe('The type of assessment: a short interactive quiz or a formal, paper-style exam.'),
   ncert: z.boolean().optional().describe('Whether the quiz should be based on the NCERT curriculum.'),
   class: z.string().optional().describe('The class of the student.'),
+  seed: z.number().optional().describe('A random seed to ensure question uniqueness.'),
 });
 export type GenerateCustomQuizInput = z.infer<typeof GenerateCustomQuizInputSchema>;
 
@@ -67,7 +68,9 @@ export type GenerateCustomQuizOutput = z.infer<typeof GenerateCustomQuizOutputSc
 export async function generateCustomQuiz(
   input: GenerateCustomQuizInput
 ): Promise<GenerateCustomQuizOutput> {
-  return generateCustomQuizFlow(input);
+  // Add a random seed to ensure uniqueness if not provided
+  const inputWithSeed = { ...input, seed: input.seed || Math.random() };
+  return generateCustomQuizFlow(inputWithSeed);
 }
 
 const generateCustomQuizPrompt = ai.definePrompt({
@@ -89,6 +92,9 @@ Chapter/Topic: {{{chapter}}}
 {{#if ncert}}
 Curriculum: NCERT
 {{/if}}
+
+**IMPORTANT**: You MUST generate a completely new and unique set of questions for every request. Use the random seed provided below to ensure the questions are different each time.
+Request Seed: {{{seed}}}
 
 - Generate a mix of question types (MCQ, Match the Following, Numerical) if the assessment type is 'exam' and the number of questions is large (e.g., >15). Otherwise, prioritize MCQs.
 - Ensure you generate exactly {{{numberOfQuestions}}} questions in total.
