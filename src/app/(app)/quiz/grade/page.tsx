@@ -49,7 +49,7 @@ export default function GradeExamPage() {
       router.replace('/quiz/create');
     }
   }, [quiz, router]);
-
+  
   const stopStream = useCallback(() => {
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
@@ -59,60 +59,89 @@ export default function GradeExamPage() {
     }
   }, [stream]);
 
-  const getCamerasAndStartStream = useCallback(async () => {
+  const getCamerasAndPermissions = useCallback(async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
       setHasCameraPermission(false);
+      toast({ variant: 'destructive', title: 'Camera Error', description: 'Your browser does not support camera access.' });
       return;
     }
     try {
-      // First, get user permission
       const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
       setHasCameraPermission(true);
-      tempStream.getTracks().forEach(track => track.stop()); // Stop the temporary stream
+      tempStream.getTracks().forEach(track => track.stop());
 
-      // Then, enumerate devices
       const devices = await navigator.mediaDevices.enumerateDevices();
       const availableVideoDevices = devices.filter(device => device.kind === 'videoinput');
       setVideoDevices(availableVideoDevices);
 
       if (availableVideoDevices.length > 0) {
-        // Try to find a back camera first
         let initialDeviceIndex = availableVideoDevices.findIndex(device => device.label.toLowerCase().includes('back'));
         if (initialDeviceIndex === -1) {
-            initialDeviceIndex = 0; // Default to the first camera
+            initialDeviceIndex = 0;
         }
         setCurrentDeviceIndex(initialDeviceIndex);
       } else {
          setHasCameraPermission(false);
+         toast({ variant: 'destructive', title: 'Camera Error', description: 'No video cameras found on your device.' });
       }
 
     } catch (error) {
       console.error('Error accessing camera or enumerating devices:', error);
       setHasCameraPermission(false);
+      toast({
+          variant: 'destructive',
+          title: 'Camera Access Denied',
+          description: 'Please enable camera permissions in your browser settings to use this feature.',
+      });
     }
-  }, []);
+  }, [toast]);
+  
+  useEffect(() => {
+    getCamerasAndPermissions();
+    // This return function acts as a cleanup.
+    return () => {
+      stopStream();
+    };
+  }, [getCamerasAndPermissions, stopStream]);
 
   useEffect(() => {
-    getCamerasAndStartStream();
-    return () => stopStream();
-  }, [getCamerasAndStartStream, stopStream]);
+    // This effect now ONLY handles starting/restarting the stream when the device changes.
+    if (hasCameraPermission && videoDevices.length > 0) {
+        const startStream = async () => {
+            // ALWAYS stop the previous stream before starting a new one.
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
 
-  useEffect(() => {
-      if (hasCameraPermission && videoDevices.length > 0) {
-          const startStream = async () => {
-              stopStream();
-              const deviceId = videoDevices[currentDeviceIndex].deviceId;
-              const newStream = await navigator.mediaDevices.getUserMedia({
-                  video: { deviceId: { exact: deviceId } }
-              });
-              setStream(newStream);
-              if (videoRef.current) {
-                  videoRef.current.srcObject = newStream;
-              }
-          };
-          startStream();
-      }
-  }, [currentDeviceIndex, videoDevices, hasCameraPermission, stopStream]);
+            try {
+                const deviceId = videoDevices[currentDeviceIndex].deviceId;
+                const newStream = await navigator.mediaDevices.getUserMedia({
+                    video: { deviceId: { exact: deviceId } }
+                });
+                setStream(newStream);
+                if (videoRef.current) {
+                    videoRef.current.srcObject = newStream;
+                }
+            } catch (err) {
+                 console.error("Could not start video source:", err);
+                 toast({
+                    variant: "destructive",
+                    title: "Camera Error",
+                    description: "Could not start video source. It might be in use by another application."
+                 });
+                 setHasCameraPermission(false);
+            }
+        };
+        startStream();
+    }
+     // The cleanup function for THIS effect also needs to stop the stream
+     return () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+     };
+  }, [currentDeviceIndex, videoDevices, hasCameraPermission, toast]); // Removed `stream` from deps to prevent loop
+
 
   useEffect(() => {
     if (gradingState === 'grading' && timer > 0) {
