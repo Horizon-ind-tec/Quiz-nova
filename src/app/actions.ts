@@ -54,7 +54,7 @@ function getAdminDb(): Firestore {
 
 
 export async function generateQuizAction(
-  input: GenerateCustomQuizInput,
+  input: Omit<GenerateCustomQuizInput, 'generationMode'>,
 ): Promise<GenerateCustomQuizOutput> {
   return await generateCustomQuiz(input);
 }
@@ -134,3 +134,5 @@ export async function handlePaymentAction(input: { targetUserId: string, action:
     });
   }
 }
+
+    
