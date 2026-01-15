@@ -7,23 +7,27 @@ require('dotenv').config({ path: require('path').resolve(process.cwd(), '.env') 
 
 
 let adminDb: Firestore;
-let adminApp: App;
 
-function initializeAdminSDK() {
-    if (process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
-        if (!getApps().some(app => app.name === 'admin-activate')) {
-            adminApp = initializeApp({
-                credential: applicationDefault(),
-                projectId: firebaseConfig.projectId,
-            }, 'admin-activate');
-        } else {
-            adminApp = getAdminApp('admin-activate');
-        }
-        adminDb = getFirestore(adminApp);
+function getAdminDb(): Firestore {
+    if (adminDb) {
+        return adminDb;
     }
-}
 
-initializeAdminSDK();
+    if (process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
+        const adminAppName = 'api-activate';
+        const existingApp = getApps().find(app => app.name === adminAppName);
+        const adminApp = existingApp || initializeApp({
+            credential: applicationDefault(),
+            projectId: firebaseConfig.projectId,
+        }, adminAppName);
+        
+        adminDb = getFirestore(adminApp);
+        return adminDb;
+    }
+    
+    // This will be caught and handled in the GET request handler
+    throw new Error('Firebase Admin SDK not initialized. Server environment is not configured.');
+}
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
 
@@ -31,10 +35,13 @@ const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('userId');
-
-  if (!adminDb) {
-    console.error('Firebase Admin not initialized. Check server environment variables.');
-    return NextResponse.redirect(`${appUrl}/dashboard?status=error&code=admin_init`, 302);
+  
+  let db: Firestore;
+  try {
+      db = getAdminDb();
+  } catch (err) {
+      console.error((err as Error).message);
+      return NextResponse.redirect(`${appUrl}/dashboard?status=error&code=admin_init`, 302);
   }
 
   if (!userId) {
@@ -42,7 +49,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const userRef = adminDb.collection('users').doc(userId);
+    const userRef = db.collection('users').doc(userId);
     const userDoc = await userRef.get();
 
     if (!userDoc.exists) {
@@ -50,8 +57,6 @@ export async function GET(request: NextRequest) {
     }
 
     const userData = userDoc.data()!;
-    let message = '';
-    let title = '';
     let statusPlan = userData.pendingPlan || userData.plan;
 
     // Check if the plan is already active or if the status is correct
@@ -62,19 +67,13 @@ export async function GET(request: NextRequest) {
             paymentStatus: null, // Clear the status after activating
             pendingPlan: null, // Clear the pending plan
         });
-        title = "Activation Successful!";
-        message = `Your ${userData.pendingPlan} plan is now active! You can now access all the premium features.`;
         return NextResponse.redirect(`${appUrl}/dashboard?status=success&plan=${statusPlan}`, 302);
 
     } else if (userData.plan !== 'free' && !userData.pendingPlan) {
-        title = "Already Active";
-        message = `Your ${userData.plan} plan is already active. No further action is needed.`;
         // Still redirect to success as they are on a paid plan
         return NextResponse.redirect(`${appUrl}/dashboard?status=success&plan=${statusPlan}`, 302);
 
     } else {
-        title = "Activation Failed";
-        message = "There was an issue activating your plan. It might be that the payment was not confirmed. Please contact support.";
         // Redirect to dashboard with an error
         return NextResponse.redirect(`${appUrl}/dashboard?status=error`, 302);
     }

@@ -1,3 +1,4 @@
+
 /**
  * This ruleset enforces a strict user-ownership model for the QuizNova application.
  * All data, including user profiles, quizzes, questions, and results, is private
@@ -87,7 +88,7 @@ service cloud.firestore {
      * They can set 'paymentStatus' to 'pending' and specify a 'pendingPlan'.
      * They cannot change their existing 'plan' or other core fields.
      */
-    function isUpdatingOwnProfileForPayment(userId) {
+    function isUpdatingToInitiatePayment(userId) {
         let incomingData = request.resource.data;
         let existingData = resource.data;
         // Ensure the user is the owner
@@ -191,7 +192,7 @@ service cloud.firestore {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin(); 
       allow create: if isCreatingOwnProfile(userId);
-      allow update: if isUpdatingOwnProfileForPayment(userId) || isAdmin();
+      allow update: if isUpdatingToInitiatePayment(userId) || isAdmin();
       allow delete: if isExistingOwner(userId);
 
       /**

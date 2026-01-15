@@ -24,24 +24,26 @@ import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { firebaseConfig } from '@/firebase/config';
 
 let adminDb: Firestore;
-let adminApp: App;
 
-function initializeAdminSDK() {
-    if (process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
-        if (!getApps().some(app => app.name === 'admin')) {
-            adminApp = initializeApp({
-                credential: applicationDefault(),
-                projectId: firebaseConfig.projectId,
-            }, 'admin');
-        } else {
-            adminApp = getAdminApp('admin');
-        }
-        adminDb = getFirestore(adminApp);
+function getAdminDb(): Firestore {
+    if (adminDb) {
+        return adminDb;
     }
-}
 
-// Call initialization once
-initializeAdminSDK();
+    if (process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
+        const adminAppName = 'server-actions';
+        const existingApp = getApps().find(app => app.name === adminAppName);
+        const adminApp = existingApp || initializeApp({
+            credential: applicationDefault(),
+            projectId: firebaseConfig.projectId,
+        }, adminAppName);
+        
+        adminDb = getFirestore(adminApp);
+        return adminDb;
+    }
+    
+    throw new Error('Firebase Admin SDK not initialized. Server environment is not configured.');
+}
 
 
 export async function generateQuizAction(
@@ -89,13 +91,10 @@ export async function notifyAdminOfPaymentAction(input: NotifyAdminOfPaymentInpu
 
 
 export async function handlePaymentAction(input: { targetUserId: string, action: 'approve' | 'deny' }): Promise<void> {
-  if (!adminDb) {
-    throw new Error('Firebase Admin SDK not initialized. Server environment is not configured.');
-  }
-
+  const db = getAdminDb();
   const { targetUserId, action } = input;
   
-  const userRef = adminDb.collection('users').doc(targetUserId);
+  const userRef = db.collection('users').doc(targetUserId);
   const userDoc = await userRef.get();
 
   if (!userDoc.exists) {

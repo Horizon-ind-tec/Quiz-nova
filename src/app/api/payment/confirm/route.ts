@@ -8,29 +8,35 @@ require('dotenv').config({ path: require('path').resolve(process.cwd(), '.env') 
 
 
 let adminDb: Firestore;
-let adminApp: App;
 
-function initializeAdminSDK() {
-    if (process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
-        if (!getApps().some(app => app.name === 'admin-confirm')) {
-            adminApp = initializeApp({
-                credential: applicationDefault(),
-                projectId: firebaseConfig.projectId,
-            }, 'admin-confirm');
-        } else {
-            adminApp = getAdminApp('admin-confirm');
-        }
-        adminDb = getFirestore(adminApp);
+function getAdminDb(): Firestore {
+    if (adminDb) {
+        return adminDb;
     }
-}
 
-initializeAdminSDK();
+    if (process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
+        const adminAppName = 'api-confirm';
+        const existingApp = getApps().find(app => app.name === adminAppName);
+        const adminApp = existingApp || initializeApp({
+            credential: applicationDefault(),
+            projectId: firebaseConfig.projectId,
+        }, adminAppName);
+        
+        adminDb = getFirestore(adminApp);
+        return adminDb;
+    }
+
+    throw new Error('Firebase Admin SDK not initialized. Server environment is not configured.');
+}
 
 
 export async function GET(request: NextRequest) {
-  if (!adminDb) {
-    const errorHtml = `<html><body style="font-family: sans-serif; display: grid; place-content: center; height: 100vh; text-align: center;"><div><h1 style="color: #dc2626;">Configuration Error</h1><p>The server is not configured for Firebase Admin operations. Please check environment variables.</p></div></body></html>`;
-    return new NextResponse(errorHtml, { status: 500, headers: { 'Content-Type': 'text/html' } });
+  let db: Firestore;
+  try {
+      db = getAdminDb();
+  } catch (err) {
+      const errorHtml = `<html><body style="font-family: sans-serif; display: grid; place-content: center; height: 100vh; text-align: center;"><div><h1 style="color: #dc2626;">Configuration Error</h1><p>The server is not configured for Firebase Admin operations. Please check environment variables.</p></div></body></html>`;
+      return new NextResponse(errorHtml, { status: 500, headers: { 'Content-Type': 'text/html' } });
   }
 
   const { searchParams } = new URL(request.url);
@@ -42,7 +48,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const userRef = adminDb.collection('users').doc(userId);
+    const userRef = db.collection('users').doc(userId);
     const userDoc = await userRef.get();
 
     if (!userDoc.exists) {
