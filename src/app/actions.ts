@@ -134,5 +134,3 @@ export async function handlePaymentAction(input: { targetUserId: string, action:
     });
   }
 }
-
-    
