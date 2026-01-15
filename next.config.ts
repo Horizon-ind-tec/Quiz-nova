@@ -1,5 +1,4 @@
 
-require('dotenv').config({ path: require('path').resolve(process.cwd(), '.env') });
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
