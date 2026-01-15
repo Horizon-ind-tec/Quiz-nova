@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, App, applicationDefault, getApp as getAdminApp } from 'firebase-admin/app';
+import { initializeApp, getApps, App, getApp as getAdminApp, cert } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { firebaseConfig } from '@/firebase/config';
 require('dotenv').config({ path: require('path').resolve(process.cwd(), '.env') });
@@ -13,13 +13,21 @@ function getAdminDb(): Firestore {
         return adminDb;
     }
 
+    const appName = 'api-activate';
+    if (getApps().find(app => app.name === appName)) {
+        adminDb = getFirestore(getAdminApp(appName));
+        return adminDb;
+    }
+
     if (process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
-        const adminAppName = 'api-activate';
-        const existingApp = getApps().find(app => app.name === adminAppName);
-        const adminApp = existingApp || initializeApp({
-            credential: applicationDefault(),
+        const adminApp = initializeApp({
+            credential: cert({
+                projectId: firebaseConfig.projectId,
+                clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+                privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, '\n'),
+            }),
             projectId: firebaseConfig.projectId,
-        }, adminAppName);
+        }, appName);
         
         adminDb = getFirestore(adminApp);
         return adminDb;

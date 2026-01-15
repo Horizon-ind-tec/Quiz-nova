@@ -19,7 +19,7 @@ import {
 } from '@/ai/flows/get-performance-report';
 import { notifyAdminOfPayment, type NotifyAdminOfPaymentInput } from '@/ai/flows/notify-admin-of-payment';
 
-import { initializeApp, getApps, App, applicationDefault, getApp as getAdminApp } from 'firebase-admin/app';
+import { initializeApp, getApps, App, applicationDefault, getApp as getAdminApp, cert } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { firebaseConfig } from '@/firebase/config';
 
@@ -30,13 +30,20 @@ function getAdminDb(): Firestore {
         return adminDb;
     }
 
+    if (getApps().find(app => app.name === 'server-actions')) {
+         adminDb = getFirestore(getAdminApp('server-actions'));
+         return adminDb;
+    }
+
     if (process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
-        const adminAppName = 'server-actions';
-        const existingApp = getApps().find(app => app.name === adminAppName);
-        const adminApp = existingApp || initializeApp({
-            credential: applicationDefault(),
+        const adminApp = initializeApp({
+            credential: cert({
+                projectId: firebaseConfig.projectId,
+                clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+                privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, '\n'),
+            }),
             projectId: firebaseConfig.projectId,
-        }, adminAppName);
+        }, 'server-actions');
         
         adminDb = getFirestore(adminApp);
         return adminDb;
