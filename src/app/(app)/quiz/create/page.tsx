@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, Sparkles, History, FilePlus } from 'lucide-react';
+import { Loader2, Sparkles, History, FilePlus, TestTubeDiagonal, FileText } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Header } from '@/components/header';
@@ -28,7 +28,7 @@ import type { Quiz } from '@/lib/types';
 import { useUser } from '@/firebase';
 
 const formSchema = z.object({
-  generationMode: z.enum(['new', 'previous']),
+  generationMode: z.enum(['new', 'previous'], { required_error: 'Please select a source.' }),
   class: z.string().min(1, 'Please select a class.'),
   subject: z.string().min(1, 'Please select a subject.'),
   subCategories: z.array(z.string()).optional(),
@@ -36,11 +36,13 @@ const formSchema = z.object({
   chapter: z.string().optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']),
   totalMarks: z.coerce.number().min(5, "Total marks must be at least 5.").max(100, "Total marks can be at most 100."),
-  quizType: z.enum(['quiz', 'exam'], { required_error: 'Please select a quiz type.' }),
+  quizType: z.enum(['quiz', 'exam'], { required_error: 'Please select an assessment type.' }),
   ncert: z.boolean().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+type CombinedSelection = 'new-quiz' | 'previous-quiz' | 'new-exam' | 'previous-exam';
 
 export default function CreateQuizPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -49,11 +51,14 @@ export default function CreateQuizPage() {
   const [lastQuizOptions, setLastQuizOptions] = useLocalStorage<FormValues | null>('lastQuizOptions', null);
   const router = useRouter();
   const { user } = useUser();
+  const [combinedSelection, setCombinedSelection] = useState<CombinedSelection>('new-quiz');
+
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       generationMode: 'new',
+      quizType: 'quiz',
       class: '',
       subject: '',
       subCategories: [],
@@ -61,10 +66,16 @@ export default function CreateQuizPage() {
       chapter: '',
       difficulty: 'medium',
       totalMarks: 20,
-      quizType: 'quiz',
       ncert: false,
     },
   });
+  
+    const handleSelectionChange = (value: CombinedSelection) => {
+        setCombinedSelection(value);
+        const [mode, type] = value.split('-');
+        form.setValue('generationMode', mode as 'new' | 'previous');
+        form.setValue('quizType', type as 'quiz' | 'exam');
+    }
 
   const selectedSubjectName = form.watch('subject');
   const selectedSubject = SUBJECTS_DATA.find(s => s.name === selectedSubjectName);
@@ -75,10 +86,6 @@ export default function CreateQuizPage() {
     form.setValue('subCategories', [], { shouldValidate: false });
   };
   
-  const handleGenerationModeChange = (value: 'new' | 'previous') => {
-    form.setValue('generationMode', value, { shouldValidate: true });
-  }
-
   const onSubmit = async (data: FormValues) => {
     if (!user) {
         toast({
@@ -164,96 +171,39 @@ export default function CreateQuizPage() {
               <FormProvider {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 
-                  <FormField
-                    name="generationMode"
-                    control={form.control}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Question Paper Source</FormLabel>
-                        <FormControl>
-                           <RadioGroup
-                            onValueChange={(value) => handleGenerationModeChange(value as 'new' | 'previous')}
-                            value={field.value}
+                   <FormItem>
+                        <FormLabel>Assessment Type & Source</FormLabel>
+                        <RadioGroup
+                            value={combinedSelection}
+                            onValueChange={(value) => handleSelectionChange(value as CombinedSelection)}
                             className="grid grid-cols-2 gap-4"
-                          >
-                            <FormItem>
-                              <FormControl>
-                                <RadioGroupItem value="new" id="mode-new" className="sr-only" />
-                              </FormControl>
-                              <FormLabel
-                                htmlFor="mode-new"
-                                className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-500 [&:has([data-state=checked])]:border-green-500 cursor-pointer"
-                              >
-                                <FilePlus className="h-6 w-6 mb-1" />
-                                <span className="font-bold">New Question Paper</span>
-                                <span className="text-xs text-muted-foreground">Unique questions</span>
-                              </FormLabel>
-                            </FormItem>
-                             <FormItem>
-                              <FormControl>
-                                <RadioGroupItem value="previous" id="mode-previous" className="sr-only" />
-                              </FormControl>
-                              <FormLabel
-                                htmlFor="mode-previous"
-                                className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-500 [&:has([data-state=checked])]:border-green-500 cursor-pointer"
-                              >
-                                <History className="h-6 w-6 mb-1" />
-                                <span className="font-bold">Previous Question Paper</span>
-                                <span className="text-xs text-muted-foreground">Regenerate last test</span>
-                              </FormLabel>
-                            </FormItem>
-                          </RadioGroup>
-                        </FormControl>
+                        >
+                            {[
+                                { value: 'new-quiz', icon: TestTubeDiagonal, label: 'New Quiz', sub: 'Unique questions' },
+                                { value: 'previous-quiz', icon: History, label: 'Previous Quiz', sub: 'Regenerate last test' },
+                                { value: 'new-exam', icon: FileText, label: 'New Exam', sub: 'Paper-style test' },
+                                { value: 'previous-exam', icon: History, label: 'Previous Exam', sub: 'Regenerate last exam' }
+                            ].map((item) => (
+                                <FormItem key={item.value}>
+                                    <FormControl>
+                                        <RadioGroupItem value={item.value} id={item.value} className="sr-only" />
+                                    </FormControl>
+                                    <FormLabel
+                                        htmlFor={item.value}
+                                        className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-500 [&:has([data-state=checked])]:border-green-500 cursor-pointer"
+                                    >
+                                        <item.icon className="h-6 w-6 mb-1" />
+                                        <span className="font-bold">{item.label}</span>
+                                        <span className="text-xs text-muted-foreground">{item.sub}</span>
+                                    </FormLabel>
+                                </FormItem>
+                            ))}
+                        </RadioGroup>
                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    </FormItem>
                   
                   <div className={cn(generationMode === 'previous' && 'opacity-50 pointer-events-none')}>
                     <div className="space-y-6">
-                      <FormField
-                        name="quizType"
-                        control={form.control}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Assessment Type</FormLabel>
-                            <FormControl>
-                              <RadioGroup
-                                onValueChange={field.onChange}
-                                value={field.value}
-                                className="grid grid-cols-2 gap-4"
-                              >
-                                <FormItem>
-                                  <FormControl>
-                                    <RadioGroupItem value="quiz" id="type-quiz" className="sr-only" />
-                                  </FormControl>
-                                  <FormLabel
-                                    htmlFor="type-quiz"
-                                    className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-500 [&:has([data-state=checked])]:border-green-500 cursor-pointer"
-                                  >
-                                    <span className="font-bold">Quiz</span>
-                                    <span className="text-xs text-muted-foreground">Interactive session</span>
-                                  </FormLabel>
-                                </FormItem>
-                                <FormItem>
-                                  <FormControl>
-                                    <RadioGroupItem value="exam" id="type-exam" className="sr-only" />
-                                  </FormControl>
-                                  <FormLabel
-                                    htmlFor="type-exam"
-                                    className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-500 [&:has([data-state=checked])]:border-green-500 cursor-pointer"
-                                  >
-                                    <span className="font-bold">Exam</span>
-                                    <span className="text-xs text-muted-foreground">Paper-style test</span>
-                                  </FormLabel>
-                                </FormItem>
-                              </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
                       <FormField
                         name="subject"
                         control={form.control}
@@ -308,8 +258,8 @@ export default function CreateQuizPage() {
                                                             checked={field.value?.includes(sub.name)}
                                                             onCheckedChange={(checked) => {
                                                                 return checked
-                                                                    ? field.onChange([...(field.value || []), sub.name])
-                                                                    : field.onChange(field.value?.filter(value => value !== sub.name))
+                                                                    ? form.setValue('subCategories', [...(field.value || []), sub.name])
+                                                                    : form.setValue('subCategories', field.value?.filter(value => value !== sub.name));
                                                             }}
                                                         />
                                                     </FormControl>
@@ -321,7 +271,7 @@ export default function CreateQuizPage() {
                                         </div>
                                     ) : (
                                         <RadioGroup
-                                            onValueChange={(value) => field.onChange([value])}
+                                            onValueChange={(value) => form.setValue('subCategories', [value])}
                                             value={field.value?.[0]}
                                             className="grid grid-cols-1 sm:grid-cols-2 gap-2"
                                         >
