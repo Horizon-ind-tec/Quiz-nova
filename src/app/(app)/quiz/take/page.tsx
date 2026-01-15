@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   Bookmark,
   Grid,
+  Loader2,
 } from 'lucide-react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { v4 as uuidv4 } from 'uuid';
@@ -48,6 +49,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { generateQuizAction } from '@/app/actions';
 
 
 type QuizState = 'loading' | 'taking' | 'paused' | 'results';
@@ -67,6 +69,7 @@ export default function TakeQuizPage() {
   
   const [shuffledMatches, setShuffledMatches] = useState<{[key: number]: string[]}>({});
   const [quizProgress, setQuizProgress] = useState(0);
+  const [isGeneratingNewQuestion, setIsGeneratingNewQuestion] = useState(false);
   
   const totalTime = useMemo(() => {
     if (!quiz) return 0;
@@ -135,6 +138,63 @@ export default function TakeQuizPage() {
     return () => clearInterval(timer);
   }, [quizState, totalTime]);
 
+  const handleAddNewQuestion = useCallback(async () => {
+    if (!quiz || isGeneratingNewQuestion) return;
+
+    setIsGeneratingNewQuestion(true);
+    toast({
+        title: 'Generating Reinforcement Question',
+        description: 'You are struggling, so we are adding a new question to help you practice.',
+    });
+
+    try {
+        const result = await generateQuizAction({
+            ...quiz,
+            subCategory: quiz.subCategory,
+            totalMarks: 2, // Generate a low-mark quiz to get one or two questions
+            seed: Math.random(),
+            timestamp: Date.now(),
+        });
+
+        if (result && result.questions.length > 0) {
+            const newQuestion = result.questions[0]; // Take the first new question
+            setQuiz(prevQuiz => {
+                if (!prevQuiz) return null;
+                
+                const updatedQuestions = [...prevQuiz.questions, newQuestion];
+                const updatedTotalMarks = prevQuiz.totalMarks + newQuestion.marks;
+
+                // Also update related states
+                setMarkedForReview(prev => [...prev, false]);
+                setUserAnswers(prev => ({
+                    ...prev,
+                    [updatedQuestions.length - 1]: newQuestion.type === 'match' ? {} : ''
+                }));
+                 if (newQuestion.type === 'match') {
+                    setShuffledMatches(prev => ({
+                        ...prev,
+                        [updatedQuestions.length - 1]: shuffleArray(newQuestion.pairs.map(p => p.match))
+                    }));
+                }
+
+
+                return {
+                    ...prevQuiz,
+                    questions: updatedQuestions,
+                    totalMarks: updatedTotalMarks,
+                };
+            });
+        }
+    } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Failed to Add Question',
+            description: 'Could not generate a new question. Please continue.',
+        });
+    } finally {
+        setIsGeneratingNewQuestion(false);
+    }
+  }, [quiz, isGeneratingNewQuestion, setQuiz, toast, shuffleArray]);
 
   const handleAnswerSelect = (questionIndex: number, answer: any) => {
     const q = quiz?.questions[questionIndex];
@@ -161,7 +221,13 @@ export default function TakeQuizPage() {
         const progressIncrease = (q.marks / (quiz.totalMarks || 1)) * 100;
         setQuizProgress(prev => Math.min(100, prev + progressIncrease));
       } else {
-        setQuizProgress(prev => Math.max(0, prev - 1));
+        setQuizProgress(prev => {
+            const newProgress = Math.max(0, prev - 1);
+            if (newProgress <= 1 && newProgress > 0) { // Check if it drops to 1% or less, but not 0
+                handleAddNewQuestion();
+            }
+            return newProgress;
+        });
       }
     }
   };
@@ -598,6 +664,7 @@ export default function TakeQuizPage() {
                   <Button variant="ghost" size="sm" onClick={() => setQuizState('paused')}>
                     <Pause className="mr-2 h-4 w-4" /> Pause
                   </Button>
+                   {isGeneratingNewQuestion && <Loader2 className="h-5 w-5 animate-spin" />}
                   <div className="flex items-center gap-2 font-medium">
                     <Clock className="h-5 w-5" />
                     <span>{formatTime(timeElapsed)}</span>
