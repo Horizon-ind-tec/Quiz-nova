@@ -2,7 +2,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { Calculator, Atom, FlaskConical, Leaf, Scroll, Globe, Scale, Landmark, Rocket, Microscope, Presentation, Plane, Cpu, BrainCircuit, Palette, Briefcase } from 'lucide-react';
 
-export const CLASSES = ['7th', '8th', '9th', '10th', '11th', '12th'];
+export const CLASSES = ['7th', '8th', '9th', '10th', '11th', '12th', 'JEE (Mains + Advanced)', 'NEET'];
 
 export const SUBJECTS_DATA: { 
   name: string; 
