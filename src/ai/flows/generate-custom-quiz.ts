@@ -22,7 +22,7 @@ const GenerateCustomQuizInputSchema = z.object({
   difficulty: z.enum(['easy', 'medium', 'hard']).describe('The difficulty level of the quiz.'),
   board: z.string().describe('The educational board for the quiz (e.g., CBSE, ICSE, State Board).'),
   chapter: z.string().optional().describe('The specific chapter or topic for the quiz.'),
-  numberOfQuestions: z.number().describe('The total number of questions to generate for the quiz.'),
+  totalMarks: z.number().describe('The total marks for the entire assessment.'),
   quizType: z.enum(['quiz', 'exam']).describe('The type of assessment: a short interactive quiz or a formal, paper-style exam.'),
   ncert: z.boolean().optional().describe('Whether the quiz should be based on the NCERT curriculum.'),
   class: z.string().optional().describe('The class of the student.'),
@@ -37,6 +37,7 @@ const MCQSchema = z.object({
   options: z.array(z.string()).describe('The multiple-choice options for the question.'),
   correctAnswer: z.string().describe('The correct answer to the question.'),
   explanation: z.string().describe('The explanation for the correct answer.'),
+  marks: z.number().describe('The marks assigned to this question.'),
 });
 
 const MatchSchema = z.object({
@@ -47,6 +48,7 @@ const MatchSchema = z.object({
     match: z.string().describe("The corresponding correct match in the second column."),
   })).describe("The pairs to be matched. The 'match' values will be shuffled for the user."),
   explanation: z.string().describe('An explanation for the correct pairings.'),
+  marks: z.number().describe('The marks assigned to this question.'),
 });
 
 const NumericalSchema = z.object({
@@ -54,6 +56,7 @@ const NumericalSchema = z.object({
   question: z.string().describe('The question that requires a numerical answer.'),
   correctAnswer: z.number().describe('The correct numerical answer.'),
   explanation: z.string().describe('The explanation for how to arrive at the correct answer.'),
+  marks: z.number().describe('The marks assigned to this question.'),
 });
 
 const QuestionSchema = z.union([MCQSchema, MatchSchema, NumericalSchema]);
@@ -82,7 +85,7 @@ const generateCustomQuizPrompt = ai.definePrompt({
   name: 'generateCustomQuizPrompt',
   input: {schema: GenerateCustomQuizInputSchema},
   output: {schema: GenerateCustomQuizOutputSchema},
-  prompt: `You are an expert quiz generator for students. Generate a quiz with exactly {{{numberOfQuestions}}} questions based on the following criteria:
+  prompt: `You are an expert question paper generator for students. Generate a question paper with a TOTAL of {{{totalMarks}}} marks based on the following criteria:
 
 Subject: {{{subject}}}
 {{#if subCategory}}
@@ -98,18 +101,21 @@ Chapter/Topic: {{{chapter}}}
 Curriculum: NCERT
 {{/if}}
 
-**VERY IMPORTANT**: You MUST generate a completely new and unique set of questions for every request. Use the unique request fingerprint provided below to ensure the questions are different each time. Do not repeat questions from previous requests with a different fingerprint.
+**VERY IMPORTANT INSTRUCTIONS:**
+1.  The sum of marks for ALL generated questions MUST be EXACTLY equal to the 'totalMarks' ({{{totalMarks}}}).
+2.  You will decide the number of questions to generate. Create a mix of questions with different marks (e.g., 1, 2, 4, 5 marks per question).
+3.  Each generated question object MUST have a "marks" field indicating the marks for that question.
+4.  You MUST generate a completely new and unique set of questions for every request. Use the unique request fingerprint to ensure uniqueness.
 
 Unique Request Fingerprint:
 - Seed: {{{seed}}}
 - Timestamp: {{{timestamp}}}
 
-- Generate a mix of question types (MCQ, Match the Following, Numerical) if the assessment type is 'exam' and the number of questions is large (e.g., >15). Otherwise, prioritize MCQs.
-- Ensure you generate exactly {{{numberOfQuestions}}} questions in total.
+- Generate a mix of question types (MCQ, Match the Following, Numerical) if the assessment type is 'exam'. Otherwise, prioritize MCQs for 'quiz' type.
 
-The entire output should be a single JSON object with a "questions" key, which holds an array of question objects. Each question object must have a "type" field ('mcq', 'match', or 'numerical') and other fields appropriate for that type.
+The entire output should be a single JSON object with a "questions" key, which holds an array of question objects. Each question object must have a "type", "marks", and other fields appropriate for that type.
 
-Example of the expected JSON structure:
+Example of the expected JSON structure for totalMarks: 10
 {
   "questions": [
     {
@@ -117,7 +123,8 @@ Example of the expected JSON structure:
       "question": "What is the capital of France?",
       "options": ["London", "Paris", "Berlin", "Rome"],
       "correctAnswer": "Paris",
-      "explanation": "Paris is the capital and most populous city of France."
+      "explanation": "Paris is the capital and most populous city of France.",
+      "marks": 1
     },
     {
       "type": "match",
@@ -127,19 +134,29 @@ Example of the expected JSON structure:
         { "item": "Albert Einstein", "match": "Theory of Relativity" },
         { "item": "Marie Curie", "match": "Radioactivity" }
       ],
-      "explanation": "Newton formulated the laws of motion, Einstein developed the theory of relativity, and Curie pioneered research on radioactivity."
+      "explanation": "Newton formulated the laws of motion, Einstein developed the theory of relativity, and Curie pioneered research on radioactivity.",
+      "marks": 4
     },
     {
       "type": "numerical",
       "question": "What is the value of Pi rounded to two decimal places?",
       "correctAnswer": 3.14,
-      "explanation": "Pi (π) is an irrational number, approximately equal to 3.14159. Rounded to two decimal places, it is 3.14."
+      "explanation": "Pi (π) is an irrational number, approximately equal to 3.14159. Rounded to two decimal places, it is 3.14.",
+      "marks": 1
+    },
+    {
+        "type": "mcq",
+        "question": "What is the largest planet in our solar system?",
+        "options": ["Earth", "Mars", "Jupiter", "Saturn"],
+        "correctAnswer": "Jupiter",
+        "explanation": "Jupiter is the largest planet in our solar system by a significant margin.",
+        "marks": 4
     }
   ]
 }
 
 
-Ensure that the generated JSON is valid and follows the specified format. Do not include any additional text or explanations outside of the JSON structure.
+Ensure the total marks add up to {{{totalMarks}}}. Ensure the generated JSON is valid. Do not include any text outside the JSON.
 `,
 });
 
@@ -154,3 +171,5 @@ const generateCustomQuizFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    

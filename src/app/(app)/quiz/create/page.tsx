@@ -35,7 +35,7 @@ const formSchema = z.object({
   board: z.string().min(1, 'Please select an educational board.'),
   chapter: z.string().optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']),
-  numberOfQuestions: z.coerce.number().min(1, "You must have at least 1 question.").max(50, "You can have at most 50 questions."),
+  totalMarks: z.coerce.number().min(5, "Total marks must be at least 5.").max(100, "Total marks can be at most 100."),
   quizType: z.enum(['quiz', 'exam'], { required_error: 'Please select a quiz type.' }),
   ncert: z.boolean().optional(),
 });
@@ -60,7 +60,7 @@ export default function CreateQuizPage() {
       board: '',
       chapter: '',
       difficulty: 'medium',
-      numberOfQuestions: 10,
+      totalMarks: 20,
       quizType: 'quiz',
       ncert: false,
     },
@@ -69,6 +69,15 @@ export default function CreateQuizPage() {
   const selectedSubjectName = form.watch('subject');
   const selectedSubject = SUBJECTS_DATA.find(s => s.name === selectedSubjectName);
   const generationMode = form.watch('generationMode');
+
+  const handleSubjectChange = (value: string) => {
+    form.setValue('subject', value, { shouldValidate: true });
+    form.setValue('subCategories', [], { shouldValidate: false });
+  };
+  
+  const handleGenerationModeChange = (value: 'new' | 'previous') => {
+    form.setValue('generationMode', value, { shouldValidate: true });
+  }
 
   const onSubmit = async (data: FormValues) => {
     if (!user) {
@@ -84,11 +93,9 @@ export default function CreateQuizPage() {
     let generationInput = { ...data };
 
     if (generationMode === 'new') {
-        // For new quizzes, ensure uniqueness and save the options
         generationInput = { ...data, seed: Math.random(), timestamp: Date.now() };
         setLastQuizOptions(data);
     } else {
-        // For previous quizzes, use the saved options
         if (!lastQuizOptions) {
             toast({
                 variant: 'destructive',
@@ -98,8 +105,7 @@ export default function CreateQuizPage() {
             setIsLoading(false);
             return;
         }
-        // Don't add new random seed/timestamp to regenerate the same quiz
-        generationInput = { ...lastQuizOptions, numberOfQuestions: data.numberOfQuestions };
+        generationInput = { ...lastQuizOptions, totalMarks: data.totalMarks };
     }
 
 
@@ -113,7 +119,6 @@ export default function CreateQuizPage() {
         const shuffledQuestions = result.questions.map(q => {
             if (q.type === 'mcq') {
                 const allOptions = [...q.options];
-                // Shuffle the options array
                 for (let i = allOptions.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [allOptions[i], allOptions[j]] = [allOptions[j], allOptions[i]];
@@ -167,7 +172,7 @@ export default function CreateQuizPage() {
                         <FormLabel>Question Paper Source</FormLabel>
                         <FormControl>
                            <RadioGroup
-                            onValueChange={field.onChange}
+                            onValueChange={(value) => handleGenerationModeChange(value as 'new' | 'previous')}
                             value={field.value}
                             className="grid grid-cols-2 gap-4"
                           >
@@ -257,10 +262,7 @@ export default function CreateQuizPage() {
                             <FormLabel>Subject</FormLabel>
                             <FormControl>
                               <RadioGroup
-                                onValueChange={(value) => {
-                                  field.onChange(value);
-                                  form.setValue('subCategories', []);
-                                }}
+                                onValueChange={handleSubjectChange}
                                 value={field.value}
                                 className="grid grid-cols-2 sm:grid-cols-3 gap-2"
                               >
@@ -408,12 +410,12 @@ export default function CreateQuizPage() {
 
                       <FormField
                         control={form.control}
-                        name="numberOfQuestions"
+                        name="totalMarks"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Marks</FormLabel>
+                            <FormLabel>Total Marks</FormLabel>
                             <FormControl>
-                              <Input type="number" min="1" max="50" placeholder="e.g., 10" {...field} />
+                              <Input type="number" min="5" max="100" placeholder="e.g., 20" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -456,3 +458,5 @@ export default function CreateQuizPage() {
     </div>
   );
 }
+
+    

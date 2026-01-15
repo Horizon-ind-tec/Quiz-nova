@@ -1,10 +1,12 @@
 
+
 export interface MCQ {
   type: 'mcq';
   question: string;
   options: string[];
   correctAnswer: string;
   explanation: string;
+  marks: number;
 }
 
 export interface Match {
@@ -12,6 +14,7 @@ export interface Match {
   question: string;
   pairs: { item: string; match: string }[];
   explanation: string;
+  marks: number;
 }
 
 export interface Numerical {
@@ -19,6 +22,7 @@ export interface Numerical {
   question: string;
   correctAnswer: number;
   explanation: string;
+  marks: number;
 }
 
 
@@ -40,6 +44,7 @@ export interface Quiz {
   chapter?: string;
   quizType: 'quiz' | 'exam';
   ncert?: boolean;
+  totalMarks: number;
   questions: Question[];
   createdAt: number;
 }
@@ -99,3 +104,5 @@ export interface UserProfile {
     paymentStatus?: 'pending' | 'confirmed';
     pendingPlan?: 'premium' | 'ultimate';
 }
+
+    

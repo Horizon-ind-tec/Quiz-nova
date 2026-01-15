@@ -69,11 +69,13 @@ export default function TakeQuizPage() {
   
   const totalTime = useMemo(() => {
     if (!quiz) return 0;
+    // For competitive exams, time is fixed regardless of marks
     if (quiz.class.startsWith('JEE') || quiz.class.startsWith('NEET')) {
-        return quiz.quizType === 'exam' ? 4 * 60 * 60 : 1 * 60 * 60; // 4 hours for exam, 1 hour for quiz
+        return quiz.quizType === 'exam' ? 3 * 60 * 60 : 1 * 60 * 60; // 3 hours for exam, 1 hour for quiz
     }
-    const timePerQuestion = quiz?.quizType === 'exam' ? 180 : 120; // 3 mins for exam, 2 for quiz
-    return (quiz?.questions.length ?? 0) * timePerQuestion
+    // For regular classes, estimate time based on marks. Approx 1.5 mins per mark.
+    const timePerMark = 90; 
+    return (quiz.totalMarks ?? 0) * timePerMark;
   }, [quiz]);
 
   const [timeElapsed, setTimeElapsed] = useState(0);
@@ -185,24 +187,30 @@ export default function TakeQuizPage() {
 
   const calculateScore = useCallback(() => {
     if (!quiz) return 0;
-
-    let correctAnswers = 0;
+    let totalObtainedMarks = 0;
+    
     quiz.questions.forEach((q, index) => {
-      const userAnswer = userAnswers[index];
-      if (q.type === 'mcq' && userAnswer === q.correctAnswer) {
-        correctAnswers++;
-      } else if (q.type === 'numerical' && Number(userAnswer) === q.correctAnswer) {
-        correctAnswers++;
-      } else if (q.type === 'match') {
-        const userMatches = userAnswer as { [key: string]: string };
-        const isFullyCorrect = q.pairs.every(p => userMatches?.[p.item] === p.match);
-        if (isFullyCorrect) {
-          correctAnswers++;
+        const userAnswer = userAnswers[index];
+        let isCorrect = false;
+        
+        if (q.type === 'mcq' && userAnswer === q.correctAnswer) {
+            isCorrect = true;
+        } else if (q.type === 'numerical' && Number(userAnswer) === q.correctAnswer) {
+            isCorrect = true;
+        } else if (q.type === 'match') {
+            const userMatches = userAnswer as { [key: string]: string };
+            const isFullyCorrect = q.pairs.every(p => userMatches?.[p.item] === p.match);
+            if (isFullyCorrect) {
+                isCorrect = true;
+            }
         }
-      }
+        
+        if (isCorrect) {
+            totalObtainedMarks += q.marks;
+        }
     });
-
-    return Math.round((correctAnswers / quiz.questions.length) * 100);
+    
+    return Math.round((totalObtainedMarks / (quiz.totalMarks ?? 1)) * 100);
   }, [quiz, userAnswers]);
 
 
@@ -472,15 +480,15 @@ export default function TakeQuizPage() {
                 
                 <div className="flex justify-between text-sm font-semibold mt-4">
                     <span>Time Allowed: {formatTime(totalTime)}</span>
-                    <span>Max Marks: {totalQuestions * 4}</span>
+                    <span>Max Marks: {quiz.totalMarks}</span>
                 </div>
 
                 <div className="text-left mt-6">
                     <h3 className="font-bold text-red-600 border-b-2 border-red-600 pb-1 inline-block">IMPORTANT INSTRUCTIONS:</h3>
                     <ol className="list-decimal list-inside text-xs sm:text-sm space-y-2 mt-2">
                         <li>The test is of {formatTime(totalTime)} duration.</li>
-                        <li>This test paper consists of {totalQuestions} questions.</li>
-                        <li>Each question carries +4 marks for correct answer and -1 mark for wrong answer.</li>
+                        <li>This test paper consists of {totalQuestions} questions for a total of {quiz.totalMarks} marks.</li>
+                        <li>Each question has marks assigned to it. There is no negative marking.</li>
                         <li>Attempt all questions.</li>
                         <li>This is a static paper. To submit, click the "Grade with AI" button at the bottom.</li>
                     </ol>
@@ -498,8 +506,13 @@ export default function TakeQuizPage() {
                     <div key={secIndex}>
                         <h2 className="text-center font-bold text-lg bg-gray-200 p-2 rounded-md mb-4 uppercase">{section.title}</h2>
                         {section.questions.map(q => (
-                            <div key={quiz.questions.indexOf(q)} className="mb-8 pb-4 border-b border-gray-200">
-                               {renderQuestion(q, quiz.questions.indexOf(q), true)}
+                            <div key={quiz.questions.indexOf(q)} className="mb-8 pb-4 border-b border-gray-200 flex justify-between items-start">
+                               <div className="flex-1">
+                                {renderQuestion(q, quiz.questions.indexOf(q), true)}
+                               </div>
+                               <div className="text-xs font-semibold bg-gray-200 text-gray-700 px-2 py-1 rounded-md ml-4">
+                                [{q.marks} Mark{q.marks > 1 ? 's' : ''}]
+                               </div>
                             </div>
                         ))}
                     </div>
@@ -523,7 +536,7 @@ export default function TakeQuizPage() {
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={() => {
                         if (quiz?.quizType === 'exam') {
-                           setQuizState('results'); // Move to results to show review
+                           setQuizState('results');
                         }
                         router.push('/quiz/grade');
                     }}>Proceed</AlertDialogAction>
@@ -610,7 +623,9 @@ export default function TakeQuizPage() {
                   <p className="text-sm font-semibold text-muted-foreground">
                     Question {currentQuestionIndex + 1}/{quiz.questions.length}
                   </p>
-                   <div className="text-xs font-semibold bg-gray-200 text-gray-700 px-2 py-1 rounded-md">+4.0 / -1.0</div>
+                   <div className="text-xs font-semibold bg-gray-200 text-gray-700 px-2 py-1 rounded-md">
+                    [{q.marks} Mark{q.marks > 1 ? 's' : ''}]
+                   </div>
                 </div>
 
                 <div className="mb-6">
@@ -861,3 +876,5 @@ export default function TakeQuizPage() {
     </div>
   );
 }
+
+    
