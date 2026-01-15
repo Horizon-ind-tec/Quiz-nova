@@ -157,7 +157,7 @@ export default function TakeQuizPage() {
   
   const handlePrevQuestion = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
     }
   };
   
@@ -262,16 +262,17 @@ export default function TakeQuizPage() {
   const progress = useMemo(() => {
     if (!quiz || totalQuestions === 0) return 0;
     let answeredCount = 0;
-    quiz.questions.forEach((q, index) => {
-      const userAnswer = userAnswers[index];
-      if (q.type === 'mcq' || q.type === 'numerical') {
-        if (userAnswer) answeredCount++;
-      } else if (q.type === 'match') {
-        if (userAnswer && Object.keys(userAnswer).length > 0) answeredCount++;
+    Object.values(userAnswers).forEach(answer => {
+      if (typeof answer === 'string' && answer) {
+        answeredCount++;
+      } else if (typeof answer === 'object' && answer && Object.keys(answer).length > 0) {
+        answeredCount++;
+      } else if (typeof answer === 'number') {
+        answeredCount++;
       }
     });
     return (answeredCount / totalQuestions) * 100;
-  }, [userAnswers, quiz, totalQuestions]);
+  }, [userAnswers, totalQuestions, quiz]);
 
   const renderMCQ = (q: MCQ, questionIndex: number, isExam: boolean) => {
     const userAnswer = userAnswers[questionIndex] as string;
