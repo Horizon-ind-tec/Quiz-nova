@@ -411,7 +411,7 @@ export default function CreateQuizPage() {
                         name="numberOfQuestions"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Number of Questions</FormLabel>
+                            <FormLabel>Marks</FormLabel>
                             <FormControl>
                               <Input type="number" min="1" max="50" placeholder="e.g., 10" {...field} />
                             </FormControl>
