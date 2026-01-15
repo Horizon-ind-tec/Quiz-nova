@@ -26,7 +26,7 @@ body {
     --destructive-foreground: 0 0% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 210 40% 50%;
+    --ring: 142.1 76.2% 36.3%;
     --chart-1: 207 70% 53%;
     --chart-2: 37 90% 51%;
     --chart-3: 197 37% 24%;
@@ -61,7 +61,7 @@ body {
     --destructive-foreground: 0 0% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 210 40% 50%;
+    --ring: 142.1 76.2% 36.3%;
     --chart-1: 207 70% 53%;
     --chart-2: 37 90% 51%;
     --chart-3: 197 37% 24%;
@@ -86,5 +86,3 @@ body {
     @apply bg-background text-foreground;
   }
 }
-
-    

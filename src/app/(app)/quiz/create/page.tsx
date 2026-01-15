@@ -154,7 +154,7 @@ export default function CreateQuizPage() {
                               </FormControl>
                               <FormLabel
                                 htmlFor="type-quiz"
-                                className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                                className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-500 [&:has([data-state=checked])]:border-green-500 cursor-pointer"
                               >
                                 <span className="font-bold">Quiz</span>
                                 <span className="text-xs text-muted-foreground">Interactive session</span>
@@ -166,7 +166,7 @@ export default function CreateQuizPage() {
                               </FormControl>
                               <FormLabel
                                 htmlFor="type-exam"
-                                className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                                className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-500 [&:has([data-state=checked])]:border-green-500 cursor-pointer"
                               >
                                 <span className="font-bold">Exam</span>
                                 <span className="text-xs text-muted-foreground">Paper-style test</span>
@@ -204,7 +204,7 @@ export default function CreateQuizPage() {
                                 <FormLabel
                                   htmlFor={subject.name}
                                   className={cn(
-                                    "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-28"
+                                    "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-500 [&:has([data-state=checked])]:border-green-500 cursor-pointer h-28"
                                   )}
                                 >
                                   <Icon className="h-8 w-8 mb-2" />
@@ -261,7 +261,7 @@ export default function CreateQuizPage() {
                                                 <FormLabel
                                                     htmlFor={`sub-${sub.name}`}
                                                     className={cn(
-                                                        "flex flex-col items-start justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                                                        "flex flex-col items-start justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-500 [&:has([data-state=checked])]:border-green-500 cursor-pointer"
                                                     )}
                                                 >
                                                     <span className="font-semibold">{sub.name}</span>
@@ -360,7 +360,7 @@ export default function CreateQuizPage() {
                               <FormControl>
                                 <RadioGroupItem value={d.value} id={`diff-${d.value}`} className="sr-only" />
                               </FormControl>
-                              <FormLabel htmlFor={`diff-${d.value}`} className={cn("flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer")}>
+                              <FormLabel htmlFor={`diff-${d.value}`} className={cn("flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-500 [&:has([data-state=checked])]:border-green-500 cursor-pointer")}>
                                 {d.label}
                               </FormLabel>
                             </FormItem>
