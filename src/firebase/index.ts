@@ -2,7 +2,7 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, browserLocalPersistence, setPersistence } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore'
 import { useUser } from '@/firebase/auth/use-user';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -19,12 +19,6 @@ export function initializeFirebase() {
 
   const auth = getAuth(firebaseApp);
   
-  // Set persistence here
-  setPersistence(auth, browserLocalPersistence)
-    .catch((error) => {
-      console.error("Error setting auth persistence:", error);
-    });
-
   return {
     firebaseApp,
     auth,
