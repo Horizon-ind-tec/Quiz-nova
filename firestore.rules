@@ -74,13 +74,14 @@ service cloud.firestore {
 
     /**
      * Validates that the User document being created has an 'id' field
-     * that matches the document's ID (which is the user's UID), and starts with a free plan.
+     * that matches the document's ID (which is the user's UID), and starts with a valid plan.
+     * Regular users must start with 'free', admin can start with 'ultimate'.
      */
     function isCreatingOwnProfile(userId) {
-      let isPlanFree = request.resource.data.plan == 'free';
+      let isPlanValid = (request.resource.data.plan == 'free' && !isAdmin()) || (request.resource.data.plan == 'ultimate' && isAdmin());
       let hasNoPaymentStatus = !('paymentStatus' in request.resource.data);
       let hasNoPendingPlan = !('pendingPlan' in request.resource.data);
-      return isOwner(userId) && request.resource.data.id == userId && isPlanFree && hasNoPaymentStatus && hasNoPendingPlan;
+      return isOwner(userId) && request.resource.data.id == userId && isPlanValid && hasNoPaymentStatus && hasNoPendingPlan;
     }
     
     /**

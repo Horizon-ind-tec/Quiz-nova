@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { BrainCircuit, Loader2 } from 'lucide-react';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, User } from 'firebase/auth';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,12 +15,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useFirestore } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 const formSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
   password: z.string().min(1, 'Password is required.'),
 });
+
+const ADMIN_EMAIL = 'wizofclassknowledge@gmail.com';
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -35,10 +37,35 @@ export default function LoginPage() {
     defaultValues: { email: '', password: '' },
   });
 
+  const createUserProfile = async (user: User) => {
+    if (!firestore) return;
+    const userDocRef = doc(firestore, 'users', user.uid);
+    
+    // Check if the user is the admin
+    const isAdmin = user.email === ADMIN_EMAIL;
+    const userPlan = isAdmin ? 'ultimate' : 'free';
+
+    // Check if document exists
+    const docSnap = await getDoc(userDocRef);
+    if (!docSnap.exists()) {
+        await setDoc(userDocRef, {
+            id: user.uid,
+            email: user.email,
+            name: user.displayName || 'New User',
+            createdAt: new Date().toISOString(),
+            plan: userPlan,
+        });
+    } else if (isAdmin) {
+        // If the admin logs in, ensure their plan is ultimate
+        await setDoc(userDocRef, { plan: 'ultimate' }, { merge: true });
+    }
+  };
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      await createUserProfile(userCredential.user);
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -64,16 +91,7 @@ export default function LoginPage() {
     try {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
-
-      const userDocRef = doc(firestore, 'users', userCredential.user.uid);
-       await setDoc(userDocRef, {
-        id: userCredential.user.uid,
-        email: userCredential.user.email,
-        name: userCredential.user.displayName || 'Google User',
-        createdAt: new Date().toISOString(),
-        plan: 'free',
-      }, { merge: true });
-      
+      await createUserProfile(userCredential.user);
       router.push('/dashboard');
     } catch (error: any) {
       toast({

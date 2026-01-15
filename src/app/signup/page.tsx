@@ -7,8 +7,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { BrainCircuit, Loader2 } from 'lucide-react';
-import { createUserWithEmailAndPassword, updateProfile, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { setDoc, doc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, updateProfile, signInWithPopup, GoogleAuthProvider, User } from 'firebase/auth';
+import { setDoc, doc, getDoc } from 'firebase/firestore';
 
 
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,8 @@ const formSchema = z.object({
   }),
 });
 
+const ADMIN_EMAIL = 'wizofclassknowledge@gmail.com';
+
 export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -42,16 +44,25 @@ export default function SignUpPage() {
   });
 
 
-  const createUserProfile = async (user: any, name: string) => {
+  const createUserProfile = async (user: User, name: string) => {
     if (!firestore) return;
     const userDocRef = doc(firestore, 'users', user.uid);
-    await setDoc(userDocRef, {
-      id: user.uid,
-      email: user.email,
-      name: name,
-      createdAt: new Date().toISOString(),
-      plan: 'free',
-    });
+    
+    const isAdmin = user.email === ADMIN_EMAIL;
+    const userPlan = isAdmin ? 'ultimate' : 'free';
+
+    const docSnap = await getDoc(userDocRef);
+    if (!docSnap.exists()) {
+        await setDoc(userDocRef, {
+            id: user.uid,
+            email: user.email,
+            name: name,
+            createdAt: new Date().toISOString(),
+            plan: userPlan,
+        });
+    } else if (isAdmin) {
+         await setDoc(userDocRef, { plan: 'ultimate' }, { merge: true });
+    }
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -94,16 +105,7 @@ export default function SignUpPage() {
     try {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
-      
-      const userDocRef = doc(firestore, 'users', userCredential.user.uid);
-       await setDoc(userDocRef, {
-        id: userCredential.user.uid,
-        email: userCredential.user.email,
-        name: userCredential.user.displayName || 'Google User',
-        createdAt: new Date().toISOString(),
-        plan: 'free',
-      }, { merge: true });
-
+      await createUserProfile(userCredential.user, userCredential.user.displayName || 'Google User');
       router.push('/dashboard');
     } catch (error: any) {
       toast({

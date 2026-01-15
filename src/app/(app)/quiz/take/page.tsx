@@ -67,9 +67,16 @@ export default function TakeQuizPage() {
   
   const [shuffledMatches, setShuffledMatches] = useState<{[key: number]: string[]}>({});
   
-  const timePerQuestion = quiz?.quizType === 'exam' ? 180 : 120; // 3 mins for exam, 2 for quiz
-  const totalTime = useMemo(() => (quiz?.questions.length ?? 0) * timePerQuestion, [quiz, timePerQuestion]);
-  const [timeRemaining, setTimeRemaining] = useState(totalTime);
+  const totalTime = useMemo(() => {
+    if (!quiz) return 0;
+    if (quiz.class.startsWith('JEE') || quiz.class.startsWith('NEET')) {
+        return quiz.quizType === 'exam' ? 4 * 60 * 60 : 1 * 60 * 60; // 4 hours for exam, 1 hour for quiz
+    }
+    const timePerQuestion = quiz?.quizType === 'exam' ? 180 : 120; // 3 mins for exam, 2 for quiz
+    return (quiz?.questions.length ?? 0) * timePerQuestion
+  }, [quiz]);
+
+  const [timeElapsed, setTimeElapsed] = useState(0);
   
   const shuffleArray = useCallback((array: any[]) => {
     const newArray = [...array];
@@ -101,28 +108,28 @@ export default function TakeQuizPage() {
       setCurrentQuestionIndex(0);
       setScore(0);
       setQuizState('taking');
-      setTimeRemaining(totalTime);
+      setTimeElapsed(0);
     } else {
       if (typeof window !== 'undefined') {
         router.replace('/quiz/create');
       }
     }
-  }, [quiz, router, totalTime, shuffleArray]);
+  }, [quiz, router, shuffleArray]);
   
   useEffect(() => {
-    if (quizState !== 'taking' || timeRemaining <= 0) return;
+    if (quizState !== 'taking') return;
     const timer = setInterval(() => {
-      setTimeRemaining(prevTime => {
-        if (prevTime <= 1) {
-          clearInterval(timer);
-          finishQuiz();
-          return 0;
+      setTimeElapsed(prevTime => {
+        if (totalTime > 0 && prevTime >= totalTime - 1) {
+            clearInterval(timer);
+            finishQuiz();
+            return totalTime;
         }
-        return prevTime - 1;
+        return prevTime + 1;
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [quizState, timeRemaining]);
+  }, [quizState, totalTime]);
 
 
   const handleAnswerSelect = (questionIndex: number, answer: any) => {
@@ -219,6 +226,7 @@ export default function TakeQuizPage() {
       score: finalScore,
       completedAt: Date.now(),
       userId: user.uid,
+      completionTime: timeElapsed,
     };
     
     try {
@@ -455,8 +463,8 @@ export default function TakeQuizPage() {
                 <p className="text-sm sm:text-base font-bold text-blue-600 mt-2">{new Date(quiz.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
                 
                 <div className="flex justify-between text-sm font-semibold mt-4">
-                    <span>Time: {formatTime(totalTime)}</span>
-                    <span>M.M: {totalQuestions * 4}</span>
+                    <span>Time Allowed: {formatTime(totalTime)}</span>
+                    <span>Max Marks: {totalQuestions * 4}</span>
                 </div>
 
                 <div className="text-left mt-6">
@@ -556,9 +564,10 @@ export default function TakeQuizPage() {
                   <Button variant="ghost" size="sm" onClick={() => setQuizState('paused')}>
                     <Pause className="mr-2 h-4 w-4" /> Pause
                   </Button>
-                  <div className="flex items-center gap-2 font-medium text-red-500">
+                  <div className="flex items-center gap-2 font-medium">
                     <Clock className="h-5 w-5" />
-                    <span>{formatTime(timeRemaining)}</span>
+                    <span>{formatTime(timeElapsed)}</span>
+                    {totalTime > 0 && <span className="text-muted-foreground">/ {formatTime(totalTime)}</span>}
                   </div>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>

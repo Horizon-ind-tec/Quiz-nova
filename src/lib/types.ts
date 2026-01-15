@@ -49,6 +49,7 @@ export interface QuizAttempt extends Quiz {
   score: number;
   userAnswers: UserAnswers;
   completedAt: number;
+  completionTime: number;
 }
 
 
