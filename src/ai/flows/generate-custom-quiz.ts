@@ -27,6 +27,7 @@ const GenerateCustomQuizInputSchema = z.object({
   ncert: z.boolean().optional().describe('Whether the quiz should be based on the NCERT curriculum.'),
   class: z.string().optional().describe('The class of the student.'),
   seed: z.number().optional().describe('A random seed to ensure question uniqueness.'),
+  timestamp: z.number().optional().describe('A timestamp to ensure question uniqueness.'),
 });
 export type GenerateCustomQuizInput = z.infer<typeof GenerateCustomQuizInputSchema>;
 
@@ -68,9 +69,13 @@ export type GenerateCustomQuizOutput = z.infer<typeof GenerateCustomQuizOutputSc
 export async function generateCustomQuiz(
   input: GenerateCustomQuizInput
 ): Promise<GenerateCustomQuizOutput> {
-  // Add a random seed to ensure uniqueness if not provided
-  const inputWithSeed = { ...input, seed: input.seed || Math.random() };
-  return generateCustomQuizFlow(inputWithSeed);
+  // Add a random seed and timestamp to ensure uniqueness
+  const inputWithUniqueness = { 
+      ...input, 
+      seed: input.seed || Math.random(),
+      timestamp: Date.now(),
+    };
+  return generateCustomQuizFlow(inputWithUniqueness);
 }
 
 const generateCustomQuizPrompt = ai.definePrompt({
@@ -93,8 +98,11 @@ Chapter/Topic: {{{chapter}}}
 Curriculum: NCERT
 {{/if}}
 
-**IMPORTANT**: You MUST generate a completely new and unique set of questions for every request. Use the random seed provided below to ensure the questions are different each time.
-Request Seed: {{{seed}}}
+**VERY IMPORTANT**: You MUST generate a completely new and unique set of questions for every request. Use the unique request fingerprint provided below to ensure the questions are different each time. Do not repeat questions from previous requests with a different fingerprint.
+
+Unique Request Fingerprint:
+- Seed: {{{seed}}}
+- Timestamp: {{{timestamp}}}
 
 - Generate a mix of question types (MCQ, Match the Following, Numerical) if the assessment type is 'exam' and the number of questions is large (e.g., >15). Otherwise, prioritize MCQs.
 - Ensure you generate exactly {{{numberOfQuestions}}} questions in total.
