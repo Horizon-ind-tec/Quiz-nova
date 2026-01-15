@@ -66,6 +66,7 @@ export default function TakeQuizPage() {
   const { toast } = useToast();
   
   const [shuffledMatches, setShuffledMatches] = useState<{[key: number]: string[]}>({});
+  const [quizProgress, setQuizProgress] = useState(0);
   
   const totalTime = useMemo(() => {
     if (!quiz) return 0;
@@ -109,6 +110,7 @@ export default function TakeQuizPage() {
       setMarkedForReview(Array(quiz.questions.length).fill(false));
       setCurrentQuestionIndex(0);
       setScore(0);
+      setQuizProgress(0);
       setQuizState('taking');
       setTimeElapsed(0);
     } else {
@@ -135,20 +137,33 @@ export default function TakeQuizPage() {
 
 
   const handleAnswerSelect = (questionIndex: number, answer: any) => {
-    setUserAnswers(prev => {
-        const q = quiz?.questions[questionIndex];
-        if (!q) return prev;
+    const q = quiz?.questions[questionIndex];
+    if (!q) return;
 
-        if (quiz?.quizType === 'quiz') {
-            const isAnswered = prev[questionIndex] !== '' && prev[questionIndex] !== undefined;
-             if (q.type === 'mcq' && isAnswered) return prev;
-        }
-        
-        return {
-            ...prev,
-            [questionIndex]: answer
-        }
-    });
+    const inQuizMode = quiz?.quizType === 'quiz';
+    const isAlreadyAnswered = userAnswers[questionIndex] !== '' && userAnswers[questionIndex] !== undefined && Object.keys(userAnswers[questionIndex]).length > 0;
+
+    // In quiz mode, don't allow changing answers and update progress
+    if (inQuizMode && isAlreadyAnswered) return;
+
+    setUserAnswers(prev => ({
+        ...prev,
+        [questionIndex]: answer
+    }));
+
+    if (inQuizMode) {
+      let isCorrect = false;
+      if (q.type === 'mcq') {
+        isCorrect = answer === q.correctAnswer;
+      }
+      
+      if (isCorrect) {
+        const progressIncrease = (q.marks / (quiz.totalMarks || 1)) * 100;
+        setQuizProgress(prev => Math.min(100, prev + progressIncrease));
+      } else {
+        setQuizProgress(prev => Math.max(0, prev - 1));
+      }
+    }
   };
 
   const handleNextQuestion = () => {
@@ -267,7 +282,7 @@ export default function TakeQuizPage() {
   const totalQuestions = quiz?.questions.length ?? 0;
   const q = quiz?.questions[currentQuestionIndex];
 
-  const progress = useMemo(() => {
+  const completionProgress = useMemo(() => {
     if (!quiz || totalQuestions === 0) return 0;
     let answeredCount = 0;
     Object.keys(userAnswers).forEach(key => {
@@ -559,7 +574,7 @@ export default function TakeQuizPage() {
             return renderExamPaper();
         }
 
-        const isAnswered = userAnswers[currentQuestionIndex] !== '' && userAnswers[currentQuestionIndex] !== undefined && userAnswers[currentQuestionIndex] !== null;
+        const isAnswered = userAnswers[currentQuestionIndex] !== '' && userAnswers[currentQuestionIndex] !== undefined;
 
         if (quizState === 'paused') {
           return (
@@ -578,7 +593,7 @@ export default function TakeQuizPage() {
           <FormProvider {...form}>
             <Card className="w-full">
               <div className="p-4 border-b space-y-3">
-                 <Progress value={progress} className="h-2" />
+                 <Progress value={quiz.quizType === 'quiz' ? quizProgress : completionProgress} className="h-2" />
                 <div className="flex justify-between items-center">
                   <Button variant="ghost" size="sm" onClick={() => setQuizState('paused')}>
                     <Pause className="mr-2 h-4 w-4" /> Pause
@@ -876,5 +891,3 @@ export default function TakeQuizPage() {
     </div>
   );
 }
-
-    
