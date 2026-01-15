@@ -83,11 +83,28 @@ export default function CreateQuizPage() {
       });
 
       if (result && result.questions.length > 0) {
+        const shuffledQuestions = result.questions.map(q => {
+            if (q.type === 'mcq') {
+                const correctAnswer = q.correctAnswer;
+                const incorrectAnswers = q.options.filter(opt => opt !== correctAnswer);
+                const allOptions = [correctAnswer, ...incorrectAnswers];
+                
+                // Shuffle the options array
+                for (let i = allOptions.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [allOptions[i], allOptions[j]] = [allOptions[j], allOptions[i]];
+                }
+                
+                return { ...q, options: allOptions };
+            }
+            return q;
+        });
+
         const newQuiz: Quiz = {
           id: uuidv4(),
           ...data,
           subCategory: data.subCategories?.join(', '),
-          questions: result.questions,
+          questions: shuffledQuestions,
           createdAt: Date.now(),
         };
         setQuiz(newQuiz);
@@ -128,7 +145,7 @@ export default function CreateQuizPage() {
                         <FormControl>
                           <RadioGroup
                             onValueChange={field.onChange}
-                            defaultValue={field.value}
+                            value={field.value}
                             className="grid grid-cols-2 gap-4"
                           >
                             <FormItem>
