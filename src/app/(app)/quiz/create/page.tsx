@@ -258,7 +258,7 @@ export default function CreateQuizPage() {
                             <FormControl>
                               <RadioGroup
                                 onValueChange={(value) => {
-                                  field.onChange(value);
+                                  form.setValue('subject', value);
                                   form.setValue('subCategories', []);
                                 }}
                                 value={field.value}
@@ -319,7 +319,7 @@ export default function CreateQuizPage() {
                                         </div>
                                     ) : (
                                         <RadioGroup
-                                            onValueChange={(value) => field.onChange([value])}
+                                            onValueChange={(value) => form.setValue('subCategories', [value])}
                                             value={field.value?.[0]}
                                             className="grid grid-cols-1 sm:grid-cols-2 gap-2"
                                         >
