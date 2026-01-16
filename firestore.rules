@@ -1,243 +1,191 @@
-
 /**
- * This ruleset enforces a strict user-ownership model for the QuizNova application.
- * All data, including user profiles, quizzes, questions, and results, is private
- * and accessible only by the user who created it. The security model is designed
- * for simplicity, performance, and strong authorization guarantees.
+ * Core Philosophy: This ruleset enforces a strict user-ownership model. All data
+ * is considered private and can only be accessed by the user who created it.
+ * Anonymous users are permitted by the auth model but have no data access.
  *
- * Core Philosophy:
- * The fundamental principle is that users own their data. There are no public or
- * shared resources. All access control decisions are based on the authenticated
-
- * user's UID.
- *
- * Data Structure:
- * The data is organized hierarchically. All user-specific content is nested
- * under their unique document in the `/users/{userId}` path. For example, a
- * user's quizzes are located at `/users/{userId}/quizzes/{quizId}`. This path-based
- * ownership model makes security rules clear and efficient.
+ * Data Structure: The data is organized into a hierarchical structure where all
+ * user-specific data (quizzes, questions, results) is stored in subcollections
+ * under that user's root document in the `/users/{userId}` path. This path-based
+ * security model is highly performant and secure.
  *
  * Key Security Decisions:
- * - User Isolation: Users can only interact with their own data subtree. They cannot
- *   read, write, or even list data belonging to other users.
- * - No Public Data: There are no globally readable collections. All access requires
- *   authentication.
- * - User Enumeration Disabled: Listing the top-level `/users` collection is explicitly
- *   disallowed to protect user privacy.
- * - Default Deny: Any operation not explicitly permitted is denied.
+ * - No Public Data: All collections and documents require the user to be signed in.
+ * - No User Listing: It is not possible to list all users in the `/users` collection.
+ * - Strict Ownership: A user can only read or write data located within their own
+ *   data tree (i.e., under their own `/users/{userId}` path). There is no concept
+ *   of shared or collaborative data.
+ * - Default Deny: Any access pattern not explicitly allowed is denied.
  *
- * Denormalization for Authorization:
- * This ruleset relies on path-based security, a form of structural denormalization.
- * The `userId` in the document path is the primary source of truth for ownership. To
- * ensure data integrity, we enforce that documents created within a user's data
- * tree contain a corresponding `userId` field that matches the path, preventing
- * data from being misplaced or misattributed.
+ * Denormalization for Authorization: Each document that represents user content
+ * (e.g., Quiz, QuizResult) contains a denormalized `userId` field. The rules
+ * validate this field on creation to ensure it matches the authenticated user,
+ * creating a strong, unchangeable link between the data and its owner. This
+
+ * avoids slow and costly `get()` calls in subcollection rules.
+ *
+ * Structural Segregation: User profiles, quizzes, questions, and quiz results are
+ * all stored in separate collections or subcollections. This clear separation
+ * allows for simple, targeted security rules for each data type and improves
+ * query performance by ensuring queries don't have to filter through mixed-entity
+ * collections.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    //-------------------------------------------------------------------------
+    // =============================================================================
     // Helper Functions
-    //-------------------------------------------------------------------------
+    // =============================================================================
 
     /**
-     * Checks if a user is authenticated.
+     * Verifies that the user is signed in.
      */
     function isSignedIn() {
       return request.auth != null;
     }
-    
-    /**
-     * Checks if the currently authenticated user is the admin.
-     */
-    function isAdmin() {
-      return isSignedIn() && request.auth.token.email == 'wizofclassknowledge@gmail.com';
-    }
 
     /**
-     * Checks if the currently authenticated user is the owner of the resource
-     * identified by the given userId.
+     * Verifies that the requesting user's UID matches the provided userId.
+     * This is the core of the user-ownership model.
      */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
     /**
-     * Checks if the authenticated user is the owner of an existing document.
-     * Crucially used for update and delete operations to prevent modifying
-     * non-existent data.
+     * Verifies ownership for an existing document. Used for update and delete
+     * operations to prevent acting on non-existent data.
      */
     function isExistingOwner(userId) {
-      return isOwner(userId) && exists(/databases/$(database)/documents/users/$(userId));
+      return isOwner(userId) && resource != null;
     }
 
     /**
-     * Validates that the User document being created has an 'id' field
-     * that matches the document's ID (which is the user's UID), and starts with a valid plan.
-     * Regular users must start with 'free', admin can start with 'ultimate'.
+     * Validates the integrity of a User document on creation.
+     * Ensures the document's internal ID matches its path ID.
      */
-    function isCreatingOwnProfile(userId) {
-      let isPlanValid = (request.resource.data.plan == 'free' && !isAdmin()) || (request.resource.data.plan == 'ultimate' && isAdmin());
-      let hasNoPaymentStatus = !('paymentStatus' in request.resource.data);
-      let hasNoPendingPlan = !('pendingPlan' in request.resource.data);
-      return isOwner(userId) && request.resource.data.id == userId && isPlanValid && hasNoPaymentStatus && hasNoPendingPlan;
-    }
-    
-    /**
-     * Allows a user to update their profile to initiate a payment.
-     * They can set 'paymentStatus' to 'pending' and specify a 'pendingPlan'.
-     * They cannot change their existing 'plan' or other core fields.
-     */
-    function isUpdatingToInitiatePayment(userId) {
-        let incomingData = request.resource.data;
-        let existingData = resource.data;
-        // Ensure the user is the owner
-        return isOwner(userId)
-            // They are setting status to 'pending'
-            && incomingData.paymentStatus == 'pending'
-            // They are setting which plan they are paying for
-            && 'pendingPlan' in incomingData
-            // They are NOT changing their current plan directly
-            && incomingData.plan == existingData.plan
-            // They are not modifying immutable fields
-            && incomingData.id == existingData.id
-            && incomingData.email == existingData.email
-            && incomingData.createdAt == existingData.createdAt;
+    function isValidNewUser(userId) {
+      return request.resource.data.id == userId;
     }
 
     /**
-     * Validates that the Quiz document being created has a 'userId' field
-     * that matches the owner's UID from the path.
+     * Enforces immutability of core relational fields on a User document update.
      */
-    function isCreatingOwnQuiz(userId) {
+    function isImmutableUser() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+    /**
+     * Validates the integrity of a Quiz document on creation.
+     * Ensures the document's internal userId matches the owner's path.
+     */
+    function isValidNewQuiz(userId) {
       return request.resource.data.userId == userId;
     }
 
     /**
-     * Enforces immutability of the Quiz's 'userId' field during updates.
+     * Enforces immutability of core relational fields on a Quiz document update.
      */
-    function isUpdatingOwnQuiz() {
+    function isImmutableQuiz() {
       return request.resource.data.userId == resource.data.userId;
     }
 
     /**
-     * Validates that the Question document being created has a 'quizId' field
-     * that matches the parent quiz's ID from the path.
+     * Validates the integrity of a Question document on creation.
+     * Ensures the document's internal quizId matches its parent path.
      */
-    function isCreatingOwnQuestion(quizId) {
+    function isValidNewQuestion(quizId) {
       return request.resource.data.quizId == quizId;
     }
 
     /**
-     * Enforces immutability of the Question's 'quizId' field during updates.
+     * Enforces immutability of core relational fields on a Question document update.
      */
-    function isUpdatingOwnQuestion() {
+    function isImmutableQuestion() {
       return request.resource.data.quizId == resource.data.quizId;
     }
 
     /**
-     * Validates that the QuizResult document being created has a 'userId' field
-     * that matches the owner's UID from the path.
+     * Validates the integrity of a QuizResult document on creation.
+     * Ensures the document's internal userId matches the owner's path.
      */
-    function isCreatingOwnQuizResult(userId) {
+    function isValidNewQuizResult(userId) {
       return request.resource.data.userId == userId;
     }
 
     /**
-     * Enforces immutability of the QuizResult's 'userId' field during updates.
+     * Enforces immutability of core relational fields on a QuizResult document update.
      */
-    function isUpdatingOwnQuizResult() {
+    function isImmutableQuizResult() {
       return request.resource.data.userId == resource.data.userId;
     }
 
 
-    //-------------------------------------------------------------------------
+    // =============================================================================
     // Collection Rules
-    //-------------------------------------------------------------------------
-
-     /**
-     * @description Manages global app settings, like the UPI QR code.
-     * @path /settings/{settingId}
-     * @allow (read) Any authenticated user can read settings.
-     * @allow (write) Only the admin can create or update settings.
-     * @principle Centralized configuration with admin-only write access.
-     */
-    match /settings/{settingId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-    
-    /**
-     * @description Manages video coaching content.
-     * @path /videos/{videoId}
-     * @allow (read) Any authenticated user can read video information.
-     * @allow (write) Only the admin user can create, update, or delete videos.
-     * @principle Public read access for educational content, with centralized admin control.
-     */
-    match /videos/{videoId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
+    // =============================================================================
 
     /**
-     * @description Manages user profile documents.
+     * @description Controls access to user profile documents.
      * @path /users/{userId}
-     * @allow (create) A newly authenticated user creating their own profile document.
-     * @allow (get) A user reading their own profile, or an admin reading any profile.
-     * @allow (list) An admin listing users (e.g., to find pending payments).
-     * @allow (update) A user updating their own profile to initiate payment, or an admin updating any profile to confirm payment.
-     * @principle Restricts access to a user's own data tree but grants full access to admins.
+     * @allow (get) A user `auth.uid: 'user123'` can read their own profile at `/users/user123`.
+     * @deny  (get) A user `auth.uid: 'user456'` cannot read another user's profile at `/users/user123`.
+     * @deny  (list) No user can list all documents in the `/users` collection.
+     * @allow (create) A new user `auth.uid: 'user123'` can create their own profile at `/users/user123`.
+     * @principle Restricts access to a user's own data tree and allows self-creation of a profile.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
-      allow list: if isAdmin(); 
-      allow create: if isCreatingOwnProfile(userId);
-      allow update: if isUpdatingToInitiatePayment(userId) || isAdmin();
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && isValidNewUser(userId);
+      allow update: if isExistingOwner(userId) && isImmutableUser();
       allow delete: if isExistingOwner(userId);
 
       /**
-       * @description Manages quizzes created by a user.
+       * @description Controls access to a user's private collection of quizzes.
        * @path /users/{userId}/quizzes/{quizId}
-       * @allow (create) An authenticated user creating a new quiz for themselves.
-       * @deny (get) User 'A' trying to read a quiz belonging to user 'B'.
-       * @principle Enforces strict document ownership within a user's private subcollection.
+       * @allow (get, list) A user `auth.uid: 'user123'` can read or list their own quizzes at `/users/user123/quizzes`.
+       * @deny  (get, list) A user `auth.uid: 'user456'` cannot access quizzes at `/users/user123/quizzes`.
+       * @allow (create) User 'user123' can create a new quiz in their own collection.
+       * @principle Enforces document ownership via path parameter for all operations.
        */
       match /quizzes/{quizId} {
         allow get: if isOwner(userId);
         allow list: if isOwner(userId);
-        allow create: if isOwner(userId) && isCreatingOwnQuiz(userId);
-        allow update: if isExistingOwner(userId) && isUpdatingOwnQuiz();
+        allow create: if isOwner(userId) && isValidNewQuiz(userId);
+        allow update: if isExistingOwner(userId) && isImmutableQuiz();
         allow delete: if isExistingOwner(userId);
 
         /**
-         * @description Manages questions within a specific quiz.
+         * @description Controls access to questions within a user's private quiz.
          * @path /users/{userId}/quizzes/{quizId}/questions/{questionId}
-         * @allow (list) The owner of a quiz listing all questions for that quiz.
-         * @deny (update) A user trying to modify a question in someone else's quiz.
-         * @principle Inherits ownership from the parent user document, securing nested data.
+         * @allow (get, list) User 'user123' can read/list questions for a quiz they own.
+         * @deny  (get, list) User 'user456' cannot access questions for a quiz owned by 'user123'.
+         * @allow (create) User 'user123' can create a new question within a quiz they own.
+         * @principle Inherits ownership from the parent path, providing strict data containment.
          */
         match /questions/{questionId} {
           allow get: if isOwner(userId);
           allow list: if isOwner(userId);
-          allow create: if isOwner(userId) && isCreatingOwnQuestion(quizId);
-          allow update: if isExistingOwner(userId) && isUpdatingOwnQuestion();
+          allow create: if isOwner(userId) && isValidNewQuestion(quizId);
+          allow update: if isExistingOwner(userId) && isImmutableQuestion();
           allow delete: if isExistingOwner(userId);
         }
       }
 
       /**
-       * @description Manages quiz results for a user.
-       * @path /users/{userId}/quiz_results/{quizResultId}
-       * @allow (create) A user saving their own result after completing a quiz.
-       * @deny (list) User 'A' attempting to see the quiz results of user 'B'.
-       * @principle Ensures personal performance data remains private to the user.
+       * @description Controls access to a user's private quiz results.
+       * @path /users/{userId}/quizResults/{quizResultId}
+       * @allow (get, list) A user `auth.uid: 'user123'` can read or list their own results at `/users/user123/quizResults`.
+       * @deny  (get, list) A user `auth.uid: 'user456'` cannot access results at `/users/user123/quizResults`.
+       * @allow (create) User 'user123' can create a new quiz result in their own collection.
+       * @principle Enforces document ownership via path parameter for all operations.
        */
-      match /quiz_results/{quizResultId} {
+      match /quizResults/{quizResultId} {
         allow get: if isOwner(userId);
         allow list: if isOwner(userId);
-        allow create: if isOwner(userId) && isCreatingOwnQuizResult(userId);
-        allow update: if isExistingOwner(userId) && isUpdatingOwnQuizResult();
+        allow create: if isOwner(userId) && isValidNewQuizResult(userId);
+        allow update: if isExistingOwner(userId) && isImmutableQuizResult();
         allow delete: if isExistingOwner(userId);
       }
     }
