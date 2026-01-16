@@ -28,6 +28,8 @@ function DashboardContent() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
+  const status = searchParams.get('status');
+  const plan = searchParams.get('plan');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -36,9 +38,7 @@ function DashboardContent() {
   }, [user, loading, router]);
   
   useEffect(() => {
-    const status = searchParams.get('status');
     if (status === 'success') {
-      const plan = searchParams.get('plan');
       toast({
         title: 'Plan Activated!',
         description: `Your ${plan} plan is now active. Enjoy your new features!`,
@@ -56,7 +56,7 @@ function DashboardContent() {
       // Clean the URL
        router.replace('/dashboard', { scroll: false });
     }
-  }, [searchParams, router, toast]);
+  }, [status, plan, router, toast]);
 
   const quizHistoryQuery = useMemoFirebase(
     () =>
