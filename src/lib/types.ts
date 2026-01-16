@@ -25,8 +25,24 @@ export interface Numerical {
   marks: number;
 }
 
+export interface ShortAnswer {
+  type: 'shortAnswer';
+  question: string;
+  correctAnswer: string;
+  explanation: string;
+  marks: number;
+}
 
-export type Question = MCQ | Match | Numerical;
+export interface LongAnswer {
+  type: 'longAnswer';
+  question: string;
+  correctAnswer: string; // Model answer
+  explanation: string;
+  marks: number;
+}
+
+
+export type Question = MCQ | Match | Numerical | ShortAnswer | LongAnswer;
 
 
 export type UserAnswers = {

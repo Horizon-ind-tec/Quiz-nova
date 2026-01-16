@@ -18,7 +18,7 @@ import type { Question } from '@/lib/types';
 
 // Define the schema for a single question to be passed to the AI
 const QuestionSchemaForAI = z.object({
-  type: z.enum(['mcq', 'match', 'numerical']),
+  type: z.enum(['mcq', 'match', 'numerical', 'shortAnswer', 'longAnswer']),
   question: z.string(),
   // For the AI, correctAnswer can be string, number, or array of pairs for matching
   correctAnswer: z.union([
@@ -74,7 +74,7 @@ const gradeExamPrompt = ai.definePrompt({
         {{#each questions}}
         - **Question {{add @index 1}} (Type: {{{type}}})**:
           - **Question:** {{{question}}}
-          - **Correct Answer:** 
+          - **Correct Answer / Model Answer:** 
             {{#if (eq type 'mcq')}}
               {{correctAnswer}}
             {{/if}}
@@ -86,13 +86,20 @@ const gradeExamPrompt = ai.definePrompt({
               - {{{item}}} -> {{{match}}}
               {{/each}}
             {{/if}}
+            {{#if (eq type 'shortAnswer')}}
+              {{correctAnswer}}
+            {{/if}}
+            {{#if (eq type 'longAnswer')}}
+              {{correctAnswer}}
+            {{/if}}
         {{/each}}
 
     3.  For each question, find the student's answer in the images. The answers should be in the same order as the questions.
-    4.  Compare the student's answer to the correct answer. Be flexible with minor spelling variations but strict with the core concepts.
+    4.  Compare the student's answer to the correct answer.
         - For MCQs, the user might write the option letter (A, B, C, D) or the full answer text. Your job is to map this back to the correct option text.
         - For Match the Following, the user might write pairs like "1 -> c", "Item -> Match". You must determine if their pairings are correct based on the provided correct answers.
         - For Numerical questions, the number must match exactly.
+        - For Short and Long Answer questions, the 'Correct Answer' is a model answer. You do not need to match it word-for-word. Instead, assess if the student's answer captures the key points and demonstrates understanding of the concept. Be lenient with phrasing but strict on factual accuracy.
 
     5. Determine if the student's answer for each question is correct.
     

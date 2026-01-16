@@ -59,7 +59,23 @@ const NumericalSchema = z.object({
   marks: z.number().describe('The marks assigned to this question.'),
 });
 
-const QuestionSchema = z.union([MCQSchema, MatchSchema, NumericalSchema]);
+const ShortAnswerSchema = z.object({
+  type: z.enum(['shortAnswer']).describe("The type of the question: Short Answer (e.g., one-word, define the term, 2-3 sentences)."),
+  question: z.string().describe('The question that requires a short textual answer.'),
+  correctAnswer: z.string().describe('The model correct answer.'),
+  explanation: z.string().describe('An explanation for the correct answer.'),
+  marks: z.number().describe('The marks assigned to this question.'),
+});
+
+const LongAnswerSchema = z.object({
+  type: z.enum(['longAnswer']).describe("The type of the question: Long Answer (e.g., paragraph-length response)."),
+  question: z.string().describe('The question that requires a detailed, long textual answer.'),
+  correctAnswer: z.string().describe('A model answer providing key points and structure.'),
+  explanation: z.string().describe('An explanation of what a good answer should contain.'),
+  marks: z.number().describe('The marks assigned to this question.'),
+});
+
+const QuestionSchema = z.union([MCQSchema, MatchSchema, NumericalSchema, ShortAnswerSchema, LongAnswerSchema]);
 
 
 const GenerateCustomQuizOutputSchema = z.object({
@@ -106,16 +122,18 @@ Curriculum: NCERT
 2.  You will decide the number of questions to generate. Create a mix of questions with different marks (e.g., 1, 2, 4, 5 marks per question).
 3.  Each generated question object MUST have a "marks" field indicating the marks for that question.
 4.  You MUST generate a completely new and unique set of questions for every request. Use the unique request fingerprint to ensure uniqueness.
+5.  For 'exam' type assessments, generate a mix of question types including Multiple Choice (MCQ), Match the Following, Numerical, Short Answer, and Long Answer questions.
+6.  For 'quiz' type assessments, generate ONLY MCQ, Match the Following, and Numerical questions.
+7.  For subjects like 'Social Science', 'History', 'Politics/Civics', or 'Biology', you SHOULD include a good number of Short Answer and Long Answer questions in 'exam' mode. For other subjects, use them where appropriate to create a balanced paper.
+
 
 Unique Request Fingerprint:
 - Seed: {{{seed}}}
 - Timestamp: {{{timestamp}}}
 
-- Generate a mix of question types (MCQ, Match the Following, Numerical) if the assessment type is 'exam'. Otherwise, prioritize MCQs for 'quiz' type.
-
 The entire output should be a single JSON object with a "questions" key, which holds an array of question objects. Each question object must have a "type", "marks", and other fields appropriate for that type.
 
-Example of the expected JSON structure for totalMarks: 10
+Example of the expected JSON structure for totalMarks: 25
 {
   "questions": [
     {
@@ -145,12 +163,26 @@ Example of the expected JSON structure for totalMarks: 10
       "marks": 1
     },
     {
+        "type": "shortAnswer",
+        "question": "Define 'photosynthesis'.",
+        "correctAnswer": "Photosynthesis is the process used by plants, algae, and certain bacteria to harness energy from sunlight and turn it into chemical energy.",
+        "explanation": "Key points are the use of sunlight, conversion to chemical energy, and the organisms that perform it.",
+        "marks": 4
+    },
+    {
+        "type": "longAnswer",
+        "question": "Describe the main causes of World War I.",
+        "correctAnswer": "The main causes of World War I can be summarized by the acronym MAIN: Militarism (building up armed forces), Alliances (agreements between nations to aid and protect one another), Imperialism (when one country takes over new lands or countries), and Nationalism (a strong sense of pride and loyalty to one's own nation). The assassination of Archduke Franz Ferdinand was the immediate trigger.",
+        "explanation": "A good answer should discuss the four main long-term causes (Militarism, Alliances, Imperialism, Nationalism) and mention the assassination of Archduke Ferdinand as the immediate cause.",
+        "marks": 10
+    },
+    {
         "type": "mcq",
         "question": "What is the largest planet in our solar system?",
         "options": ["Earth", "Mars", "Jupiter", "Saturn"],
         "correctAnswer": "Jupiter",
         "explanation": "Jupiter is the largest planet in our solar system by a significant margin.",
-        "marks": 4
+        "marks": 5
     }
   ]
 }
@@ -171,5 +203,3 @@ const generateCustomQuizFlow = ai.defineFlow(
     return output!;
   }
 );
-
-    

@@ -32,7 +32,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useLocalStorage } from '@/hooks/use-local-storage';
-import type { Quiz, QuizAttempt, Question, MCQ, Match, Numerical, UserAnswers } from '@/lib/types';
+import type { Quiz, QuizAttempt, Question, MCQ, Match, Numerical, UserAnswers, ShortAnswer, LongAnswer } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -381,7 +381,7 @@ export default function TakeQuizPage() {
           <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
             {q.options.map((option, index) => (
-              <div key={index} className="flex items-center">
+              <div key={option + index} className="flex items-center">
                 <span className="mr-2 font-semibold">({String.fromCharCode(65 + index)})</span>
                 <span>{option}</span>
               </div>
@@ -414,7 +414,7 @@ export default function TakeQuizPage() {
                       return "border-gray-300 opacity-70 cursor-not-allowed";
                     };
                     return (
-                        <FormItem key={index}>
+                        <FormItem key={option + index}>
                             <FormControl>
                                 <RadioGroupItem value={option} id={`q${questionIndex}-option-${index}`} className="sr-only" />
                             </FormControl>
@@ -527,11 +527,40 @@ export default function TakeQuizPage() {
     );
   };
 
+    const renderShortAnswer = (q: ShortAnswer, questionIndex: number, isExam: boolean) => {
+        if (isExam) {
+            return (
+                <div>
+                    <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
+                    <div className="mt-2 border-b-2 border-dotted border-gray-400 h-16 w-full"></div>
+                </div>
+            )
+        }
+        // This type of question is not interactive in 'quiz' mode
+        return <p>Unsupported question type for this quiz mode.</p>;
+    }
+
+    const renderLongAnswer = (q: LongAnswer, questionIndex: number, isExam: boolean) => {
+        if (isExam) {
+            return (
+                <div>
+                    <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
+                    <div className="mt-2 border-b-2 border-dotted border-gray-400 h-32 w-full mb-2"></div>
+                    <div className="mt-2 border-b-2 border-dotted border-gray-400 h-32 w-full mb-2"></div>
+                </div>
+            )
+        }
+         // This type of question is not interactive in 'quiz' mode
+        return <p>Unsupported question type for this quiz mode.</p>;
+    }
+
   const renderQuestion = (q: Question, index: number, isExam = false) => {
     switch (q.type) {
         case 'mcq': return renderMCQ(q, index, isExam);
         case 'match': return renderMatch(q, index, isExam);
         case 'numerical': return renderNumerical(q, index, isExam);
+        case 'shortAnswer': return renderShortAnswer(q, index, isExam);
+        case 'longAnswer': return renderLongAnswer(q, index, isExam);
         default: return <p>Unsupported question type.</p>;
     }
   }
@@ -543,6 +572,8 @@ export default function TakeQuizPage() {
     const mcqs = quiz.questions.filter(q => q.type === 'mcq');
     const matches = quiz.questions.filter(q => q.type === 'match');
     const numericals = quiz.questions.filter(q => q.type === 'numerical');
+    const shortAnswers = quiz.questions.filter(q => q.type === 'shortAnswer');
+    const longAnswers = quiz.questions.filter(q => q.type === 'longAnswer');
 
     return (
     <FormProvider {...form}>
@@ -581,7 +612,9 @@ export default function TakeQuizPage() {
             {[
               { title: 'Multiple Choice Questions', questions: mcqs },
               { title: 'Match the Following', questions: matches },
-              { title: 'Numerical Answer Questions', questions: numericals }
+              { title: 'Numerical Answer Questions', questions: numericals },
+              { title: 'Short Answer Questions', questions: shortAnswers },
+              { title: 'Long Answer Questions', questions: longAnswers },
             ].map((section, secIndex) => (
                 section.questions.length > 0 && (
                     <div key={secIndex}>
