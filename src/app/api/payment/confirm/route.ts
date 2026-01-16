@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, App, getApp as getAdminApp, cert } from 'firebase-admin/app';
+import { initializeApp, getApps, App, getApp as getAdminApp, cert, applicationDefault } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { firebaseConfig } from '@/firebase/config';
 import { notifyAdminOfPayment } from '@/ai/flows/notify-admin-of-payment';
@@ -20,21 +20,34 @@ function getAdminDb(): Firestore {
         return adminDb;
     }
 
-    if (process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
+    // Check for explicit credentials in environment variables
+    if (process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY && process.env.FIREBASE_ADMIN_PROJECT_ID) {
         const adminApp = initializeApp({
             credential: cert({
-                projectId: firebaseConfig.projectId,
+                projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
                 clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
                 privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, '\n'),
             }),
-            projectId: firebaseConfig.projectId,
+            projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
         }, appName);
         
         adminDb = getFirestore(adminApp);
         return adminDb;
     }
-
-    throw new Error('Firebase Admin SDK not initialized. Server environment is not configured.');
+    
+    // Check if running in a Google Cloud environment
+    try {
+        const adminApp = initializeApp({
+            credential: applicationDefault(),
+            projectId: firebaseConfig.projectId,
+        }, appName);
+        
+        adminDb = getFirestore(adminApp);
+        return adminDb;
+    } catch(e) {
+         console.error("Default application credentials failed for /api/payment/confirm. Please set FIREBASE_ADMIN_CLIENT_EMAIL, FIREBASE_ADMIN_PRIVATE_KEY, and FIREBASE_ADMIN_PROJECT_ID environment variables.", e);
+         throw new Error('Firebase Admin SDK not initialized. Server environment is not configured.');
+    }
 }
 
 
