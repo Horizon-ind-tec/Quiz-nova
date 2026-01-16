@@ -39,6 +39,22 @@ export const SUBJECTS_DATA: {
     ]
   },
   {
+    name: 'English',
+    icon: Scroll,
+    subCategories: [
+        { name: 'English' },
+        { name: 'Supplementary' }
+    ]
+  },
+  {
+    name: 'Hindi',
+    icon: Scroll,
+    subCategories: [
+        { name: 'Hindi' },
+        { name: 'Supplementary' }
+    ]
+  },
+  {
     name: 'Commerce',
     icon: Briefcase,
     multiSelect: true,
