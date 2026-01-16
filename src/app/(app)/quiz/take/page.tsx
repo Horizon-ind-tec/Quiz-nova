@@ -152,6 +152,7 @@ export default function TakeQuizPage() {
             ...quiz,
             subCategory: quiz.subCategory,
             totalMarks: 2, // Generate a low-mark quiz to get one or two questions
+            quizType: 'quiz', // Always gen an interactive question type
             seed: Math.random(),
             timestamp: Date.now(),
         });
@@ -240,7 +241,7 @@ export default function TakeQuizPage() {
   
   const handlePrevQuestion = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
   };
   
@@ -649,9 +650,6 @@ export default function TakeQuizPage() {
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={() => {
-                        if (quiz?.quizType === 'exam') {
-                           setQuizState('results');
-                        }
                         router.push('/quiz/grade');
                     }}>Proceed</AlertDialogAction>
                   </AlertDialogFooter>
@@ -991,3 +989,5 @@ export default function TakeQuizPage() {
     </div>
   );
 }
+
+      
