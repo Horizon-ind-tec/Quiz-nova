@@ -125,6 +125,7 @@ Curriculum: NCERT
 5.  For 'exam' type assessments, generate a mix of question types including Multiple Choice (MCQ), Match the Following, Numerical, Short Answer, and Long Answer questions.
 6.  For 'quiz' type assessments, generate ONLY MCQ, Match the Following, and Numerical questions.
 7.  For subjects like 'Social Science', 'History', 'Politics/Civics', or 'Biology', you SHOULD include a good number of Short Answer and Long Answer questions in 'exam' mode. For other subjects, use them where appropriate to create a balanced paper.
+8.  Create a balanced paper. For higher total marks, generate a greater number of questions. For example, a 20-mark paper might have 8-12 questions, while a 100-mark paper should have 25-30 questions. Avoid creating just a few questions with very high marks (e.g., a 10-mark question should be rare and reserved for very detailed long answers).
 
 
 Unique Request Fingerprint:
