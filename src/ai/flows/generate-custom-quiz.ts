@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -121,13 +120,18 @@ Curriculum: NCERT
 
 **VERY IMPORTANT INSTRUCTIONS:**
 1.  The sum of marks for ALL generated questions MUST be EXACTLY equal to the 'totalMarks' ({{{totalMarks}}}).
-2.  You will decide the number of questions to generate. Create a mix of questions with different marks (e.g., 1, 2, 4, 5 marks per question).
-3.  Each generated question object MUST have a "marks" field indicating the marks for that question.
-4.  You MUST generate a completely new and unique set of questions for every request. Use the unique request fingerprint to ensure uniqueness.
-5.  For 'exam' type assessments, generate a mix of question types including Multiple Choice (MCQ), Match the Following, Numerical, Short Answer, and Long Answer questions.
-6.  For 'quiz' type assessments, generate ONLY MCQ, Match the Following, and Numerical questions.
-7.  For subjects like 'Social Science', 'History', 'Politics/Civics', or 'Biology', you SHOULD include a good number of Short Answer and Long Answer questions in 'exam' mode. For other subjects, use them where appropriate to create a balanced paper.
-8.  Create a balanced paper. For higher total marks, generate a greater number of questions. For example, a 20-mark paper might have 8-12 questions, while a 100-mark paper should have 25-30 questions. Avoid creating just a few questions with very high marks (e.g., a 10-mark question should be rare and reserved for very detailed long answers).
+2.  You MUST determine the number of questions to generate based on the \`totalMarks\`. Follow this algorithm precisely:
+    - For \`totalMarks\` <= 10, generate 5-7 questions.
+    - For \`totalMarks\` between 11 and 25, generate 8-12 questions.
+    - For \`totalMarks\` between 26 and 50, generate 15-20 questions.
+    - For \`totalMarks\` between 51 and 75, generate 20-25 questions.
+    - For \`totalMarks\` > 75, generate 25-30 questions.
+3.  You must create a mix of questions with varying marks (e.g., 1, 2, 4, 5 marks). Avoid creating questions worth more than 5 marks unless it is a 'longAnswer' type question that requires a detailed response.
+4.  Each generated question object MUST have a "marks" field indicating the marks for that question.
+5.  You MUST generate a completely new and unique set of questions for every request. Use the unique request fingerprint to ensure uniqueness.
+6.  For 'exam' type assessments, generate a mix of question types including Multiple Choice (MCQ), Match the Following, Numerical, Short Answer, and Long Answer questions.
+7.  For 'quiz' type assessments, generate ONLY MCQ, Match the Following, and Numerical questions.
+8.  For subjects like 'Social Science', 'History', 'Politics/Civics', or 'Biology', you SHOULD include a good number of Short Answer and Long Answer questions in 'exam' mode. For other subjects, use them where appropriate to create a balanced paper.
 
 
 Unique Request Fingerprint:
