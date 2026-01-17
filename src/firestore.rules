@@ -1,4 +1,3 @@
-
 /**
  * This ruleset enforces a strict user-ownership model for the QuizNova application.
  * All data, including user profiles, quizzes, questions, and results, is private
@@ -83,6 +82,17 @@ service cloud.firestore {
       return isOwner(userId) && request.resource.data.id == userId && isPlanFree && hasNoPaymentStatus && hasNoPendingPlan;
     }
     
+    /**
+     * Validates that the Admin User document being created has an 'id' field
+     * that matches the document's ID (which is the user's UID).
+     * This allows the admin to be created with a non-free plan.
+     */
+    function isCreatingOwnAdminProfile(userId) {
+      let hasNoPaymentStatus = !('paymentStatus' in request.resource.data);
+      let hasNoPendingPlan = !('pendingPlan' in request.resource.data);
+      return isAdmin() && isOwner(userId) && request.resource.data.id == userId && hasNoPaymentStatus && hasNoPendingPlan;
+    }
+
     /**
      * Allows a user to update their profile to initiate a payment.
      * They can set 'paymentStatus' to 'pending' and specify a 'pendingPlan'.
@@ -191,7 +201,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin(); 
-      allow create: if isCreatingOwnProfile(userId);
+      allow create: if isCreatingOwnProfile(userId) || isCreatingOwnAdminProfile(userId);
       allow update: if isUpdatingToInitiatePayment(userId) || isAdmin();
       allow delete: if isExistingOwner(userId);
 
@@ -242,5 +252,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
