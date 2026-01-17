@@ -94,7 +94,7 @@ export default function LoginPage() {
       const userCredential = await signInWithPopup(auth, provider);
       createUserProfile(userCredential.user);
       router.push('/dashboard');
-    } catch (error: any)_path>
+    } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Google Sign-In Failed',
@@ -179,5 +179,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
