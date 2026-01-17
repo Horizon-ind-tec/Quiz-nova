@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   CheckCircle,
@@ -74,17 +73,10 @@ export default function TakeQuizPage() {
   const totalTime = useMemo(() => {
     if (!quiz) return 0;
     
-    // Prioritize the new timeLimit property if it exists and is greater than 0
     if (quiz.timeLimit && quiz.timeLimit > 0) {
         return quiz.timeLimit;
     }
 
-    // Fallback logic for old quizzes or quizzes without a time limit set
-    // For competitive exams, time is fixed regardless of marks
-    if (quiz.class.startsWith('JEE') || quiz.class.startsWith('NEET')) {
-        return quiz.quizType === 'exam' ? 3 * 60 * 60 : 1 * 60 * 60; // 3 hours for exam, 1 hour for quiz
-    }
-    // For regular classes, estimate time based on marks. Approx 1.5 mins per mark.
     const timePerMark = 90; 
     return (quiz.totalMarks ?? 0) * timePerMark;
   }, [quiz]);
@@ -99,6 +91,78 @@ export default function TakeQuizPage() {
     }
     return newArray;
   }, []);
+  
+  const calculateScore = useCallback(() => {
+    if (!quiz) return 0;
+    let totalObtainedMarks = 0;
+    
+    quiz.questions.forEach((q, index) => {
+        const userAnswer = userAnswers[index];
+        let isCorrect = false;
+        
+        if (q.type === 'mcq' && userAnswer === q.correctAnswer) {
+            isCorrect = true;
+        } else if (q.type === 'numerical' && Number(userAnswer) === q.correctAnswer) {
+            isCorrect = true;
+        } else if (q.type === 'match') {
+            const userMatches = userAnswer as { [key: string]: string };
+            const isFullyCorrect = q.pairs.every(p => userMatches?.[p.item] === p.match);
+            if (isFullyCorrect) {
+                isCorrect = true;
+            }
+        }
+        
+        if (isCorrect) {
+            totalObtainedMarks += q.marks;
+        }
+    });
+    
+    return Math.round((totalObtainedMarks / (quiz.totalMarks ?? 1)) * 100);
+  }, [quiz, userAnswers]);
+
+  const finishQuiz = useCallback(async () => {
+    if (!quiz || !user || !firestore) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not save quiz results. User not logged in.',
+      });
+      return;
+    }
+
+    const finalScore = calculateScore();
+    setScore(finalScore);
+
+    const newQuizAttempt: QuizAttempt = {
+      ...quiz,
+      id: uuidv4(),
+      userAnswers: userAnswers,
+      score: finalScore,
+      completedAt: Date.now(),
+      userId: user.uid,
+      completionTime: timeElapsed,
+    };
+    
+    try {
+        const quizResultsRef = collection(firestore, 'users', user.uid, 'quiz_results');
+        await addDoc(quizResultsRef, newQuizAttempt);
+    } catch(error) {
+        console.error("Error saving quiz result:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Save Error',
+            description: "Could not save your quiz result to your profile."
+        })
+    }
+
+    setQuizState('results');
+  }, [quiz, user, firestore, toast, userAnswers, timeElapsed, calculateScore, router, setScore, setQuizState]);
+
+  // Using a ref to hold the finishQuiz function to avoid stale closures in setInterval.
+  const savedFinishQuiz = useRef<() => void>();
+  useEffect(() => {
+    savedFinishQuiz.current = finishQuiz;
+  });
 
   useEffect(() => {
     if (quiz) {
@@ -136,7 +200,9 @@ export default function TakeQuizPage() {
       setTimeElapsed(prevTime => {
         if (totalTime > 0 && prevTime >= totalTime - 1) {
             clearInterval(timer);
-            finishQuiz();
+            if (savedFinishQuiz.current) {
+              savedFinishQuiz.current();
+            }
             return totalTime;
         }
         return prevTime + 1;
@@ -273,73 +339,6 @@ export default function TakeQuizPage() {
     newMarked[currentQuestionIndex] = !newMarked[currentQuestionIndex];
     setMarkedForReview(newMarked);
   }
-
-  const calculateScore = useCallback(() => {
-    if (!quiz) return 0;
-    let totalObtainedMarks = 0;
-    
-    quiz.questions.forEach((q, index) => {
-        const userAnswer = userAnswers[index];
-        let isCorrect = false;
-        
-        if (q.type === 'mcq' && userAnswer === q.correctAnswer) {
-            isCorrect = true;
-        } else if (q.type === 'numerical' && Number(userAnswer) === q.correctAnswer) {
-            isCorrect = true;
-        } else if (q.type === 'match') {
-            const userMatches = userAnswer as { [key: string]: string };
-            const isFullyCorrect = q.pairs.every(p => userMatches?.[p.item] === p.match);
-            if (isFullyCorrect) {
-                isCorrect = true;
-            }
-        }
-        
-        if (isCorrect) {
-            totalObtainedMarks += q.marks;
-        }
-    });
-    
-    return Math.round((totalObtainedMarks / (quiz.totalMarks ?? 1)) * 100);
-  }, [quiz, userAnswers]);
-
-
-  const finishQuiz = async () => {
-    if (!quiz || !user || !firestore) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Could not save quiz results. User not logged in.',
-      });
-      return;
-    }
-
-    const finalScore = calculateScore();
-    setScore(finalScore);
-
-    const newQuizAttempt: QuizAttempt = {
-      ...quiz,
-      id: uuidv4(),
-      userAnswers: userAnswers,
-      score: finalScore,
-      completedAt: Date.now(),
-      userId: user.uid,
-      completionTime: timeElapsed,
-    };
-    
-    try {
-        const quizResultsRef = collection(firestore, 'users', user.uid, 'quiz_results');
-        await addDoc(quizResultsRef, newQuizAttempt);
-    } catch(error) {
-        console.error("Error saving quiz result:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Save Error',
-            description: "Could not save your quiz result to your profile."
-        })
-    }
-
-    setQuizState('results');
-  };
 
   const restartQuiz = () => {
     setQuiz(null);

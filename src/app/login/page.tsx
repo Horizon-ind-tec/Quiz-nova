@@ -65,7 +65,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      createUserProfile(userCredential.user);
+      await createUserProfile(userCredential.user);
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -91,7 +91,7 @@ export default function LoginPage() {
     try {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
-      createUserProfile(userCredential.user);
+      await createUserProfile(userCredential.user);
       router.push('/dashboard');
     } catch (error: any) {
       toast({

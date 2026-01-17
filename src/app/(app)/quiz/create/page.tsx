@@ -98,7 +98,7 @@ export default function CreateQuizPage() {
     }
     setIsLoading(true);
 
-    let generationInput = { ...data };
+    let generationInput: FormValues;
 
     if (generationMode === 'new') {
         generationInput = { ...data, seed: Math.random(), timestamp: Date.now() };
@@ -113,7 +113,13 @@ export default function CreateQuizPage() {
             setIsLoading(false);
             return;
         }
-        generationInput = { ...lastQuizOptions, totalMarks: data.totalMarks, timeLimit: data.timeLimit };
+        // When regenerating, use the last options, but override with the current form's type, marks and time.
+        generationInput = { 
+            ...lastQuizOptions, 
+            quizType: data.quizType, 
+            totalMarks: data.totalMarks, 
+            timeLimit: data.timeLimit 
+        };
     }
 
     let timeLimitInSeconds: number;

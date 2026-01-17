@@ -1,9 +1,8 @@
-
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BrainCircuit, LayoutDashboard, PlusCircle, TrendingUp, MessageSquareHeart, Gem, BookUser, Shield } from 'lucide-react';
+import { BrainCircuit, LayoutDashboard, PlusCircle, TrendingUp, MessageSquareHeart, Gem, BookUser, Shield, Bell } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -130,10 +129,10 @@ export function SideNav() {
                     <SidebarMenuButton
                     asChild
                     size="lg"
-                    isActive={isActive('/admin/confirm-payments')}
+                    isActive={isActive('/notifications')}
                     tooltip={{ children: 'Admin Panel' }}
                     >
-                    <Link href="/admin/confirm-payments">
+                    <Link href="/notifications">
                         <Shield />
                         <span>Admin Panel</span>
                         {notificationCount > 0 && <SidebarMenuBadge>{notificationCount}</SidebarMenuBadge>}
