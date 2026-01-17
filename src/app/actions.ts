@@ -1,4 +1,3 @@
-
 'use server';
 
 import {
@@ -65,7 +64,7 @@ export async function notifyAdminOfPaymentAction(input: NotifyAdminOfPaymentInpu
 
 
 export async function handlePaymentAction(input: { targetUserId: string, action: 'approve' | 'deny' }): Promise<void> {
-  const db = await getAdminDb('server-actions');
+  const db = await getAdminDb();
   const { targetUserId, action } = input;
   
   const userRef = db.collection('users').doc(targetUserId);

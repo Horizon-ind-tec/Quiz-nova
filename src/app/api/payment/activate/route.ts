@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import type { Firestore } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/firebase/admin';
@@ -12,7 +11,7 @@ export async function GET(request: NextRequest) {
   
   let db: Firestore;
   try {
-      db = await getAdminDb('api-activate');
+      db = await getAdminDb();
   } catch (err) {
       console.error((err as Error).message);
       return NextResponse.redirect(`${appUrl}/dashboard?status=error&code=admin_init`, 302);
