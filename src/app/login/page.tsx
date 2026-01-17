@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -65,7 +66,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      await createUserProfile(userCredential.user);
+      createUserProfile(userCredential.user);
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -91,9 +92,9 @@ export default function LoginPage() {
     try {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
-      await createUserProfile(userCredential.user);
+      createUserProfile(userCredential.user);
       router.push('/dashboard');
-    } catch (error: any) {
+    } catch (error: any)_path>
       toast({
         variant: 'destructive',
         title: 'Google Sign-In Failed',
@@ -178,3 +179,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    

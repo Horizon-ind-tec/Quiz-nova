@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -78,8 +79,9 @@ export default function SignUpPage() {
     }
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      await updateProfile(userCredential.user, { displayName: values.name });
-      await createUserProfile(userCredential.user, values.name);
+      // Don't block navigation on these non-critical updates
+      updateProfile(userCredential.user, { displayName: values.name });
+      createUserProfile(userCredential.user, values.name);
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -105,7 +107,8 @@ export default function SignUpPage() {
     try {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
-      await createUserProfile(userCredential.user, userCredential.user.displayName || 'Google User');
+      // Don't block navigation
+      createUserProfile(userCredential.user, userCredential.user.displayName || 'Google User');
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -226,3 +229,5 @@ export default function SignUpPage() {
     </div>
   );
 }
+
+    
