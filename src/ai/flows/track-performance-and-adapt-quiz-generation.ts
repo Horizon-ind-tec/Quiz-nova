@@ -46,7 +46,7 @@ export async function trackPerformanceAndAdaptQuizGeneration(
 
 const adaptQuizPrompt = ai.definePrompt({
   name: 'adaptQuizPrompt',
-  model: 'gemini-1.5-flash-latest',
+  model: 'gemini-1.5-pro-latest',
   input: { schema: TrackPerformanceAndAdaptQuizGenerationInputSchema },
   output: { schema: TrackPerformanceAndAdaptQuizGenerationOutputSchema },
   prompt: `You are an AI quiz adaptation expert. Analyze the student's quiz performance and determine how to adjust future quiz generation to focus on their weaker areas.
