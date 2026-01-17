@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   
   let db: Firestore;
   try {
-      db = getAdminDb('api-activate');
+      db = await getAdminDb('api-activate');
   } catch (err) {
       console.error((err as Error).message);
       return NextResponse.redirect(`${appUrl}/dashboard?status=error&code=admin_init`, 302);
@@ -58,5 +58,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${appUrl}/dashboard?status=error`, 302);
   }
 }
-
-    

@@ -65,7 +65,7 @@ export async function notifyAdminOfPaymentAction(input: NotifyAdminOfPaymentInpu
 
 
 export async function handlePaymentAction(input: { targetUserId: string, action: 'approve' | 'deny' }): Promise<void> {
-  const db = getAdminDb('server-actions');
+  const db = await getAdminDb('server-actions');
   const { targetUserId, action } = input;
   
   const userRef = db.collection('users').doc(targetUserId);
@@ -101,5 +101,3 @@ export async function handlePaymentAction(input: { targetUserId: string, action:
     });
   }
 }
-
-    

@@ -7,7 +7,7 @@ import { notifyAdminOfPayment } from '@/ai/flows/notify-admin-of-payment';
 export async function GET(request: NextRequest) {
   let db: Firestore;
   try {
-      db = getAdminDb('api-confirm');
+      db = await getAdminDb('api-confirm');
   } catch (err) {
       const errorHtml = `<html><body style="font-family: sans-serif; display: grid; place-content: center; height: 100vh; text-align: center;"><div><h1 style="color: #dc2626;">Configuration Error</h1><p>The server is not configured for Firebase Admin operations. Please check environment variables.</p></div></body></html>`;
       return new NextResponse(errorHtml, { status: 500, headers: { 'Content-Type': 'text/html' } });
@@ -80,5 +80,3 @@ export async function GET(request: NextRequest) {
     return new NextResponse(`<html><body><h1>Error</h1><p>${errorMessage}</p></body></html>`, { status: 500, headers: { 'Content-Type': 'text/html' } });
   }
 }
-
-    

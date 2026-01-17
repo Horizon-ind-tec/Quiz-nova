@@ -74,9 +74,7 @@ function getAdminApp(appName: string): App {
  * @param appName The unique name for the Firebase Admin App instance.
  * @returns The initialized Firestore instance.
  */
-export function getAdminDb(appName: string = 'default-admin-app'): Firestore {
+export async function getAdminDb(appName: string = 'default-admin-app'): Promise<Firestore> {
     const app = getAdminApp(appName);
     return getFirestore(app);
 }
-
-    
