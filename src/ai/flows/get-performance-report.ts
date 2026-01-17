@@ -13,6 +13,7 @@
  */
 
 import { ai } from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 import { z } from 'zod';
 import type { QuizAttempt } from '@/lib/types';
 
@@ -47,7 +48,7 @@ export async function getPerformanceReport(input: {
 
 const getPerformanceReportPrompt = ai.definePrompt({
   name: 'getPerformanceReportPrompt',
-  model: 'googleai/gemini-pro',
+  model: googleAI.model('gemini-pro'),
   input: { schema: GetPerformanceReportInputSchema },
   output: { schema: GetPerformanceReportOutputSchema },
   prompt: `You are Nova, an expert AI academic advisor. Your task is to generate a comprehensive, well-structured performance report for a student based on their quiz and exam history and their specific question.
