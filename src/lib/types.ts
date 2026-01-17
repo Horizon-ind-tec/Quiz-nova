@@ -56,7 +56,7 @@ export interface Quiz {
   subCategory?: string;
   difficulty: 'easy' | 'medium' | 'hard';
   class: string;
-  board: string;
+  board?: string;
   chapter?: string;
   quizType: 'quiz' | 'exam';
   ncert?: boolean;

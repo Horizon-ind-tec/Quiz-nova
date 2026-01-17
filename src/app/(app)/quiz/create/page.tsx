@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -32,7 +31,7 @@ const formSchema = z.object({
   class: z.string().min(1, 'Please select a class.'),
   subject: z.string().min(1, 'Please select a subject.'),
   subCategories: z.array(z.string()).optional(),
-  board: z.string().min(1, 'Please select an educational board.'),
+  board: z.string().optional(),
   chapter: z.string().optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']),
   totalMarks: z.coerce.number().min(5, "Total marks must be at least 5.").max(100, "Total marks can be at most 100."),
@@ -325,8 +324,8 @@ export default function CreateQuizPage() {
                         )} />
                         <FormField name="board" control={form.control} render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Educational Board</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <FormLabel>Educational Board (Optional)</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value ?? ''}>
                               <FormControl><SelectTrigger><SelectValue placeholder="Select a board" /></SelectTrigger></FormControl>
                               <SelectContent>{BOARDS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
                             </Select>

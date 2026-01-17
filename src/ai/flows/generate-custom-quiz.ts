@@ -20,7 +20,7 @@ const GenerateCustomQuizInputSchema = z.object({
   subject: z.string().describe('The subject of the quiz (e.g., Mathematics, History).'),
   subCategory: z.string().optional().describe('The sub-category of the subject (e.g., Advance Math, Physics).'),
   difficulty: z.enum(['easy', 'medium', 'hard']).describe('The difficulty level of the quiz.'),
-  board: z.string().describe('The educational board for the quiz (e.g., CBSE, ICSE, State Board).'),
+  board: z.string().optional().describe('The educational board for the quiz (e.g., CBSE, ICSE, State Board).'),
   chapter: z.string().optional().describe('The specific chapter or topic for the quiz.'),
   totalMarks: z.number().describe('The total marks for the entire assessment.'),
   quizType: z.enum(['quiz', 'exam']).describe('The type of assessment: a short interactive quiz or a formal, paper-style exam.'),
@@ -108,7 +108,9 @@ Subject: {{{subject}}}
 Sub-category: {{{subCategory}}}
 {{/if}}
 Difficulty: {{{difficulty}}}
+{{#if board}}
 Educational Board: {{{board}}}
+{{/if}}
 Assessment Type: {{{quizType}}}
 {{#if chapter}}
 Chapter/Topic: {{{chapter}}}
