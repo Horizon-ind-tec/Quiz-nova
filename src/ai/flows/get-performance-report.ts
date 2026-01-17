@@ -46,7 +46,6 @@ export async function getPerformanceReport(input: {
 
 const getPerformanceReportPrompt = ai.definePrompt({
   name: 'getPerformanceReportPrompt',
-  model: 'googleai/gemini-1.0-pro',
   input: { schema: GetPerformanceReportInputSchema },
   output: { schema: GetPerformanceReportOutputSchema },
   prompt: `You are Nova, an expert AI academic advisor. Your task is to generate a comprehensive, well-structured performance report for a student based on their quiz and exam history and their specific question.
