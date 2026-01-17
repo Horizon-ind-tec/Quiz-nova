@@ -1,60 +1,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, App, getApp as getAdminApp, cert, applicationDefault } from 'firebase-admin/app';
-import { getFirestore, Firestore } from 'firebase-admin/firestore';
-import { firebaseConfig } from '@/firebase/config';
+import type { Firestore } from 'firebase-admin/firestore';
+import { getAdminDb } from '@/firebase/admin';
 import { notifyAdminOfPayment } from '@/ai/flows/notify-admin-of-payment';
-require('dotenv').config({ path: require('path').resolve(process.cwd(), '.env') });
-
-
-let adminDb: Firestore;
-
-function getAdminDb(): Firestore {
-    if (adminDb) {
-        return adminDb;
-    }
-
-    const appName = 'api-confirm';
-     if (getApps().find(app => app.name === appName)) {
-        adminDb = getFirestore(getAdminApp(appName));
-        return adminDb;
-    }
-
-    // Check for explicit credentials in environment variables
-    if (process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY && process.env.FIREBASE_ADMIN_PROJECT_ID) {
-        const adminApp = initializeApp({
-            credential: cert({
-                projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-                privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, '\n'),
-            }),
-            projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
-        }, appName);
-        
-        adminDb = getFirestore(adminApp);
-        return adminDb;
-    }
-    
-    // Check if running in a Google Cloud environment
-    try {
-        const adminApp = initializeApp({
-            credential: applicationDefault(),
-            projectId: firebaseConfig.projectId,
-        }, appName);
-        
-        adminDb = getFirestore(adminApp);
-        return adminDb;
-    } catch(e) {
-         console.error("Default application credentials failed for /api/payment/confirm. Please set FIREBASE_ADMIN_CLIENT_EMAIL, FIREBASE_ADMIN_PRIVATE_KEY, and FIREBASE_ADMIN_PROJECT_ID environment variables.", e);
-         throw new Error('Firebase Admin SDK not initialized. Server environment is not configured.');
-    }
-}
-
 
 export async function GET(request: NextRequest) {
   let db: Firestore;
   try {
-      db = getAdminDb();
+      db = getAdminDb('api-confirm');
   } catch (err) {
       const errorHtml = `<html><body style="font-family: sans-serif; display: grid; place-content: center; height: 100vh; text-align: center;"><div><h1 style="color: #dc2626;">Configuration Error</h1><p>The server is not configured for Firebase Admin operations. Please check environment variables.</p></div></body></html>`;
       return new NextResponse(errorHtml, { status: 500, headers: { 'Content-Type': 'text/html' } });
@@ -127,3 +80,5 @@ export async function GET(request: NextRequest) {
     return new NextResponse(`<html><body><h1>Error</h1><p>${errorMessage}</p></body></html>`, { status: 500, headers: { 'Content-Type': 'text/html' } });
   }
 }
+
+    

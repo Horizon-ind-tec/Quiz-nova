@@ -1,6 +1,5 @@
 
 'use server';
-require('dotenv').config({ path: require('path').resolve(process.cwd(), '.env') });
 
 import {
   generateCustomQuiz,
@@ -18,52 +17,7 @@ import {
   type GetPerformanceReportOutput
 } from '@/ai/flows/get-performance-report';
 import { notifyAdminOfPayment, type NotifyAdminOfPaymentInput } from '@/ai/flows/notify-admin-of-payment';
-
-import { initializeApp, getApps, App, applicationDefault, getApp as getAdminApp, cert } from 'firebase-admin/app';
-import { getFirestore, Firestore } from 'firebase-admin/firestore';
-import { firebaseConfig } from '@/firebase/config';
-
-let adminDb: Firestore;
-
-function getAdminDb(): Firestore {
-    if (adminDb) {
-        return adminDb;
-    }
-
-    if (getApps().find(app => app.name === 'server-actions')) {
-         adminDb = getFirestore(getAdminApp('server-actions'));
-         return adminDb;
-    }
-
-    // Check for explicit credentials in environment variables
-    if (process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY && process.env.FIREBASE_ADMIN_PROJECT_ID) {
-        const adminApp = initializeApp({
-            credential: cert({
-                projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-                privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, '\n'),
-            }),
-            projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
-        }, 'server-actions');
-        
-        adminDb = getFirestore(adminApp);
-        return adminDb;
-    }
-    
-    // Check if running in a Google Cloud environment
-    try {
-        const adminApp = initializeApp({
-            credential: applicationDefault(),
-            projectId: firebaseConfig.projectId,
-        }, 'server-actions');
-        
-        adminDb = getFirestore(adminApp);
-        return adminDb;
-    } catch(e) {
-         console.error("Default application credentials failed. Please set FIREBASE_ADMIN_CLIENT_EMAIL, FIREBASE_ADMIN_PRIVATE_KEY, and FIREBASE_ADMIN_PROJECT_ID environment variables.", e);
-         throw new Error('Firebase Admin SDK not initialized. Server environment is not configured.');
-    }
-}
+import { getAdminDb } from '@/firebase/admin';
 
 
 export async function generateQuizAction(
@@ -111,7 +65,7 @@ export async function notifyAdminOfPaymentAction(input: NotifyAdminOfPaymentInpu
 
 
 export async function handlePaymentAction(input: { targetUserId: string, action: 'approve' | 'deny' }): Promise<void> {
-  const db = getAdminDb();
+  const db = getAdminDb('server-actions');
   const { targetUserId, action } = input;
   
   const userRef = db.collection('users').doc(targetUserId);
@@ -147,3 +101,5 @@ export async function handlePaymentAction(input: { targetUserId: string, action:
     });
   }
 }
+
+    

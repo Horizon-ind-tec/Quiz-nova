@@ -1,53 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, App, getApp as getAdminApp, cert, applicationDefault } from 'firebase-admin/app';
-import { getFirestore, Firestore } from 'firebase-admin/firestore';
-import { firebaseConfig } from '@/firebase/config';
-require('dotenv').config({ path: require('path').resolve(process.cwd(), '.env') });
-
-
-let adminDb: Firestore;
-
-function getAdminDb(): Firestore {
-    if (adminDb) {
-        return adminDb;
-    }
-
-    const appName = 'api-activate';
-    if (getApps().find(app => app.name === appName)) {
-        adminDb = getFirestore(getAdminApp(appName));
-        return adminDb;
-    }
-    
-    // Check for explicit credentials in environment variables
-    if (process.env.FIREBASE_ADMIN_CLIENT_EMAIL && process.env.FIREBASE_ADMIN_PRIVATE_KEY && process.env.FIREBASE_ADMIN_PROJECT_ID) {
-        const adminApp = initializeApp({
-            credential: cert({
-                projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-                privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, '\n'),
-            }),
-            projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
-        }, appName);
-        
-        adminDb = getFirestore(adminApp);
-        return adminDb;
-    }
-
-    // Check if running in a Google Cloud environment
-    try {
-        const adminApp = initializeApp({
-            credential: applicationDefault(),
-            projectId: firebaseConfig.projectId,
-        }, appName);
-        
-        adminDb = getFirestore(adminApp);
-        return adminDb;
-    } catch(e) {
-         console.error("Default application credentials failed for /api/payment/activate. Please set FIREBASE_ADMIN_CLIENT_EMAIL, FIREBASE_ADMIN_PRIVATE_KEY, and FIREBASE_ADMIN_PROJECT_ID environment variables.", e);
-         throw new Error('Firebase Admin SDK not initialized. Server environment is not configured.');
-    }
-}
+import type { Firestore } from 'firebase-admin/firestore';
+import { getAdminDb } from '@/firebase/admin';
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
 
@@ -58,7 +12,7 @@ export async function GET(request: NextRequest) {
   
   let db: Firestore;
   try {
-      db = getAdminDb();
+      db = getAdminDb('api-activate');
   } catch (err) {
       console.error((err as Error).message);
       return NextResponse.redirect(`${appUrl}/dashboard?status=error&code=admin_init`, 302);
@@ -104,3 +58,5 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${appUrl}/dashboard?status=error`, 302);
   }
 }
+
+    
