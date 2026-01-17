@@ -61,6 +61,7 @@ export interface Quiz {
   quizType: 'quiz' | 'exam';
   ncert?: boolean;
   totalMarks: number;
+  timeLimit?: number; // Time limit in seconds
   questions: Question[];
   createdAt: number;
 }

@@ -36,6 +36,7 @@ const formSchema = z.object({
   chapter: z.string().optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']),
   totalMarks: z.coerce.number().min(5, "Total marks must be at least 5.").max(100, "Total marks can be at most 100."),
+  timeLimit: z.coerce.number().min(1, "Time limit must be at least 1 minute.").optional(),
   quizType: z.enum(['quiz', 'exam'], { required_error: 'Please select an assessment type.' }),
   ncert: z.boolean().optional(),
 });
@@ -66,6 +67,7 @@ export default function CreateQuizPage() {
       chapter: '',
       difficulty: 'medium',
       totalMarks: 20,
+      timeLimit: undefined,
       ncert: false,
     },
   });
@@ -112,7 +114,16 @@ export default function CreateQuizPage() {
             setIsLoading(false);
             return;
         }
-        generationInput = { ...lastQuizOptions, totalMarks: data.totalMarks };
+        generationInput = { ...lastQuizOptions, totalMarks: data.totalMarks, timeLimit: data.timeLimit };
+    }
+
+    let timeLimitInSeconds: number;
+    if (generationInput.timeLimit && generationInput.timeLimit > 0) {
+        timeLimitInSeconds = generationInput.timeLimit * 60;
+    } else {
+        // AI automatically gives a time. Approx 1.5 mins per mark.
+        const timePerMark = 90; 
+        timeLimitInSeconds = generationInput.totalMarks * timePerMark;
     }
 
 
@@ -139,6 +150,7 @@ export default function CreateQuizPage() {
           id: uuidv4(),
           ...generationInput,
           subCategory: generationInput.subCategories?.join(', '),
+          timeLimit: timeLimitInSeconds,
           questions: shuffledQuestions,
           createdAt: Date.now(),
         };
@@ -358,19 +370,34 @@ export default function CreateQuizPage() {
                         )}
                       />
 
-                      <FormField
-                        control={form.control}
-                        name="totalMarks"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Total Marks</FormLabel>
-                            <FormControl>
-                              <Input type="number" min="5" max="100" placeholder="e.g., 20" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="totalMarks"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Total Marks</FormLabel>
+                                <FormControl>
+                                <Input type="number" min="5" max="100" placeholder="e.g., 20" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="timeLimit"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Time Limit (Minutes, optional)</FormLabel>
+                                <FormControl>
+                                <Input type="number" min="1" placeholder="Auto-assigned if blank" {...field} value={field.value ?? ''} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                      </div>
 
                       <FormField name="difficulty" control={form.control} render={({ field }) => (
                         <FormItem>
@@ -408,5 +435,3 @@ export default function CreateQuizPage() {
     </div>
   );
 }
-
-    

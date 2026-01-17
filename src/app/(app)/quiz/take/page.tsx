@@ -73,6 +73,13 @@ export default function TakeQuizPage() {
   
   const totalTime = useMemo(() => {
     if (!quiz) return 0;
+    
+    // Prioritize the new timeLimit property if it exists and is greater than 0
+    if (quiz.timeLimit && quiz.timeLimit > 0) {
+        return quiz.timeLimit;
+    }
+
+    // Fallback logic for old quizzes or quizzes without a time limit set
     // For competitive exams, time is fixed regardless of marks
     if (quiz.class.startsWith('JEE') || quiz.class.startsWith('NEET')) {
         return quiz.quizType === 'exam' ? 3 * 60 * 60 : 1 * 60 * 60; // 3 hours for exam, 1 hour for quiz
@@ -989,5 +996,3 @@ export default function TakeQuizPage() {
     </div>
   );
 }
-
-    
