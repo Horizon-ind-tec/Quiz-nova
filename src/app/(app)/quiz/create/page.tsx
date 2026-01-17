@@ -181,37 +181,6 @@ export default function CreateQuizPage() {
             <CardContent>
               <FormProvider {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-
-                   <FormItem>
-                        <FormLabel>Assessment Type & Source</FormLabel>
-                        <RadioGroup
-                            value={combinedSelection}
-                            onValueChange={(value) => handleSelectionChange(value as CombinedSelection)}
-                            className="grid grid-cols-2 gap-4"
-                        >
-                            {[
-                                { value: 'new-quiz', icon: TestTubeDiagonal, label: 'New Quiz', sub: 'Unique questions' },
-                                { value: 'previous-quiz', icon: History, label: 'Previous Quiz', sub: 'Regenerate last test' },
-                                { value: 'new-exam', icon: FileText, label: 'New Exam', sub: 'Paper-style test' },
-                                { value: 'previous-exam', icon: History, label: 'Previous Exam', sub: 'Regenerate last exam' }
-                            ].map((item) => (
-                                <FormItem key={item.value}>
-                                    <FormControl>
-                                        <RadioGroupItem value={item.value} id={item.value} className="sr-only" />
-                                    </FormControl>
-                                    <FormLabel
-                                        htmlFor={item.value}
-                                        className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-500 [&:has([data-state=checked])]:border-green-500 cursor-pointer"
-                                    >
-                                        <item.icon className="h-6 w-6 mb-1" />
-                                        <span className="font-bold">{item.label}</span>
-                                        <span className="text-xs text-muted-foreground">{item.sub}</span>
-                                    </FormLabel>
-                                </FormItem>
-                            ))}
-                        </RadioGroup>
-                        <FormMessage />
-                    </FormItem>
                   
                   <div className={cn(generationMode === 'previous' && 'opacity-50 pointer-events-none')}>
                     <div className="space-y-6">
@@ -420,6 +389,37 @@ export default function CreateQuizPage() {
                       )} />
                     </div>
                   </div>
+
+                  <FormItem>
+                        <FormLabel>Assessment Type &amp; Source</FormLabel>
+                        <RadioGroup
+                            value={combinedSelection}
+                            onValueChange={(value) => handleSelectionChange(value as CombinedSelection)}
+                            className="grid grid-cols-2 gap-4"
+                        >
+                            {[
+                                { value: 'new-quiz', icon: TestTubeDiagonal, label: 'New Quiz', sub: 'Unique questions' },
+                                { value: 'previous-quiz', icon: History, label: 'Regenerate last test' },
+                                { value: 'new-exam', icon: FileText, label: 'Paper-style test' },
+                                { value: 'previous-exam', icon: History, label: 'Regenerate last exam' }
+                            ].map((item) => (
+                                <FormItem key={item.value}>
+                                    <FormControl>
+                                        <RadioGroupItem value={item.value} id={item.value} className="sr-only" />
+                                    </FormControl>
+                                    <FormLabel
+                                        htmlFor={item.value}
+                                        className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-500 [&:has([data-state=checked])]:border-green-500 cursor-pointer"
+                                    >
+                                        <item.icon className="h-6 w-6 mb-1" />
+                                        <span className="font-bold">{item.label}</span>
+                                        <span className="text-xs text-muted-foreground">{item.sub}</span>
+                                    </FormLabel>
+                                </FormItem>
+                            ))}
+                        </RadioGroup>
+                        <FormMessage />
+                    </FormItem>
 
                   <Button type="submit" className="w-full !mt-8" disabled={isLoading}>
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
