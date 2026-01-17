@@ -8,10 +8,10 @@
 // This object is used to initialize the Firebase app in the browser.
 export const firebaseConfig = {
   "projectId": "studio-770359382-db111",
-  "appId": "1:79648401698:web:75a7c2b535d519bce2dd7b",
-  "apiKey": "AIzaSyDF18Jii8SgRDb0n8GjI0G1g2-lT_9qCew",
+  "appId": "1:79648401698:web:31030f0df29820dbe2dd7b",
+  "apiKey": "AIzaSyASjQkpCYnbsS_csgCdWbnrWk27Q9m7sOo",
   "authDomain": "studio-770359382-db111.firebaseapp.com",
-  "measurementId": "G-49VS0LFW6K",
+  "measurementId": "",
   "messagingSenderId": "79648401698",
   "storageBucket": "studio-770359382-db111.appspot.com"
 };
