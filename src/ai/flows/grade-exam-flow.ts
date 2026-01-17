@@ -13,7 +13,6 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { googleAI } from '@genkit-ai/google-genai';
 import { z } from 'genkit';
 import type { Question } from '@/lib/types';
 
@@ -61,7 +60,7 @@ export async function gradeExam(input: GradeExamInput): Promise<GradeExamOutput>
 
 const gradeExamPrompt = ai.definePrompt({
     name: 'gradeExamPrompt',
-    model: googleAI.model('gemini-1.5-flash-latest'),
+    model: 'gemini-1.5-flash-latest',
     input: { schema: GradeExamInputSchema },
     output: { schema: GradeExamOutputSchema },
     prompt: `You are an expert AI Exam Grader. Your task is to analyze images of a student's handwritten answer sheet and grade their answers against a provided list of questions and correct answers.

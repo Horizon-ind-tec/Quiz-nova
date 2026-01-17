@@ -14,7 +14,6 @@
  */
 
 import {ai} from '@/ai/genkit';
-import { googleAI } from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const GenerateCustomQuizInputSchema = z.object({
@@ -100,7 +99,7 @@ export async function generateCustomQuiz(
 
 const generateCustomQuizPrompt = ai.definePrompt({
   name: 'generateCustomQuizPrompt',
-  model: googleAI.model('gemini-1.5-flash-latest'),
+  model: 'gemini-1.5-flash-latest',
   input: {schema: GenerateCustomQuizInputSchema},
   output: {schema: GenerateCustomQuizOutputSchema},
   prompt: `You are an expert question paper generator for students. Generate a question paper with a TOTAL of {{{totalMarks}}} marks based on the following criteria:
