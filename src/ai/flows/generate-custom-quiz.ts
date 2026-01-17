@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -98,7 +99,7 @@ export async function generateCustomQuiz(
 
 const generateCustomQuizPrompt = ai.definePrompt({
   name: 'generateCustomQuizPrompt',
-  model: 'gemini-pro',
+  model: 'googleai/gemini-pro',
   input: {schema: GenerateCustomQuizInputSchema},
   output: {schema: GenerateCustomQuizOutputSchema},
   prompt: `You are an expert question paper generator for students. Generate a question paper with a TOTAL of {{{totalMarks}}} marks based on the following criteria:
@@ -211,3 +212,5 @@ const generateCustomQuizFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    

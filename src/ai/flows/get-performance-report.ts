@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview AI flow for generating a performance report based on user's quiz history.
@@ -46,7 +47,7 @@ export async function getPerformanceReport(input: {
 
 const getPerformanceReportPrompt = ai.definePrompt({
   name: 'getPerformanceReportPrompt',
-  model: 'gemini-pro',
+  model: 'googleai/gemini-pro',
   input: { schema: GetPerformanceReportInputSchema },
   output: { schema: GetPerformanceReportOutputSchema },
   prompt: `You are Nova, an expert AI academic advisor. Your task is to generate a comprehensive, well-structured performance report for a student based on their quiz and exam history and their specific question.
@@ -119,3 +120,5 @@ const getPerformanceReportFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    
