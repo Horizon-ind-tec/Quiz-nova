@@ -30,6 +30,7 @@ const GenerateCustomQuizInputSchema = z.object({
   class: z.string().optional().describe('The class of the student.'),
   seed: z.number().optional().describe('A random seed to ensure question uniqueness.'),
   timestamp: z.number().optional().describe('A timestamp to ensure question uniqueness.'),
+  isJeeOrNeet: z.boolean().optional().describe('Flag for JEE/NEET specific question generation.'),
 });
 export type GenerateCustomQuizInput = z.infer<typeof GenerateCustomQuizInputSchema>;
 
@@ -90,9 +91,11 @@ export type GenerateCustomQuizOutput = z.infer<typeof GenerateCustomQuizOutputSc
 export async function generateCustomQuiz(
   input: GenerateCustomQuizInput
 ): Promise<GenerateCustomQuizOutput> {
+  const isJeeOrNeet = input.class === 'JEE (Mains + Advanced)' || input.class === 'NEET';
   // Add a random seed and timestamp to ensure uniqueness
   const inputWithUniqueness = { 
       ...input, 
+      isJeeOrNeet,
       seed: input.seed || Math.random(),
       timestamp: Date.now(),
     };
@@ -102,16 +105,12 @@ export async function generateCustomQuiz(
 const generateCustomQuizPrompt = ai.definePrompt({
   name: 'generateCustomQuizPrompt',
   model: googleAI.model('gemini-2.5-flash'),
+  helpers: {
+      eq: (a: any, b: any) => a === b,
+  },
   prompt: `You are an expert question paper generator for students.
 
-{{#if numberOfQuestions}}
-Generate EXACTLY {{{numberOfQuestions}}} questions based on the following criteria.
-You MUST assign sensible marks to each question (e.g., 1, 2, 5 marks) to create a balanced assessment.
-The total marks will be the sum of the marks for each question you create.
-{{else}}
-Generate a question paper with a TOTAL of {{{totalMarks}}} marks based on the following criteria.
-{{/if}}
-
+Generate questions based on the following criteria:
 Subject: {{{subject}}}
 {{#if subCategory}}
 Sub-category: {{{subCategory}}}
@@ -128,7 +127,19 @@ Chapter/Topic: {{{chapter}}}
 Curriculum: NCERT
 {{/if}}
 
-**VERY IMPORTANT INSTRUCTIONS:**
+**VERY IMPORTANT INSTRUCTIONS ON QUESTION TYPES:**
+
+{{#if isJeeOrNeet}}
+**FOR JEE/NEET EXAMS:** You MUST generate ONLY Multiple Choice (MCQ) and Numerical questions. Do NOT generate Match the Following, Short Answer, or Long Answer questions.
+{{else}}
+  {{#if (eq quizType 'quiz')}}
+**FOR INTERACTIVE QUIZ:** You MUST generate ONLY Multiple Choice (MCQ) and Numerical questions. It is forbidden to generate 'match' type questions for this quiz.
+  {{else if (eq quizType 'exam')}}
+**FOR PAPER-STYLE EXAM:** Generate a mix of question types including Multiple Choice (MCQ), Match the Following, Numerical, Short Answer, and Long Answer questions. For subjects like 'Social Science', 'History', 'Politics/Civics', or 'Biology', you SHOULD include a good number of Short Answer and Long Answer questions.
+  {{/if}}
+{{/if}}
+
+**GENERAL INSTRUCTIONS:**
 {{#if numberOfQuestions}}
 1.  You MUST generate exactly {{{numberOfQuestions}}} questions.
 2.  Assign a "marks" field to each question. Choose marks that are appropriate for the question's difficulty and type.
@@ -144,10 +155,6 @@ Curriculum: NCERT
 {{/if}}
 4.  Each generated question object MUST have a "marks" field indicating the marks for that question.
 5.  You MUST generate a completely new and unique set of questions for every request. Use the unique request fingerprint to ensure uniqueness.
-6.  For 'exam' type assessments, generate a mix of question types including Multiple Choice (MCQ), Match the Following, Numerical, Short Answer, and Long Answer questions.
-7.  For 'quiz' type assessments, generate ONLY MCQ and Numerical questions.
-8.  For subjects like 'Social Science', 'History', 'Politics/Civics', or 'Biology', you SHOULD include a good number of Short Answer and Long Answer questions in 'exam' mode. For other subjects, use them where appropriate to create a balanced paper.
-
 
 Unique Request Fingerprint:
 - Seed: {{{seed}}}
@@ -164,17 +171,11 @@ const generateCustomQuizFlow = ai.defineFlow(
     outputSchema: GenerateCustomQuizOutputSchema,
   },
   async input => {
-    const response = await generateCustomQuizPrompt(input);
-    const text = response.text;
+    const {output} = await generateCustomQuizPrompt(input);
     
-    // Sometimes the model might still wrap the JSON in markdown backticks
-    const cleanedText = text.replace(/^```json\s*|```\s*$/g, '').trim();
-
-    try {
-        return JSON.parse(cleanedText);
-    } catch (e) {
-        console.error("Failed to parse JSON from model output:", cleanedText);
-        throw new Error("The AI returned a response that was not valid JSON.");
+    if (!output) {
+      throw new Error("The AI failed to return a response.");
     }
+    return output;
   }
 );
