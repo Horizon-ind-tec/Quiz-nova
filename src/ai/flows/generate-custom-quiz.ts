@@ -23,7 +23,8 @@ const GenerateCustomQuizInputSchema = z.object({
   difficulty: z.enum(['easy', 'medium', 'hard']).describe('The difficulty level of the quiz.'),
   board: z.string().optional().describe('The educational board for the quiz (e.g., CBSE, ICSE, State Board).'),
   chapter: z.string().optional().describe('The specific chapter or topic for the quiz.'),
-  totalMarks: z.number().describe('The total marks for the entire assessment.'),
+  totalMarks: z.number().describe('The total marks for the entire assessment.').optional(),
+  numberOfQuestions: z.number().describe('The exact number of questions to generate.').optional(),
   quizType: z.enum(['quiz', 'exam']).describe('The type of assessment: a short interactive quiz or a formal, paper-style exam.'),
   ncert: z.boolean().optional().describe('Whether the quiz should be based on the NCERT curriculum.'),
   class: z.string().optional().describe('The class of the student.'),
@@ -101,7 +102,15 @@ export async function generateCustomQuiz(
 const generateCustomQuizPrompt = ai.definePrompt({
   name: 'generateCustomQuizPrompt',
   model: googleAI.model('gemini-2.5-flash'),
-  prompt: `You are an expert question paper generator for students. Generate a question paper with a TOTAL of {{{totalMarks}}} marks based on the following criteria:
+  prompt: `You are an expert question paper generator for students.
+
+{{#if numberOfQuestions}}
+Generate EXACTLY {{{numberOfQuestions}}} questions based on the following criteria.
+You MUST assign sensible marks to each question (e.g., 1, 2, 5 marks) to create a balanced assessment.
+The total marks will be the sum of the marks for each question you create.
+{{else}}
+Generate a question paper with a TOTAL of {{{totalMarks}}} marks based on the following criteria.
+{{/if}}
 
 Subject: {{{subject}}}
 {{#if subCategory}}
@@ -120,6 +129,10 @@ Curriculum: NCERT
 {{/if}}
 
 **VERY IMPORTANT INSTRUCTIONS:**
+{{#if numberOfQuestions}}
+1.  You MUST generate exactly {{{numberOfQuestions}}} questions.
+2.  Assign a "marks" field to each question. Choose marks that are appropriate for the question's difficulty and type.
+{{else}}
 1.  The sum of marks for ALL generated questions MUST be EXACTLY equal to the 'totalMarks' ({{{totalMarks}}}).
 2.  You MUST determine the number of questions to generate based on the \`totalMarks\`. Follow this algorithm precisely:
     - For \`totalMarks\` <= 10, generate 5-7 questions.
@@ -128,6 +141,7 @@ Curriculum: NCERT
     - For \`totalMarks\` between 51 and 75, generate 20-25 questions.
     - For \`totalMarks\` > 75, generate 25-30 questions.
 3.  You must create a mix of questions with varying marks (e.g., 1, 2, 4, 5 marks). Avoid creating questions worth more than 5 marks unless it is a 'longAnswer' type question that requires a detailed response.
+{{/if}}
 4.  Each generated question object MUST have a "marks" field indicating the marks for that question.
 5.  You MUST generate a completely new and unique set of questions for every request. Use the unique request fingerprint to ensure uniqueness.
 6.  For 'exam' type assessments, generate a mix of question types including Multiple Choice (MCQ), Match the Following, Numerical, Short Answer, and Long Answer questions.
@@ -139,64 +153,7 @@ Unique Request Fingerprint:
 - Seed: {{{seed}}}
 - Timestamp: {{{timestamp}}}
 
-The entire output should be a single JSON object with a "questions" key, which holds an array of question objects. Each question object must have a "type", "marks", and other fields appropriate for that type.
-
-Example of the expected JSON structure for totalMarks: 25
-{
-  "questions": [
-    {
-      "type": "mcq",
-      "question": "What is the capital of France?",
-      "options": ["London", "Paris", "Berlin", "Rome"],
-      "correctAnswer": "Paris",
-      "explanation": "Paris is the capital and most populous city of France.",
-      "marks": 1
-    },
-    {
-      "type": "match",
-      "question": "Match the scientists to their discoveries.",
-      "pairs": [
-        { "item": "Isaac Newton", "match": "Laws of Motion" },
-        { "item": "Albert Einstein", "match": "Theory of Relativity" },
-        { "item": "Marie Curie", "match": "Radioactivity" }
-      ],
-      "explanation": "Newton formulated the laws of motion, Einstein developed the theory of relativity, and Curie pioneered research on radioactivity.",
-      "marks": 4
-    },
-    {
-      "type": "numerical",
-      "question": "What is the value of Pi rounded to two decimal places?",
-      "correctAnswer": 3.14,
-      "explanation": "Pi (π) is an irrational number, approximately equal to 3.14159. Rounded to two decimal places, it is 3.14.",
-      "marks": 1
-    },
-    {
-        "type": "shortAnswer",
-        "question": "Define 'photosynthesis'.",
-        "correctAnswer": "Photosynthesis is the process used by plants, algae, and certain bacteria to harness energy from sunlight and turn it into chemical energy.",
-        "explanation": "Key points are the use of sunlight, conversion to chemical energy, and the organisms that perform it.",
-        "marks": 4
-    },
-    {
-        "type": "longAnswer",
-        "question": "Describe the main causes of World War I.",
-        "correctAnswer": "The main causes of World War I can be summarized by the acronym MAIN: Militarism (building up armed forces), Alliances (agreements between nations to aid and protect one another), Imperialism (when one country takes over new lands or countries), and Nationalism (a strong sense of pride and loyalty to one's own nation). The assassination of Archduke Franz Ferdinand was the immediate trigger.",
-        "explanation": "A good answer should discuss the four main long-term causes (Militarism, Alliances, Imperialism, Nationalism) and mention the assassination of Archduke Ferdinand as the immediate cause.",
-        "marks": 10
-    },
-    {
-        "type": "mcq",
-        "question": "What is the largest planet in our solar system?",
-        "options": ["Earth", "Mars", "Jupiter", "Saturn"],
-        "correctAnswer": "Jupiter",
-        "explanation": "Jupiter is the largest planet in our solar system by a significant margin.",
-        "marks": 5
-    }
-  ]
-}
-
-
-Ensure the total marks add up to {{{totalMarks}}}. Ensure the generated JSON is valid. Do not include any text outside the JSON.
+Return a response as a valid JSON object only. Do not include any text outside the JSON. The JSON object should have a "questions" key, which holds an array of question objects. Each question object must have a "type", "marks", and other fields appropriate for that type.
 `,
 });
 

@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -34,10 +34,19 @@ const formSchema = z.object({
   board: z.string().optional(),
   chapter: z.string().optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']),
-  totalMarks: z.coerce.number().min(5, "Total marks must be at least 5.").max(100, "Total marks can be at most 100."),
+  totalMarks: z.coerce.number().min(5, "Total marks must be at least 5.").max(100, "Total marks can be at most 100.").optional(),
+  numberOfQuestions: z.coerce.number().min(1, "Must have at least 1 question.").max(50, "Cannot exceed 50 questions.").optional(),
   timeLimit: z.coerce.number().min(1, "Time limit must be at least 1 minute.").optional(),
   quizType: z.enum(['quiz', 'exam'], { required_error: 'Please select an assessment type.' }),
   ncert: z.boolean().optional(),
+}).refine(
+    (data) => data.totalMarks || data.numberOfQuestions, {
+    message: "Either Total Marks or Number of Questions must be provided.",
+    path: ["totalMarks"],
+}).refine(
+    (data) => !(data.totalMarks && data.numberOfQuestions), {
+    message: "Please provide either Total Marks or Number of Questions, not both.",
+    path: ["numberOfQuestions"],
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -66,6 +75,7 @@ export default function CreateQuizPage() {
       chapter: '',
       difficulty: 'medium',
       totalMarks: 20,
+      numberOfQuestions: undefined,
       timeLimit: undefined,
       ncert: false,
     },
@@ -101,7 +111,7 @@ export default function CreateQuizPage() {
     let generationInput: FormValues;
 
     if (generationMode === 'new') {
-        generationInput = { ...data, seed: Math.random(), timestamp: Date.now() };
+        generationInput = { ...data };
         setLastQuizOptions(data);
     } else {
         if (!lastQuizOptions) {
@@ -113,22 +123,14 @@ export default function CreateQuizPage() {
             setIsLoading(false);
             return;
         }
-        // When regenerating, use the last options, but override with the current form's type, marks and time.
+        // When regenerating, use the last options, but override with the current form's type, marks, questions and time.
         generationInput = { 
             ...lastQuizOptions, 
             quizType: data.quizType, 
             totalMarks: data.totalMarks, 
+            numberOfQuestions: data.numberOfQuestions,
             timeLimit: data.timeLimit 
         };
-    }
-
-    let timeLimitInSeconds: number;
-    if (generationInput.timeLimit && generationInput.timeLimit > 0) {
-        timeLimitInSeconds = generationInput.timeLimit * 60;
-    } else {
-        // AI automatically gives a time. Approx 1.5 mins per mark.
-        const timePerMark = 90; 
-        timeLimitInSeconds = generationInput.totalMarks * timePerMark;
     }
 
 
@@ -136,6 +138,8 @@ export default function CreateQuizPage() {
       const result = await generateQuizAction({
         ...generationInput,
         subCategory: generationInput.subCategories?.join(', '),
+        seed: Math.random(),
+        timestamp: Date.now(),
       });
 
       if (result && result.questions.length > 0) {
@@ -150,11 +154,30 @@ export default function CreateQuizPage() {
             }
             return q;
         });
+        
+        const finalTotalMarks = generationInput.numberOfQuestions
+            ? result.questions.reduce((sum, q) => sum + q.marks, 0)
+            : generationInput.totalMarks!;
+
+        let timeLimitInSeconds: number;
+        if (generationInput.timeLimit && generationInput.timeLimit > 0) {
+            timeLimitInSeconds = generationInput.timeLimit * 60;
+        } else {
+            const timePerMark = 90; // 1.5 minutes per mark
+            timeLimitInSeconds = finalTotalMarks * timePerMark;
+        }
 
         const newQuiz: Quiz = {
           id: uuidv4(),
-          ...generationInput,
+          subject: generationInput.subject,
+          class: generationInput.class,
+          difficulty: generationInput.difficulty,
+          quizType: generationInput.quizType,
           subCategory: generationInput.subCategories?.join(', '),
+          board: generationInput.board,
+          chapter: generationInput.chapter,
+          ncert: generationInput.ncert,
+          totalMarks: finalTotalMarks,
           timeLimit: timeLimitInSeconds,
           questions: shuffledQuestions,
           createdAt: Date.now(),
@@ -344,15 +367,18 @@ export default function CreateQuizPage() {
                         )}
                       />
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                         <FormField
                             control={form.control}
                             name="totalMarks"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Total Marks</FormLabel>
+                                <FormLabel>Total Marks (Optional)</FormLabel>
                                 <FormControl>
-                                <Input type="number" min="5" max="100" placeholder="e.g., 20" {...field} />
+                                <Input type="number" min="5" max="100" placeholder="e.g., 20" {...field} value={field.value ?? ''} onChange={e => {
+                                    field.onChange(e.target.valueAsNumber);
+                                    if(e.target.value) form.setValue('numberOfQuestions', undefined, { shouldValidate: true });
+                                }} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -360,18 +386,37 @@ export default function CreateQuizPage() {
                         />
                          <FormField
                             control={form.control}
-                            name="timeLimit"
+                            name="numberOfQuestions"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Time Limit (Minutes, optional)</FormLabel>
+                                <FormLabel>Number of Questions (Optional)</FormLabel>
                                 <FormControl>
-                                <Input type="number" min="1" placeholder="Auto-assigned if blank" {...field} value={field.value ?? ''} />
+                                <Input type="number" min="1" max="50" placeholder="e.g., 10" {...field} value={field.value ?? ''} onChange={e => {
+                                    field.onChange(e.target.valueAsNumber);
+                                    if(e.target.value) form.setValue('totalMarks', undefined, { shouldValidate: true });
+                                }} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                             )}
                         />
                       </div>
+                      
+                       <FormField
+                          control={form.control}
+                          name="timeLimit"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Time Limit (Minutes, optional)</FormLabel>
+                              <FormControl>
+                              <Input type="number" min="1" placeholder="Auto-assigned if blank" {...field} value={field.value ?? ''} />
+                              </FormControl>
+                              <FormDescription>If left blank, a time limit will be estimated based on the questions.</FormDescription>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+
 
                       <FormField name="difficulty" control={form.control} render={({ field }) => (
                         <FormItem>
@@ -419,7 +464,7 @@ export default function CreateQuizPage() {
                                     >
                                         <item.icon className="h-6 w-6 mb-1" />
                                         <span className="font-bold">{item.label}</span>
-                                        <span className="text-xs text-muted-foreground">{item.sub}</span>
+                                        {item.sub && <span className="text-xs text-muted-foreground">{item.sub}</span>}
                                     </FormLabel>
                                 </FormItem>
                             ))}
