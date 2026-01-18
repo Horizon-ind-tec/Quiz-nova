@@ -102,7 +102,6 @@ const generateCustomQuizPrompt = ai.definePrompt({
   name: 'generateCustomQuizPrompt',
   model: googleAI.model('gemini-2.5-flash'),
   input: {schema: GenerateCustomQuizInputSchema},
-  output: {schema: GenerateCustomQuizOutputSchema},
   prompt: `You are an expert question paper generator for students. Generate a question paper with a TOTAL of {{{totalMarks}}} marks based on the following criteria:
 
 Subject: {{{subject}}}
@@ -209,7 +208,17 @@ const generateCustomQuizFlow = ai.defineFlow(
     outputSchema: GenerateCustomQuizOutputSchema,
   },
   async input => {
-    const {output} = await generateCustomQuizPrompt(input);
-    return output!;
+    const response = await generateCustomQuizPrompt(input);
+    const text = response.text;
+    
+    // Sometimes the model might still wrap the JSON in markdown backticks
+    const cleanedText = text.replace(/^```json\s*|```\s*$/g, '').trim();
+
+    try {
+        return JSON.parse(cleanedText);
+    } catch (e) {
+        console.error("Failed to parse JSON from model output:", cleanedText);
+        throw new Error("The AI returned a response that was not valid JSON.");
+    }
   }
 );

@@ -49,7 +49,6 @@ const adaptQuizPrompt = ai.definePrompt({
   name: 'adaptQuizPrompt',
   model: googleAI.model('gemini-2.5-flash'),
   input: { schema: TrackPerformanceAndAdaptQuizGenerationInputSchema },
-  output: { schema: TrackPerformanceAndAdaptQuizGenerationOutputSchema },
   prompt: `You are an AI quiz adaptation expert. Analyze the student's quiz performance and determine how to adjust future quiz generation to focus on their weaker areas.
 
   User ID: {{{userId}}}
@@ -65,7 +64,7 @@ const adaptQuizPrompt = ai.definePrompt({
   Based on this data, recommend a new difficulty level and specific focus areas for future quizzes.
   Explain why you are recommending these adjustments. Ensure the explanation is clear and concise.
 
-  Output in the following format:
+  Output in the following format as a valid JSON object. Do not include markdown formatting or any other text.
   {
     "newDifficulty": "<new difficulty level>",
     "focusAreas": ["<area 1>", "<area 2>", ...],
@@ -81,7 +80,15 @@ const trackPerformanceAndAdaptQuizGenerationFlow = ai.defineFlow(
     outputSchema: TrackPerformanceAndAdaptQuizGenerationOutputSchema,
   },
   async input => {
-    const { output } = await adaptQuizPrompt(input);
-    return output!;
+    const response = await adaptQuizPrompt(input);
+    const text = response.text;
+    const cleanedText = text.replace(/^```json\s*|```\s*$/g, '').trim();
+
+    try {
+        return JSON.parse(cleanedText);
+    } catch (e) {
+        console.error("Failed to parse JSON from model output for adaptation:", cleanedText);
+        throw new Error("The AI returned a response that was not valid JSON.");
+    }
   }
 );

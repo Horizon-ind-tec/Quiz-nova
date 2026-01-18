@@ -50,7 +50,6 @@ const getPerformanceReportPrompt = ai.definePrompt({
   name: 'getPerformanceReportPrompt',
   model: googleAI.model('gemini-2.5-flash'),
   input: { schema: GetPerformanceReportInputSchema },
-  output: { schema: GetPerformanceReportOutputSchema },
   prompt: `You are Nova, an expert AI academic advisor. Your task is to generate a comprehensive, well-structured performance report for a student based on their quiz and exam history and their specific question.
 
 If the user's question contains phrases like "monthly report", "report card for this month", or happens to be asked near the end of the month (e.g., after the 28th), assume they are asking for a monthly report and analyze only the data from the current calendar month. Otherwise, analyze their entire history.
@@ -117,7 +116,16 @@ const getPerformanceReportFlow = ai.defineFlow(
     outputSchema: GetPerformanceReportOutputSchema,
   },
   async (input) => {
-    const { output } = await getPerformanceReportPrompt(input);
-    return output!;
+    const response = await getPerformanceReportPrompt(input);
+    const text = response.text;
+    const cleanedText = text.replace(/^```json\s*|```\s*$/g, '').trim();
+
+    try {
+      return JSON.parse(cleanedText);
+    } catch (e) {
+      console.error('Failed to parse JSON from model output for report:', cleanedText);
+      // Fallback: if parsing fails, wrap the raw text in the expected object structure.
+      return { report: text };
+    }
   }
 );

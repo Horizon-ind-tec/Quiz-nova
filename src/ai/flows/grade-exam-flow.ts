@@ -63,7 +63,6 @@ const gradeExamPrompt = ai.definePrompt({
     name: 'gradeExamPrompt',
     model: googleAI.model('gemini-2.5-flash'),
     input: { schema: GradeExamInputSchema },
-    output: { schema: GradeExamOutputSchema },
     prompt: `You are an expert AI Exam Grader. Your task is to analyze images of a student's handwritten answer sheet and grade their answers against a provided list of questions and correct answers.
 
     **Instructions:**
@@ -110,7 +109,7 @@ const gradeExamPrompt = ai.definePrompt({
     7. Provide overall feedback on the user's performance, highlighting areas of strength and weakness.
     
     **Output Format:**
-    You must return a valid JSON object that strictly follows this structure. For each question, include the extracted user answer and whether it was correct.
+    You must return a valid JSON object that strictly follows this structure. For each question, include the extracted user answer and whether it was correct. Do not include any markdown formatting or other text outside the JSON object.
     
     Example:
     {
@@ -153,12 +152,19 @@ const gradeExamFlow = ai.defineFlow(
     outputSchema: GradeExamOutputSchema,
   },
   async (input) => {
-    const { output } = await gradeExamPrompt(input);
-    
-    if (!output) {
-        throw new Error('AI failed to generate a grade.');
+    const response = await gradeExamPrompt(input);
+    const text = response.text;
+    const cleanedText = text.replace(/^```json\s*|```\s*$/g, '').trim();
+
+    try {
+        const output = JSON.parse(cleanedText);
+        if (!output) {
+            throw new Error('AI failed to generate a grade.');
+        }
+        return output;
+    } catch (e) {
+        console.error("Failed to parse JSON from model output for grading:", cleanedText);
+        throw new Error("The AI returned a response that was not valid JSON.");
     }
-    
-    return output;
   }
 );
