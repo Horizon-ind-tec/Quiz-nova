@@ -61,8 +61,7 @@ export async function gradeExam(input: GradeExamInput): Promise<GradeExamOutput>
 
 const gradeExamPrompt = ai.definePrompt({
     name: 'gradeExamPrompt',
-    model: googleAI.model('gemini-2.5-flash'),
-    input: { schema: GradeExamInputSchema },
+    model: googleAI.model('gemini-1.5-flash-latest'),
     prompt: `You are an expert AI Exam Grader. Your task is to analyze images of a student's handwritten answer sheet and grade their answers against a provided list of questions and correct answers.
 
     **Instructions:**
@@ -106,7 +105,7 @@ const gradeExamPrompt = ai.definePrompt({
     
     6. Calculate the final score as a percentage of correct answers. For example, if 15 out of 30 are correct, the score is 50.
     
-    7. Provide overall feedback on the user's performance, highlighting areas of strength and weakness.
+    7. Provide brief, overall feedback on the user's performance (1-2 sentences).
     
     **Output Format:**
     You must return a valid JSON object that strictly follows this structure. For each question, include the extracted user answer and whether it was correct. Do not include any markdown formatting or other text outside the JSON object.
@@ -136,7 +135,7 @@ const gradeExamPrompt = ai.definePrompt({
           "isCorrect": false
         }
       ],
-      "generalFeedback": "Great job on the matching and numerical questions! You seem to have a good grasp of the core concepts. Review the material on European capitals for the next exam."
+      "generalFeedback": "Great job on the matching and numerical questions! Review European capitals for the next exam."
     }
     `,
     helpers: {

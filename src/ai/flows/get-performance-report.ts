@@ -48,9 +48,8 @@ export async function getPerformanceReport(input: {
 
 const getPerformanceReportPrompt = ai.definePrompt({
   name: 'getPerformanceReportPrompt',
-  model: googleAI.model('gemini-2.5-flash'),
-  input: { schema: GetPerformanceReportInputSchema },
-  prompt: `You are Nova, an expert AI academic advisor. Your task is to generate a comprehensive, well-structured performance report for a student based on their quiz and exam history and their specific question.
+  model: googleAI.model('gemini-1.5-flash-latest'),
+  prompt: `You are Nova, an expert AI academic advisor. Your task is to generate a **brief, conversational performance summary** for a student based on their quiz and exam history and their specific question.
 
 If the user's question contains phrases like "monthly report", "report card for this month", or happens to be asked near the end of the month (e.g., after the 28th), assume they are asking for a monthly report and analyze only the data from the current calendar month. Otherwise, analyze their entire history.
 
@@ -61,51 +60,26 @@ If the user's question contains phrases like "monthly report", "report card for 
 - Type: {{{quizType}}}, Subject: {{{subject}}}{{#if subCategory}} ({{{subCategory}}}){{/if}}, Difficulty: {{{difficulty}}}, Score: {{{score}}}%, Date: {{completedAt}} (Unix Timestamp ms)
 {{/each}}
 
-**YOUR TASK: Generate a detailed report in markdown format. The report should be structured like a professional school report card, providing deep insights.**
+**YOUR TASK: Generate a concise, friendly report in markdown format. The report should be a short summary.**
 
 The report MUST have the following structure:
 
-### **Student Performance Report**
+#### **Performance Snapshot**
 
-**Analysis for: User**
-**Date: [Generate a current date, e.g., "October 30, 2023"]**
+*   Start with a friendly, one-sentence summary of their overall performance.
+*   Identify their top 1-2 **Strengths** (subjects with highest average scores).
+*   Identify their top 1-2 **Areas for Improvement** (subjects with lowest average scores).
+*   Provide one or two **Actionable Tips**. Be direct and recommend a specific action, e.g., "Focus on 'easy' Physics quizzes to build confidence." or "Re-read the 'Thermodynamics' chapter."
+*   Keep the entire response to about 4-5 bullet points.
 
----
+**Tone:** Be encouraging, direct, and act as a personal mentor. Keep it short and to the point.
 
-#### **Overall Performance Summary**
-*   Provide a brief, encouraging paragraph summarizing the student's performance based on their question and the provided history.
-*   Mention trends, like improvement over time or consistency in certain areas.
+You MUST return a valid JSON object that strictly follows this structure. Do not include any markdown formatting or other text outside the JSON object.
 
----
-
-#### **Subject-wise Grade Analysis**
-*   For each subject in the history, calculate the average score.
-*   Assign a letter grade based on this average: 90-100: A+, 80-89: A, 70-79: B+, 65-69: B, 55-64: C, below 55: F.
-*   Present this in a list. Include a short, insightful comment for each subject.
-
-**Example:**
-*   **Mathematics:** Grade A (Average Score: 88%) - Excellent grasp of core concepts.
-*   **Physics:** Grade C (Average Score: 62%) - Shows potential but needs more practice on numerical problems.
-*   **History:** Grade B+ (Average Score: 78%) - Good understanding of key events.
-
----
-
-#### **Key Insights**
-*   **Strengths:** List 2-3 specific subjects or topics where the student is excelling.
-*   **Areas for Improvement:** List 2-3 specific subjects or topics where the student is struggling the most. Be very specific (e.g., "Thermodynamics in Physics" or "Algebra in Mathematics").
-
----
-
-#### **Your Path to 100% Mastery**
-This is the most important section. Provide clear, actionable advice to help the student prepare for their real-life exams.
-*   **Strategic Advice:** Give concrete steps for improvement. For example: "To master Physics, first re-read the 'Thermodynamics' chapter. Then, complete two 'easy' difficulty quizzes on that topic to build a foundation."
-*   **Practice Plan:** Recommend a number of practice tests/quizzes for their weak subjects. For example: "For the next two weeks, I recommend you take 3 Physics quizzes and 2 Algebra quizzes."
-*   **Target Scores:** Set clear goals for these practice tests. For example: "In these practice quizzes, you should aim for a score of at least **85%** to ensure you are ready for your final exams."
-*   **Final Goal:** Conclude with an encouraging statement about how this plan will lead to success.
-
-**Tone:** Be encouraging, insightful, and act as a personal mentor. The goal is to motivate the student.
-
-Generate the entire response as a single markdown string in the 'report' field of the JSON output.
+Example:
+{
+  "report": "#### **Performance Snapshot**\\n*   You're showing great consistency in Mathematics!\\n*   **Strengths:** Mathematics (Avg: 88%), History (Avg: 78%)\\n*   **Areas for Improvement:** Physics (Avg: 62%)\\n*   **Actionable Tip:** To master Physics, try re-reading the 'Thermodynamics' chapter and then take an 'easy' quiz on it to build your foundation."
+}
 `,
 });
 
@@ -121,7 +95,8 @@ const getPerformanceReportFlow = ai.defineFlow(
     const cleanedText = text.replace(/^```json\s*|```\s*$/g, '').trim();
 
     try {
-      return JSON.parse(cleanedText);
+      const parsed = JSON.parse(cleanedText);
+      return parsed;
     } catch (e) {
       console.error('Failed to parse JSON from model output for report:', cleanedText);
       // Fallback: if parsing fails, wrap the raw text in the expected object structure.
