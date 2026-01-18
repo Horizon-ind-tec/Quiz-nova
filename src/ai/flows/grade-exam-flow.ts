@@ -61,8 +61,8 @@ export async function gradeExam(input: GradeExamInput): Promise<GradeExamOutput>
 
 const gradeExamPrompt = ai.definePrompt({
     name: 'gradeExamPrompt',
-    model: googleAI.model('gemini-1.5-flash-latest'),
-    prompt: `You are an expert AI Exam Grader. Your task is to analyze images of a student's handwritten answer sheet and grade their answers against a provided list of questions and correct answers.
+    model: googleAI.model('gemini-2.5-flash'),
+    prompt: `You are an expert AI Exam Grader. Your task is to analyze images of a student's handwritten answer sheet and grade them.
 
     **Instructions:**
     1.  Carefully examine the handwritten answers in the provided images:
@@ -70,72 +70,29 @@ const gradeExamPrompt = ai.definePrompt({
         - Image: {{media url=this}}
         {{/each}}
     
-    2.  Here are the exam questions and their correct answers. The questions are in order.
+    2.  Here are the exam questions and their correct answers, in order.
         {{#each questions}}
         - **Question {{add @index 1}} (Type: {{{type}}})**:
-          - **Question:** {{{question}}}
-          - **Correct Answer / Model Answer:** 
-            {{#if (eq type 'mcq')}}
-              {{correctAnswer}}
-            {{/if}}
-            {{#if (eq type 'numerical')}}
-              {{correctAnswer}}
-            {{/if}}
-            {{#if (eq type 'match')}}
-              {{#each correctAnswer}}
-              - {{{item}}} -> {{{match}}}
-              {{/each}}
-            {{/if}}
-            {{#if (eq type 'shortAnswer')}}
-              {{correctAnswer}}
-            {{/if}}
-            {{#if (eq type 'longAnswer')}}
-              {{correctAnswer}}
-            {{/if}}
+          - Question: {{{question}}}
+          - Correct Answer: [Redacted for brevity]
         {{/each}}
 
-    3.  For each question, find the student's answer in the images. The answers should be in the same order as the questions.
-    4.  Compare the student's answer to the correct answer.
-        - For MCQs, the user might write the option letter (A, B, C, D) or the full answer text. Your job is to map this back to the correct option text.
-        - For Match the Following, the user might write pairs like "1 -> c", "Item -> Match". You must determine if their pairings are correct based on the provided correct answers.
-        - For Numerical questions, the number must match exactly.
-        - For Short and Long Answer questions, the 'Correct Answer' is a model answer. You do not need to match it word-for-word. Instead, assess if the student's answer captures the key points and demonstrates understanding of the concept. Be lenient with phrasing but strict on factual accuracy.
-
-    5. Determine if the student's answer for each question is correct.
-    
-    6. Calculate the final score as a percentage of correct answers. For example, if 15 out of 30 are correct, the score is 50.
-    
-    7. Provide brief, overall feedback on the user's performance (1-2 sentences).
+    3.  For each question, find the student's answer in the images and determine if it is correct. For subjective answers (short/long), assess if the key points are captured. Be lenient with phrasing.
+    4. Calculate the final score as a percentage.
+    5. Provide a single sentence of general feedback.
     
     **Output Format:**
-    You must return a valid JSON object that strictly follows this structure. For each question, include the extracted user answer and whether it was correct. Do not include any markdown formatting or other text outside the JSON object.
-    
+    Return a valid JSON object. Do not include markdown.
     Example:
     {
       "score": 80,
       "gradedAnswers": [
-        {
-          "questionIndex": 0,
-          "userAnswer": "Paris",
-          "isCorrect": true
-        },
-        {
-          "questionIndex": 1,
-          "userAnswer": "The user matched 'Newton' to 'Laws of Motion' and 'Einstein' to 'Theory of Relativity'.",
-          "isCorrect": true
-        },
-        {
-          "questionIndex": 2,
-          "userAnswer": "3.14",
-          "isCorrect": true
-        },
-        {
-          "questionIndex": 3,
-          "userAnswer": "London",
-          "isCorrect": false
-        }
+        { "questionIndex": 0, "userAnswer": "Paris", "isCorrect": true },
+        { "questionIndex": 1, "userAnswer": "User matched correctly.", "isCorrect": true },
+        { "questionIndex": 2, "userAnswer": "3.14", "isCorrect": true },
+        { "questionIndex": 3, "userAnswer": "London", "isCorrect": false }
       ],
-      "generalFeedback": "Great job on the matching and numerical questions! Review European capitals for the next exam."
+      "generalFeedback": "Great job, but review European capitals."
     }
     `,
     helpers: {
