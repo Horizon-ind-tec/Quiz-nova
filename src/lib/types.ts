@@ -13,7 +13,7 @@ export interface Match {
   type: 'match';
   question: string;
   pairs: { item: string; match: string }[];
-  explanation: string;
+  explanation:string;
   marks: number;
 }
 
@@ -98,7 +98,18 @@ export interface Video {
     title: string;
     youtubeUrl: string;
     createdAt: number;
+    views?: number;
+    likes?: string[];
 }
+
+export interface Comment {
+    id: string;
+    userId: string;
+    userName: string;
+    text: string;
+    createdAt: number;
+}
+
 
 export interface Subject {
     id: string;

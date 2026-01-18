@@ -99,6 +99,8 @@ export function AdminVideoManager() {
         await addDoc(collection(firestore, 'videos'), {
           ...data,
           createdAt: Date.now(),
+          views: 0,
+          likes: [],
         });
         toast({ title: 'Success', description: 'Video added successfully.' });
       }

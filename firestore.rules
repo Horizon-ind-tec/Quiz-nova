@@ -181,12 +181,42 @@ service cloud.firestore {
      * @description Manages video coaching content.
      * @path /videos/{videoId}
      * @allow (read) Any authenticated user can read video information.
-     * @allow (write) Only the admin user can create, update, or delete videos.
+     * @allow (create, delete) Only admins can create or delete videos.
+     * @allow (update) Admin can update anything. Users can only update views and likes.
      * @principle Public read access for educational content, with centralized admin control.
      */
     match /videos/{videoId} {
       allow read: if isSignedIn();
-      allow write: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        isSignedIn() &&
+        // Ensure user cannot change core video details
+        request.resource.data.title == resource.data.title &&
+        request.resource.data.youtubeUrl == resource.data.youtubeUrl &&
+        request.resource.data.class == resource.data.class &&
+        request.resource.data.subject == resource.data.subject &&
+        request.resource.data.chapter == resource.data.chapter &&
+        request.resource.data.createdAt == resource.data.createdAt
+      );
+
+      /**
+       * @description Manages comments on a video.
+       * @path /videos/{videoId}/comments/{commentId}
+       * @allow (read) Any authenticated user can read comments.
+       * @allow (create) An authenticated user can post a comment.
+       * @allow (delete) The comment owner or an admin can delete a comment.
+       */
+      match /comments/{commentId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() &&
+                       request.resource.data.userId == request.auth.uid &&
+                       request.resource.data.text is string &&
+                       request.resource.data.text.size() > 0 &&
+                       request.resource.data.text.size() < 500; // Limit comment length
+        allow delete: if isAdmin() || (
+            isSignedIn() && resource.data.userId == request.auth.uid
+        );
+      }
     }
 
     /**

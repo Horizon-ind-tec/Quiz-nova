@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -6,11 +7,11 @@ import type { Video } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { YoutubeEmbed } from '@/components/youtube-embed';
 import { Loader2 } from 'lucide-react';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { CLASSES, SUBJECTS_DATA } from '@/lib/data';
+import { VideoCard } from './video-card';
 
 export function VideoLibrary() {
   const firestore = useFirestore();
@@ -94,17 +95,7 @@ export function VideoLibrary() {
         ) : filteredVideos.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredVideos.map(video => (
-              <Card key={video.id}>
-                <CardContent className="p-0">
-                  <YoutubeEmbed url={video.youtubeUrl} />
-                </CardContent>
-                <div className="p-4">
-                  <h3 className="font-semibold">{video.title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {video.subject} {video.subCategory ? `- ${video.subCategory}`: ''} - {video.chapter} ({video.class})
-                  </p>
-                </div>
-              </Card>
+              <VideoCard key={video.id} video={video} />
             ))}
           </div>
         ) : (
