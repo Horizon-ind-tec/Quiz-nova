@@ -101,7 +101,6 @@ export async function generateCustomQuiz(
 const generateCustomQuizPrompt = ai.definePrompt({
   name: 'generateCustomQuizPrompt',
   model: googleAI.model('gemini-2.5-flash'),
-  input: {schema: GenerateCustomQuizInputSchema},
   prompt: `You are an expert question paper generator for students. Generate a question paper with a TOTAL of {{{totalMarks}}} marks based on the following criteria:
 
 Subject: {{{subject}}}
@@ -132,7 +131,7 @@ Curriculum: NCERT
 4.  Each generated question object MUST have a "marks" field indicating the marks for that question.
 5.  You MUST generate a completely new and unique set of questions for every request. Use the unique request fingerprint to ensure uniqueness.
 6.  For 'exam' type assessments, generate a mix of question types including Multiple Choice (MCQ), Match the Following, Numerical, Short Answer, and Long Answer questions.
-7.  For 'quiz' type assessments, generate ONLY MCQ, Match the Following, and Numerical questions.
+7.  For 'quiz' type assessments, generate ONLY MCQ and Numerical questions.
 8.  For subjects like 'Social Science', 'History', 'Politics/Civics', or 'Biology', you SHOULD include a good number of Short Answer and Long Answer questions in 'exam' mode. For other subjects, use them where appropriate to create a balanced paper.
 
 
