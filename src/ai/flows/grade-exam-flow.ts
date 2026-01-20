@@ -97,7 +97,6 @@ const gradeExamPrompt = ai.definePrompt({
     `,
     helpers: {
       add: (a: number, b: number) => a + b,
-      eq: (a: any, b: any) => a === b,
     },
 });
 

@@ -24,7 +24,7 @@ const GenerateCustomQuizInputSchema = z.object({
   board: z.string().optional().describe('The educational board for the quiz (e.g., CBSE, ICSE, State Board).'),
   chapter: z.string().optional().describe('The specific chapter or topic for the quiz.'),
   totalMarks: z.number().describe('The total marks for the entire assessment.').optional(),
-  numberOfQuestions: z.number().describe('The exact number of questions to generate.').optional(),
+  numberOfQuestions: z.coerce.number().min(1, "Must have at least 1 question.").max(100, "Cannot exceed 100 questions.").optional(),
   quizType: z.enum(['quiz', 'exam']).describe('The type of assessment: a short interactive quiz or a formal, paper-style exam.'),
   ncert: z.boolean().optional().describe('Whether the quiz should be based on the NCERT curriculum.'),
   class: z.string().optional().describe('The class of the student.'),
@@ -92,10 +92,15 @@ export async function generateCustomQuiz(
   input: GenerateCustomQuizInput
 ): Promise<GenerateCustomQuizOutput> {
   const isJeeOrNeet = input.class === 'JEE (Mains + Advanced)' || input.class === 'NEET';
+  const isQuizTypeQuiz = input.quizType === 'quiz';
+  const isQuizTypeExam = input.quizType === 'exam';
+
   // Add a random seed and timestamp to ensure uniqueness
   const inputWithUniqueness = { 
       ...input, 
       isJeeOrNeet,
+      isQuizTypeQuiz,
+      isQuizTypeExam,
       seed: input.seed || Math.random(),
       timestamp: Date.now(),
     };
@@ -105,9 +110,6 @@ export async function generateCustomQuiz(
 const generateCustomQuizPrompt = ai.definePrompt({
   name: 'generateCustomQuizPrompt',
   model: googleAI.model('gemini-2.5-flash'),
-  helpers: {
-      eq: (a: any, b: any) => a === b,
-  },
   prompt: `You are an expert question paper generator for students.
 
 Generate questions based on the following criteria:
@@ -132,9 +134,9 @@ Curriculum: NCERT
 {{#if isJeeOrNeet}}
 **FOR JEE/NEET EXAMS:** You MUST generate ONLY Multiple Choice (MCQ) and Numerical questions. Do NOT generate Match the Following, Short Answer, or Long Answer questions.
 {{else}}
-  {{#if (eq quizType 'quiz')}}
+  {{#if isQuizTypeQuiz}}
 **FOR INTERACTIVE QUIZ:** You MUST generate ONLY Multiple Choice (MCQ) and Numerical questions. It is forbidden to generate 'match' type questions for this quiz.
-  {{else if (eq quizType 'exam')}}
+  {{else if isQuizTypeExam}}
 **FOR PAPER-STYLE EXAM:** Generate a mix of question types including Multiple Choice (MCQ), Match the Following, Numerical, Short Answer, and Long Answer questions. For subjects like 'Social Science', 'History', 'Politics/Civics', or 'Biology', you SHOULD include a good number of Short Answer and Long Answer questions.
   {{/if}}
 {{/if}}
