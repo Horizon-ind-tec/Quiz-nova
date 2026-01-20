@@ -35,7 +35,7 @@ const formSchema = z.object({
   chapter: z.string().optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']),
   totalMarks: z.coerce.number().min(5, "Total marks must be at least 5.").max(100, "Total marks can be at most 100.").optional(),
-  numberOfQuestions: z.coerce.number().min(1, "Must have at least 1 question.").max(50, "Cannot exceed 50 questions.").optional(),
+  numberOfQuestions: z.coerce.number().min(1, "Must have at least 1 question.").max(100, "Cannot exceed 100 questions.").optional(),
   timeLimit: z.coerce.number().min(1, "Time limit must be at least 1 minute.").optional(),
   quizType: z.enum(['quiz', 'exam'], { required_error: 'Please select an assessment type.' }),
   ncert: z.boolean().optional(),
@@ -391,7 +391,7 @@ export default function CreateQuizPage() {
                             <FormItem>
                                 <FormLabel>Number of Questions (Optional)</FormLabel>
                                 <FormControl>
-                                <Input type="number" min="1" max="50" placeholder="e.g., 10" {...field} value={field.value || ''} onChange={e => {
+                                <Input type="number" min="1" max="100" placeholder="e.g., 10" {...field} value={field.value || ''} onChange={e => {
                                     field.onChange(e.target.valueAsNumber);
                                     if(e.target.value) form.setValue('totalMarks', undefined, { shouldValidate: true });
                                 }} />
