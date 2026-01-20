@@ -3,21 +3,19 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, indexedDBLocalPersistence, setPersistence } from 'firebase/auth';
+import { getAuth, browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
-export function initializeFirebase() {
-  if (getApps().length === 0) {
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    // Using IndexedDB persistence for better compatibility in webviews (Capacitor).
-    // This is more robust than the default local storage persistence.
-    setPersistence(auth, indexedDBLocalPersistence);
-    return getSdks(app);
-  }
-  // If already initialized, return the SDKs with the already initialized App
-  return getSdks(getApp());
+export async function initializeFirebase() {
+  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  const auth = getAuth(app);
+  
+  // Set persistence to local to keep the user signed in across browser sessions.
+  // This must be awaited before the app continues.
+  await setPersistence(auth, browserLocalPersistence);
+  
+  return getSdks(app);
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
