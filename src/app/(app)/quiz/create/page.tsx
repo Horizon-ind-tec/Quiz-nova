@@ -375,7 +375,7 @@ export default function CreateQuizPage() {
                             <FormItem>
                                 <FormLabel>Total Marks (Optional)</FormLabel>
                                 <FormControl>
-                                <Input type="number" min="5" max="100" placeholder="e.g., 20" {...field} value={field.value ?? ''} onChange={e => {
+                                <Input type="number" min="5" max="100" placeholder="e.g., 20" {...field} value={field.value || ''} onChange={e => {
                                     field.onChange(e.target.valueAsNumber);
                                     if(e.target.value) form.setValue('numberOfQuestions', undefined, { shouldValidate: true });
                                 }} />
@@ -391,7 +391,7 @@ export default function CreateQuizPage() {
                             <FormItem>
                                 <FormLabel>Number of Questions (Optional)</FormLabel>
                                 <FormControl>
-                                <Input type="number" min="1" max="50" placeholder="e.g., 10" {...field} value={field.value ?? ''} onChange={e => {
+                                <Input type="number" min="1" max="50" placeholder="e.g., 10" {...field} value={field.value || ''} onChange={e => {
                                     field.onChange(e.target.valueAsNumber);
                                     if(e.target.value) form.setValue('totalMarks', undefined, { shouldValidate: true });
                                 }} />
@@ -409,7 +409,7 @@ export default function CreateQuizPage() {
                           <FormItem>
                               <FormLabel>Time Limit (Minutes, optional)</FormLabel>
                               <FormControl>
-                              <Input type="number" min="1" placeholder="Auto-assigned if blank" {...field} value={field.value ?? ''} />
+                              <Input type="number" min="1" placeholder="Auto-assigned if blank" {...field} value={field.value || ''} />
                               </FormControl>
                               <FormDescription>If left blank, a time limit will be estimated based on the questions.</FormDescription>
                               <FormMessage />
