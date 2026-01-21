@@ -140,6 +140,7 @@ Your task is to generate a set of questions based on the user's request.
 2.  **Quantity & Marks:**
     - If 'Number of Questions' is given, generate EXACTLY that many questions. Assign reasonable 'marks' to each.
     - If 'Total Marks' is given, generate a suitable number of questions so their marks add up to the total.
+    - For JEE/NEET exams, be aware that questions often have different values (e.g., some are worth 4 marks, some 2). Distribute marks realistically based on the question type and difficulty.
 
 3.  **Output Format:**
     - You MUST output a single valid JSON object.
