@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview AI flow for generating a performance report based on user's quiz history.
@@ -34,7 +33,7 @@ const GetPerformanceReportInputSchema = z.object({
 export type GetPerformanceReportInput = z.infer<typeof GetPerformanceReportInputSchema>;
 
 const GetPerformanceReportOutputSchema = z.object({
-  report: z.string().describe("The AI-generated conversational response to the user's question."),
+  report: z.string().describe("The AI-generated conversational response to the user's question in markdown format."),
 });
 export type GetPerformanceReportOutput = z.infer<typeof GetPerformanceReportOutputSchema>;
 
@@ -49,6 +48,7 @@ export async function getPerformanceReport(input: {
 const getPerformanceReportPrompt = ai.definePrompt({
   name: 'getPerformanceReportPrompt',
   model: googleAI.model('gemini-2.5-flash'),
+  output: { schema: GetPerformanceReportOutputSchema },
   prompt: `You are Nova, an expert AI academic advisor. Your task is to generate a **brief, conversational performance summary** for a student based on their quiz and exam history and their specific question.
 
 If the user's question contains phrases like "monthly report", "report card for this month", or happens to be asked near the end of the month (e.g., after the 28th), assume they are asking for a monthly report and analyze only the data from the current calendar month. Otherwise, analyze their entire history.
@@ -73,13 +73,6 @@ The report MUST have the following structure:
 *   Keep the entire response to about 4-5 bullet points.
 
 **Tone:** Be encouraging, direct, and act as a personal mentor. Keep it short and to the point.
-
-You MUST return a valid JSON object that strictly follows this structure. Do not include any markdown formatting or other text outside the JSON object.
-
-Example:
-{
-  "report": "#### **Performance Snapshot**\\n*   You're showing great consistency in Mathematics!\\n*   **Strengths:** Mathematics (Avg: 88%), History (Avg: 78%)\\n*   **Areas for Improvement:** Physics (Avg: 62%)\\n*   **Actionable Tip:** To master Physics, try re-reading the 'Thermodynamics' chapter and then take an 'easy' quiz on it to build your foundation."
-}
 `,
 });
 
@@ -91,27 +84,16 @@ const getPerformanceReportFlow = ai.defineFlow(
   },
   async (input) => {
     const response = await getPerformanceReportPrompt(input);
-    const text = response.text;
+    const output = response.output;
 
-    let cleanedText = text.replace(/^```json\s*|```\s*$/g, '').trim();
-    const firstBrace = cleanedText.indexOf('{');
-    const lastBrace = cleanedText.lastIndexOf('}');
-
-    if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
-      console.error("Could not find a valid JSON object in the model's response for report:", text);
-      // Fallback: if no JSON is found at all, return the raw text as the report.
-      return { report: text };
+    if (!output || !output.report) {
+       console.error("AI did not return the expected output format for report.", response);
+       // Fallback to raw text if structured output fails
+       const rawText = response.text;
+       if(rawText) return { report: rawText };
+       throw new Error('AI failed to generate a valid report.');
     }
-
-    const jsonString = cleanedText.substring(firstBrace, lastBrace + 1);
-
-    try {
-      const parsed = JSON.parse(jsonString);
-      return parsed;
-    } catch (e) {
-      console.error('Failed to parse JSON from model output for report:', jsonString);
-      // Fallback: if parsing the extracted string fails, return the raw text.
-      return { report: text };
-    }
+    
+    return output;
   }
 );

@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -110,6 +109,7 @@ export async function generateCustomQuiz(
 const generateCustomQuizPrompt = ai.definePrompt({
   name: 'generateCustomQuizPrompt',
   model: googleAI.model('gemini-2.5-flash'),
+  output: { schema: GenerateCustomQuizOutputSchema },
   prompt: `You are an expert exam question generator.
 
 Your task is to generate a set of questions based on the user's request.
@@ -141,13 +141,6 @@ Your task is to generate a set of questions based on the user's request.
     - If 'Number of Questions' is given, generate EXACTLY that many questions. Assign reasonable 'marks' to each.
     - If 'Total Marks' is given, generate a suitable number of questions so their marks add up to the total.
     - For JEE/NEET exams, be aware that questions often have different values (e.g., some are worth 4 marks, some 2). Distribute marks realistically based on the question type and difficulty.
-
-3.  **Output Format:**
-    - You MUST output a single valid JSON object.
-    - The JSON object must have one key: "questions".
-    - The value of "questions" must be an array of question objects.
-    - Each question object must have all the required fields for its 'type', including 'marks' and 'explanation'.
-    - Do not add any text or markdown before or after the JSON object.
 `,
 });
 
@@ -159,32 +152,13 @@ const generateCustomQuizFlow = ai.defineFlow(
   },
   async input => {
     const response = await generateCustomQuizPrompt(input);
-    const text = response.text;
+    const output = response.output;
     
-    // First, try to remove markdown fences if they exist.
-    let cleanedText = text.replace(/^```json\s*|```\s*$/g, '').trim();
-
-    // Then, extract the content between the first '{' and the last '}'.
-    const firstBrace = cleanedText.indexOf('{');
-    const lastBrace = cleanedText.lastIndexOf('}');
-    
-    if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
-      console.error("Could not find a valid JSON object in the model's response:", text);
-      throw new Error("The AI's response did not contain a recognizable JSON object.");
+    if (!output || !output.questions) {
+      console.error("AI did not return the expected output format.", response);
+      throw new Error('AI failed to generate a valid quiz structure.');
     }
     
-    const jsonString = cleanedText.substring(firstBrace, lastBrace + 1);
-
-    try {
-        const output = JSON.parse(jsonString);
-        if (!output || !output.questions) {
-            throw new Error('AI returned a valid JSON object, but it was missing the required "questions" key.');
-        }
-        return output;
-    } catch (e) {
-        console.error("Failed to parse JSON from model output for quiz generation:", jsonString);
-        const parseError = e instanceof Error ? e.message : String(e);
-        throw new Error(`The AI returned a response that was not valid JSON. Parser error: ${parseError}`);
-    }
+    return output;
   }
 );

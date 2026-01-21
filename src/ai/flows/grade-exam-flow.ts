@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview AI flow for grading handwritten exam answers from images.
@@ -62,6 +61,7 @@ export async function gradeExam(input: GradeExamInput): Promise<GradeExamOutput>
 const gradeExamPrompt = ai.definePrompt({
     name: 'gradeExamPrompt',
     model: googleAI.model('gemini-2.5-flash'),
+    output: { schema: GradeExamOutputSchema },
     prompt: `You are an expert AI Exam Grader. Your task is to analyze images of a student's handwritten answer sheet and grade them.
 
     **Instructions:**
@@ -80,20 +80,6 @@ const gradeExamPrompt = ai.definePrompt({
     3.  For each question, find the student's answer in the images and determine if it is correct. For subjective answers (short/long), assess if the key points are captured. Be lenient with phrasing.
     4. Calculate the final score as a percentage.
     5. Provide a single sentence of general feedback.
-    
-    **Output Format:**
-    Return a valid JSON object. Do not include markdown.
-    Example:
-    {
-      "score": 80,
-      "gradedAnswers": [
-        { "questionIndex": 0, "userAnswer": "Paris", "isCorrect": true },
-        { "questionIndex": 1, "userAnswer": "User matched correctly.", "isCorrect": true },
-        { "questionIndex": 2, "userAnswer": "3.14", "isCorrect": true },
-        { "questionIndex": 3, "userAnswer": "London", "isCorrect": false }
-      ],
-      "generalFeedback": "Great job, but review European capitals."
-    }
     `,
 });
 
@@ -105,28 +91,13 @@ const gradeExamFlow = ai.defineFlow(
   },
   async (input) => {
     const response = await gradeExamPrompt(input);
-    const text = response.text;
+    const output = response.output;
 
-    let cleanedText = text.replace(/^```json\s*|```\s*$/g, '').trim();
-    const firstBrace = cleanedText.indexOf('{');
-    const lastBrace = cleanedText.lastIndexOf('}');
-
-    if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
-      console.error("Could not find a valid JSON object in the model's response for grading:", text);
-      throw new Error("The AI's grading response did not contain a recognizable JSON object.");
+    if (!output) {
+      console.error("AI did not return the expected output format for grading.", response);
+      throw new Error("The AI failed to grade the exam.");
     }
-
-    const jsonString = cleanedText.substring(firstBrace, lastBrace + 1);
-
-    try {
-        const output = JSON.parse(jsonString);
-        if (!output) {
-            throw new Error('AI failed to generate a grade.');
-        }
-        return output;
-    } catch (e) {
-        console.error("Failed to parse JSON from model output for grading:", jsonString);
-        throw new Error("The AI returned a response that was not valid JSON.");
-    }
+    
+    return output;
   }
 );

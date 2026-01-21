@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview This file defines a Genkit flow to track user quiz performance and adapt future quiz generation accordingly.
@@ -48,6 +47,7 @@ export async function trackPerformanceAndAdaptQuizGeneration(
 const adaptQuizPrompt = ai.definePrompt({
   name: 'adaptQuizPrompt',
   model: googleAI.model('gemini-2.5-flash'),
+  output: { schema: TrackPerformanceAndAdaptQuizGenerationOutputSchema },
   prompt: `You are an AI quiz adaptation expert. Analyze the student's quiz performance and determine how to adjust future quiz generation to focus on their weaker areas.
 
   User ID: {{{userId}}}
@@ -62,15 +62,7 @@ const adaptQuizPrompt = ai.definePrompt({
 
   Based on this data, recommend a new difficulty level and specific focus areas for future quizzes.
   Briefly explain your recommendation in one sentence.
-
-  You MUST return a valid JSON object that strictly follows this structure. Do not include any markdown formatting or other text outside the JSON object.
-  
-  Example:
-  {
-    "newDifficulty": "medium",
-    "focusAreas": ["Physics"],
-    "explanation": "To improve your overall score, we should focus on Physics where you are currently scoring the lowest."
-  }`,
+  `,
 });
 
 // Genkit flow definition
@@ -82,25 +74,13 @@ const trackPerformanceAndAdaptQuizGenerationFlow = ai.defineFlow(
   },
   async input => {
     const response = await adaptQuizPrompt(input);
-    const text = response.text;
-    
-    let cleanedText = text.replace(/^```json\s*|```\s*$/g, '').trim();
-    const firstBrace = cleanedText.indexOf('{');
-    const lastBrace = cleanedText.lastIndexOf('}');
+    const output = response.output;
 
-    if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
-      console.error("Could not find a valid JSON object in the model's response for adaptation:", text);
-      throw new Error("The AI's adaptation response did not contain a recognizable JSON object.");
+    if (!output) {
+      console.error("AI did not return the expected output format for adaptation.", response);
+      throw new Error("The AI failed to adapt the quiz generation.");
     }
-    
-    const jsonString = cleanedText.substring(firstBrace, lastBrace + 1);
 
-    try {
-        const parsed = JSON.parse(jsonString);
-        return parsed;
-    } catch (e) {
-        console.error("Failed to parse JSON from model output for adaptation:", jsonString);
-        throw new Error("The AI returned a response that was not valid JSON.");
-    }
+    return output;
   }
 );
