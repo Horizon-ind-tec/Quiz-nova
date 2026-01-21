@@ -158,11 +158,19 @@ const generateCustomQuizFlow = ai.defineFlow(
     outputSchema: GenerateCustomQuizOutputSchema,
   },
   async input => {
-    const {output} = await generateCustomQuizPrompt(input);
-    
-    if (!output) {
-      throw new Error("The AI failed to return a response.");
+    const response = await generateCustomQuizPrompt(input);
+    const text = response.text;
+    const cleanedText = text.replace(/^```json\s*|```\s*$/g, '').trim();
+
+    try {
+        const output = JSON.parse(cleanedText);
+        if (!output || !output.questions) {
+            throw new Error('AI returned invalid JSON structure.');
+        }
+        return output;
+    } catch (e) {
+        console.error("Failed to parse JSON from model output for quiz generation:", cleanedText);
+        throw new Error("The AI returned a response that was not valid JSON.");
     }
-    return output;
   }
 );
