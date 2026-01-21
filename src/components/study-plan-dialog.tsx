@@ -22,18 +22,18 @@ import { addDays } from 'date-fns';
 const studyPlanSchema = z.object({
   examDate: z.date({ required_error: "Please select an exam date." }),
   selectedSubjects: z.array(z.string()).min(1, "Please select at least one subject."),
-  chapters: z.record(z.string()).refine(
-    (val, ctx) => {
-        const { parent } = ctx;
-        if (!parent.selectedSubjects) return true;
-        return parent.selectedSubjects.every((subject: string) => val[subject] && val[subject].trim().length > 0);
+  chapters: z.record(z.string()),
+}).refine(
+    (data) => {
+        if (!data.selectedSubjects || data.selectedSubjects.length === 0) return true; // Let the array validation handle the empty case
+        return data.selectedSubjects.every((subject) => data.chapters[subject] && data.chapters[subject].trim().length > 0);
     },
     {
         message: "Please list chapters for every selected subject.",
-        path: ['chapters'],
+        path: ["chapters"],
     }
-  ),
-});
+);
+
 
 type StudyPlanFormData = z.infer<typeof studyPlanSchema>;
 
@@ -178,7 +178,7 @@ export function StudyPlanDialog({ onOpenChange }: StudyPlanDialogProps) {
                                                     <FormItem>
                                                         <FormLabel className="font-semibold">{subject}</FormLabel>
                                                         <FormControl>
-                                                            <Textarea placeholder={`e.g., Chapter 1: The Living World, Chapter 2: Biological Classification...`} {...field} />
+                                                            <Textarea placeholder={`e.g., Chapter 1: The Living World, Chapter 2: Biological Classification...`} {...field} value={field.value || ''} />
                                                         </FormControl>
                                                     </FormItem>
                                                 )}
@@ -188,7 +188,7 @@ export function StudyPlanDialog({ onOpenChange }: StudyPlanDialogProps) {
                                     </ScrollArea>
                                 )}
                              />
-                             <FormMessage>{form.formState.errors.chapters?.message}</FormMessage>
+                             <FormMessage>{form.formState.errors.chapters?.root?.message}</FormMessage>
                         </div>
                     )}
 
