@@ -110,59 +110,43 @@ export async function generateCustomQuiz(
 const generateCustomQuizPrompt = ai.definePrompt({
   name: 'generateCustomQuizPrompt',
   model: googleAI.model('gemini-2.5-flash'),
-  prompt: `You are an expert question paper generator for students.
+  prompt: `You are an expert exam question generator.
 
-Generate questions based on the following criteria:
-Subject: {{{subject}}}
-{{#if subCategory}}
-Sub-category: {{{subCategory}}}
-{{/if}}
-Difficulty: {{{difficulty}}}
-{{#if board}}
-Educational Board: {{{board}}}
-{{/if}}
-Assessment Type: {{{quizType}}}
-{{#if chapter}}
-Chapter/Topic: {{{chapter}}}
-{{/if}}
-{{#if ncert}}
-Curriculum: NCERT
-{{/if}}
+Your task is to generate a set of questions based on the user's request.
 
-**VERY IMPORTANT INSTRUCTIONS ON QUESTION TYPES:**
+**USER REQUEST:**
+- Subject: {{{subject}}}
+- Class: {{{class}}}
+- Difficulty: {{{difficulty}}}
+{{#if subCategory}}- Sub-category: {{{subCategory}}}{{/if}}
+{{#if chapter}}- Chapter/Topic: {{{chapter}}}{{/if}}
+{{#if board}}- Board: {{{board}}}{{/if}}
+{{#if ncert}}- Curriculum: NCERT{{/if}}
 
-{{#if isJeeOrNeet}}
-**FOR JEE/NEET EXAMS:** You MUST generate ONLY Multiple Choice (MCQ) and Numerical questions. Do NOT generate Match the Following, Short Answer, or Long Answer questions.
-{{else}}
-  {{#if isQuizTypeQuiz}}
-**FOR INTERACTIVE QUIZ:** You MUST generate ONLY Multiple Choice (MCQ) and Numerical questions. It is forbidden to generate 'match' type questions for this quiz.
-  {{else if isQuizTypeExam}}
-**FOR PAPER-STYLE EXAM:** Generate a mix of question types including Multiple Choice (MCQ), Match the Following, Numerical, Short Answer, and Long Answer questions. For subjects like 'Social Science', 'History', 'Politics/Civics', or 'Biology', you SHOULD include a good number of Short Answer and Long Answer questions.
-  {{/if}}
-{{/if}}
-
-**GENERAL INSTRUCTIONS:**
+**ASSESSMENT DETAILS:**
+- Type: {{{quizType}}}
 {{#if numberOfQuestions}}
-1.  You MUST generate exactly {{{numberOfQuestions}}} questions.
-2.  Assign a "marks" field to each question. Choose marks that are appropriate for the question's difficulty and type.
+- Number of Questions: {{{numberOfQuestions}}}
 {{else}}
-1.  The sum of marks for ALL generated questions MUST be EXACTLY equal to the 'totalMarks' ({{{totalMarks}}}).
-2.  You MUST determine the number of questions to generate based on the \`totalMarks\`. Follow this algorithm precisely:
-    - For \`totalMarks\` <= 10, generate 5-7 questions.
-    - For \`totalMarks\` between 11 and 25, generate 8-12 questions.
-    - For \`totalMarks\` between 26 and 50, generate 15-20 questions.
-    - For \`totalMarks\` between 51 and 75, generate 20-25 questions.
-    - For \`totalMarks\` > 75, generate 25-30 questions.
-3.  You must create a mix of questions with varying marks (e.g., 1, 2, 4, 5 marks). Avoid creating questions worth more than 5 marks unless it is a 'longAnswer' type question that requires a detailed response.
+- Total Marks: {{{totalMarks}}}
 {{/if}}
-4.  Each generated question object MUST have a "marks" field indicating the marks for that question.
-5.  You MUST generate a completely new and unique set of questions for every request. Use the unique request fingerprint to ensure uniqueness.
 
-Unique Request Fingerprint:
-- Seed: {{{seed}}}
-- Timestamp: {{{timestamp}}}
+**INSTRUCTIONS:**
+1.  **Question Types:**
+    - If this is for **JEE or NEET**, you MUST generate ONLY Multiple Choice (MCQ) and Numerical questions.
+    - If this is an interactive **'quiz'**, you MUST generate ONLY Multiple Choice (MCQ) and Numerical questions. It is forbidden to generate 'match' type questions.
+    - If this is a paper-style **'exam'**, generate a mix of question types (MCQ, Match, Numerical, Short Answer, Long Answer).
 
-Return a response as a valid JSON object only. Do not include any text outside the JSON. The JSON object should have a "questions" key, which holds an array of question objects. Each question object must have a "type", "marks", and other fields appropriate for that type.
+2.  **Quantity & Marks:**
+    - If 'Number of Questions' is given, generate EXACTLY that many questions. Assign reasonable 'marks' to each.
+    - If 'Total Marks' is given, generate a suitable number of questions so their marks add up to the total.
+
+3.  **Output Format:**
+    - You MUST output a single valid JSON object.
+    - The JSON object must have one key: "questions".
+    - The value of "questions" must be an array of question objects.
+    - Each question object must have all the required fields for its 'type', including 'marks' and 'explanation'.
+    - Do not add any text or markdown before or after the JSON object.
 `,
 });
 
