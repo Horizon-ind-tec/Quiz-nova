@@ -92,14 +92,25 @@ const getPerformanceReportFlow = ai.defineFlow(
   async (input) => {
     const response = await getPerformanceReportPrompt(input);
     const text = response.text;
-    const cleanedText = text.replace(/^```json\s*|```\s*$/g, '').trim();
+
+    let cleanedText = text.replace(/^```json\s*|```\s*$/g, '').trim();
+    const firstBrace = cleanedText.indexOf('{');
+    const lastBrace = cleanedText.lastIndexOf('}');
+
+    if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
+      console.error("Could not find a valid JSON object in the model's response for report:", text);
+      // Fallback: if no JSON is found at all, return the raw text as the report.
+      return { report: text };
+    }
+
+    const jsonString = cleanedText.substring(firstBrace, lastBrace + 1);
 
     try {
-      const parsed = JSON.parse(cleanedText);
+      const parsed = JSON.parse(jsonString);
       return parsed;
     } catch (e) {
-      console.error('Failed to parse JSON from model output for report:', cleanedText);
-      // Fallback: if parsing fails, wrap the raw text in the expected object structure.
+      console.error('Failed to parse JSON from model output for report:', jsonString);
+      // Fallback: if parsing the extracted string fails, return the raw text.
       return { report: text };
     }
   }

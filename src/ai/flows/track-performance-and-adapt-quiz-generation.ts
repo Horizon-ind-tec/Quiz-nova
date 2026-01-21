@@ -83,13 +83,23 @@ const trackPerformanceAndAdaptQuizGenerationFlow = ai.defineFlow(
   async input => {
     const response = await adaptQuizPrompt(input);
     const text = response.text;
-    const cleanedText = text.replace(/^```json\s*|```\s*$/g, '').trim();
+    
+    let cleanedText = text.replace(/^```json\s*|```\s*$/g, '').trim();
+    const firstBrace = cleanedText.indexOf('{');
+    const lastBrace = cleanedText.lastIndexOf('}');
+
+    if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
+      console.error("Could not find a valid JSON object in the model's response for adaptation:", text);
+      throw new Error("The AI's adaptation response did not contain a recognizable JSON object.");
+    }
+    
+    const jsonString = cleanedText.substring(firstBrace, lastBrace + 1);
 
     try {
-        const parsed = JSON.parse(cleanedText);
+        const parsed = JSON.parse(jsonString);
         return parsed;
     } catch (e) {
-        console.error("Failed to parse JSON from model output for adaptation:", cleanedText);
+        console.error("Failed to parse JSON from model output for adaptation:", jsonString);
         throw new Error("The AI returned a response that was not valid JSON.");
     }
   }

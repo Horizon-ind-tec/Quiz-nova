@@ -160,17 +160,31 @@ const generateCustomQuizFlow = ai.defineFlow(
   async input => {
     const response = await generateCustomQuizPrompt(input);
     const text = response.text;
-    const cleanedText = text.replace(/^```json\s*|```\s*$/g, '').trim();
+    
+    // First, try to remove markdown fences if they exist.
+    let cleanedText = text.replace(/^```json\s*|```\s*$/g, '').trim();
+
+    // Then, extract the content between the first '{' and the last '}'.
+    const firstBrace = cleanedText.indexOf('{');
+    const lastBrace = cleanedText.lastIndexOf('}');
+    
+    if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
+      console.error("Could not find a valid JSON object in the model's response:", text);
+      throw new Error("The AI's response did not contain a recognizable JSON object.");
+    }
+    
+    const jsonString = cleanedText.substring(firstBrace, lastBrace + 1);
 
     try {
-        const output = JSON.parse(cleanedText);
+        const output = JSON.parse(jsonString);
         if (!output || !output.questions) {
-            throw new Error('AI returned invalid JSON structure.');
+            throw new Error('AI returned a valid JSON object, but it was missing the required "questions" key.');
         }
         return output;
     } catch (e) {
-        console.error("Failed to parse JSON from model output for quiz generation:", cleanedText);
-        throw new Error("The AI returned a response that was not valid JSON.");
+        console.error("Failed to parse JSON from model output for quiz generation:", jsonString);
+        const parseError = e instanceof Error ? e.message : String(e);
+        throw new Error(`The AI returned a response that was not valid JSON. Parser error: ${parseError}`);
     }
   }
 );

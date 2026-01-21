@@ -106,16 +106,26 @@ const gradeExamFlow = ai.defineFlow(
   async (input) => {
     const response = await gradeExamPrompt(input);
     const text = response.text;
-    const cleanedText = text.replace(/^```json\s*|```\s*$/g, '').trim();
+
+    let cleanedText = text.replace(/^```json\s*|```\s*$/g, '').trim();
+    const firstBrace = cleanedText.indexOf('{');
+    const lastBrace = cleanedText.lastIndexOf('}');
+
+    if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
+      console.error("Could not find a valid JSON object in the model's response for grading:", text);
+      throw new Error("The AI's grading response did not contain a recognizable JSON object.");
+    }
+
+    const jsonString = cleanedText.substring(firstBrace, lastBrace + 1);
 
     try {
-        const output = JSON.parse(cleanedText);
+        const output = JSON.parse(jsonString);
         if (!output) {
             throw new Error('AI failed to generate a grade.');
         }
         return output;
     } catch (e) {
-        console.error("Failed to parse JSON from model output for grading:", cleanedText);
+        console.error("Failed to parse JSON from model output for grading:", jsonString);
         throw new Error("The AI returned a response that was not valid JSON.");
     }
   }
