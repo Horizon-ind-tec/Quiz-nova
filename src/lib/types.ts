@@ -133,4 +133,22 @@ export interface UserProfile {
     pendingPlan?: 'premium' | 'ultimate';
 }
 
+export interface StudyTask {
+  date: string; // YYYY-MM-DD
+  subject: string;
+  chapter: string;
+  isCompleted: boolean;
+}
+
+export interface StudyPlan {
+  id: string;
+  userId: string;
+  examDate: number; // timestamp
+  subjects: {
+    name: string;
+    chapters: string[];
+  }[];
+  schedule: StudyTask[];
+  createdAt: number; // timestamp
+}
     

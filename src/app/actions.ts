@@ -1,3 +1,4 @@
+
 'use server';
 
 import {
@@ -10,13 +11,15 @@ import {
   type GradeExamInput,
   type GradeExamOutput
 } from '@/ai/flows/grade-exam-flow';
-import type { Question, QuizAttempt } from '@/lib/types';
+import type { Question, QuizAttempt, StudyPlan, StudyTask } from '@/lib/types';
 import { 
   getPerformanceReport,
   type GetPerformanceReportOutput
 } from '@/ai/flows/get-performance-report';
 import { notifyAdminOfPayment, type NotifyAdminOfPaymentInput } from '@/ai/flows/notify-admin-of-payment';
+import { generateStudyPlan } from '@/ai/flows/generate-study-plan';
 import { getAdminDb } from '@/firebase/admin';
+import { v4 as uuidv4 } from 'uuid';
 
 
 export async function generateQuizAction(
@@ -99,4 +102,34 @@ export async function handlePaymentAction(input: { targetUserId: string, action:
       pendingPlan: null,
     });
   }
+}
+
+export async function generateStudyPlanAction(input: {
+  examDate: Date;
+  subjects: { name: string; chapters: string[] }[];
+  userId: string;
+}): Promise<string> {
+  const { examDate, subjects, userId } = input;
+
+  const aiResult = await generateStudyPlan({ examDate, subjects });
+
+  const scheduleWithCompletion: StudyTask[] = aiResult.schedule.map(task => ({
+    ...task,
+    isCompleted: false,
+  }));
+
+  const newStudyPlan: StudyPlan = {
+    id: uuidv4(),
+    userId,
+    examDate: examDate.getTime(),
+    subjects,
+    schedule: scheduleWithCompletion,
+    createdAt: Date.now(),
+  };
+
+  const db = await getAdminDb();
+  const planRef = db.collection('users').doc(userId).collection('studyPlans').doc(newStudyPlan.id);
+  await planRef.set(newStudyPlan);
+
+  return newStudyPlan.id;
 }

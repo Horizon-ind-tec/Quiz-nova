@@ -279,6 +279,16 @@ service cloud.firestore {
         allow update: if isExistingOwner(userId) && isUpdatingOwnQuizResult();
         allow delete: if isExistingOwner(userId);
       }
+
+      /**
+       * @description Manages AI-generated study plans for a user.
+       * @path /users/{userId}/studyPlans/{studyPlanId}
+       * @allow (read, write) The user can fully manage their own study plans.
+       * @principle Enforces strict ownership of personal study plans.
+       */
+      match /studyPlans/{studyPlanId} {
+        allow read, write: if isOwner(userId);
+      }
     }
   }
 }
