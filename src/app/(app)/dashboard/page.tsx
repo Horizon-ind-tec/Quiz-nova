@@ -4,7 +4,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PlusCircle, BrainCircuit, Gem, BookUser, PartyPopper, AlertTriangle } from 'lucide-react';
+import { PlusCircle, BrainCircuit, Gem, BookUser, PartyPopper, AlertTriangle, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Header } from '@/components/header';
@@ -17,6 +17,10 @@ import { Loader2 } from 'lucide-react';
 import { collection, query, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Calendar } from '@/components/ui/calendar';
+import { useLocalStorage } from '@/hooks/use-local-storage';
+import { differenceInCalendarDays } from 'date-fns';
 
 type ViewType = 'quiz' | 'exam';
 
@@ -27,6 +31,10 @@ function DashboardContent() {
   const firestore = useFirestore();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+
+  const [examDate, setExamDate] = useLocalStorage<string | null>('examDate', null);
+  const [daysLeft, setDaysLeft] = useState<number | null>(null);
+  const [isExamDateDialogOpen, setIsExamDateDialogOpen] = useState(false);
 
   const status = searchParams.get('status');
   const plan = searchParams.get('plan');
@@ -57,6 +65,17 @@ function DashboardContent() {
        router.replace('/dashboard', { scroll: false });
     }
   }, [status, plan, router, toast]);
+
+  useEffect(() => {
+    if (examDate) {
+      const today = new Date();
+      const targetDate = new Date(examDate);
+      const diff = differenceInCalendarDays(targetDate, today);
+      setDaysLeft(diff);
+    } else {
+      setDaysLeft(null);
+    }
+  }, [examDate]);
 
   const quizHistoryQuery = useMemoFirebase(
     () =>
@@ -110,6 +129,36 @@ function DashboardContent() {
                 Create New Quiz
               </Link>
             </Button>
+            <Dialog open={isExamDateDialogOpen} onOpenChange={setIsExamDateDialogOpen}>
+                <DialogTrigger asChild>
+                    <Button variant="destructive">
+                        <CalendarDays className="mr-2 h-4 w-4" />
+                        {daysLeft !== null && daysLeft >= 0 ? `${daysLeft} Days Left` : 'Days left for exam'}
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Set Exam Date</DialogTitle>
+                        <DialogDescription>
+                            Select your main exam date to see a countdown on your dashboard.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex justify-center">
+                        <Calendar
+                            mode="single"
+                            selected={examDate ? new Date(examDate) : undefined}
+                            onSelect={(date) => {
+                                if (date) {
+                                    setExamDate(date.toISOString());
+                                    setIsExamDateDialogOpen(false);
+                                }
+                            }}
+                            disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
+                            initialFocus
+                        />
+                    </div>
+                </DialogContent>
+            </Dialog>
           </div>
         </div>
 
