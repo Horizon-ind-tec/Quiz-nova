@@ -70,9 +70,9 @@ const gradeExamPrompt = ai.definePrompt({
         - Image: {{media url=this}}
         {{/each}}
     
-    2.  Here are the exam questions and their correct answers, in order.
+    2.  Here are the exam questions and their correct answers, in order. The question index is zero-based.
         {{#each questions}}
-        - **Question {{add @index 1}} (Type: {{{type}}})**:
+        - **Question {{ @index }} (Type: {{{type}}})**:
           - Question: {{{question}}}
           - Correct Answer: [Redacted for brevity]
         {{/each}}
@@ -95,9 +95,6 @@ const gradeExamPrompt = ai.definePrompt({
       "generalFeedback": "Great job, but review European capitals."
     }
     `,
-    helpers: {
-      add: (a: number, b: number) => a + b,
-    },
 });
 
 const gradeExamFlow = ai.defineFlow(
