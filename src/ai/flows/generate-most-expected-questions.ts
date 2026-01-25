@@ -3,8 +3,8 @@
  * @fileOverview AI flow for generating "Most Expected Questions" for exams.
  *
  * This file defines a Genkit flow that takes class, board, subject, and chapter,
- * and generates a curated list of high-probability exam questions based on an
- * examiner's perspective.
+ * and generates a curated list of high-probability exam questions with solutions,
+ * mimicking an examiner's perspective.
  *
  * @exports generateMostExpectedQuestions - The main function to generate questions.
  * @exports GenerateMostExpectedQuestionsInput - The input type for the function.
@@ -24,7 +24,7 @@ const GenerateMostExpectedQuestionsInputSchema = z.object({
 export type GenerateMostExpectedQuestionsInput = z.infer<typeof GenerateMostExpectedQuestionsInputSchema>;
 
 const GenerateMostExpectedQuestionsOutputSchema = z.object({
-  questions: z.string().describe("The formatted list of most expected questions in Markdown format."),
+  questions: z.string().describe("The formatted list of most expected questions with solutions, in Markdown format."),
 });
 export type GenerateMostExpectedQuestionsOutput = z.infer<typeof GenerateMostExpectedQuestionsOutputSchema>;
 
@@ -42,7 +42,7 @@ const generateMostExpectedQuestionsPrompt = ai.definePrompt({
   output: { schema: GenerateMostExpectedQuestionsOutputSchema },
   prompt: `You are an experienced subject teacher and board-exam question paper setter.
 
-Your task is to generate “Most Expected Questions” for the given:
+Your task is to generate “Most Expected Questions” with solutions for the given:
 - Class: {{{class}}}
 - Board: {{{board}}}
 - Subject: {{{subject}}}
@@ -59,12 +59,16 @@ Follow this thinking process internally:
    - Prefer core concepts, derivations, definitions, and application-based questions
    - Avoid rare, low-probability subtopics
 4. Frame questions exactly in board-exam style language.
-5. Modify repeated questions slightly to match current syllabus trends.
+5. For each question, provide a concise solution.
 
 Output format:
 - Structure the entire response as a single block of markdown text.
 - Use markdown headings for mark sections (e.g., "### 1–2 Mark Questions").
-- Use markdown lists for the questions under each section.
+- For each question:
+    - Present the question using a markdown list.
+    - If it's an MCQ, list the options.
+    - Provide the answer clearly, like \`**Ans.** (2)\`.
+    - Provide a brief solution, starting with \`**Sol.**\`.
 - Limit the list to only the most important and high-probability questions.
 - Do NOT mention percentages, guarantees, or paper prediction.
 - Do NOT claim exact paper matching.
@@ -72,7 +76,7 @@ Output format:
 End with a short note in markdown italics:
 *This list is generated using examiner-style analysis and exam trends for effective preparation.*
 
-Now generate the Most Expected Questions.
+Now generate the Most Expected Questions with solutions.
 `,
 });
 

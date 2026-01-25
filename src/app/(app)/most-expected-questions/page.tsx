@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2, Sparkles, Target } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 import { generateMostExpectedQuestionsAction } from '@/app/actions';
 import { CLASSES, SUBJECTS, BOARDS } from '@/lib/data';
@@ -30,9 +31,11 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function MostExpectedQuestionsPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [generatedQuestions, setGeneratedQuestions] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useUser();
+  const router = useRouter();
+  const [, setGeneratedPaper] = useLocalStorage<string | null>('generatedPaper', null);
+  const [, setPaperDetails] = useLocalStorage<FormValues | null>('paperDetails', null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -54,12 +57,13 @@ export default function MostExpectedQuestionsPage() {
       return;
     }
     setIsLoading(true);
-    setGeneratedQuestions(null);
 
     try {
       const result = await generateMostExpectedQuestionsAction(data);
       if (result && result.questions) {
-        setGeneratedQuestions(result.questions);
+        setGeneratedPaper(result.questions);
+        setPaperDetails(data);
+        router.push('/most-expected-questions/paper');
       } else {
         throw new Error('AI failed to generate questions. Please try again.');
       }
@@ -69,7 +73,6 @@ export default function MostExpectedQuestionsPage() {
         title: 'Error',
         description: (error as Error).message || 'Something went wrong.',
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -78,9 +81,8 @@ export default function MostExpectedQuestionsPage() {
     <div className="flex flex-col">
       <Header title="Most Expected Questions" />
       <main className="flex-1 overflow-y-auto">
-        <div className="p-4 pt-6 md:p-8">
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
+        <div className="p-4 pt-6 md:p-8 flex justify-center">
+            <Card className="w-full max-w-2xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Target className="h-6 w-6 text-destructive" />
@@ -149,35 +151,6 @@ export default function MostExpectedQuestionsPage() {
                 </Form>
               </CardContent>
             </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Generated Questions</CardTitle>
-                <CardDescription>Your curated list of questions will appear here.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[450px] w-full rounded-md border p-4 bg-muted/50">
-                  {isLoading && (
-                    <div className="flex h-full items-center justify-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        <p className="ml-4 text-muted-foreground">AI is thinking like an examiner...</p>
-                    </div>
-                  )}
-                  {generatedQuestions ? (
-                    <div className="text-sm whitespace-pre-wrap font-sans">
-                      {generatedQuestions}
-                    </div>
-                  ) : (
-                    !isLoading && (
-                        <div className="flex h-full items-center justify-center text-center text-muted-foreground">
-                            <p>Fill out the form to generate your questions.</p>
-                        </div>
-                    )
-                  )}
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </main>
     </div>
