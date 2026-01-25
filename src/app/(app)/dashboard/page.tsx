@@ -4,7 +4,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PlusCircle, BrainCircuit, Gem, BookUser, PartyPopper, AlertTriangle, CalendarDays } from 'lucide-react';
+import { PlusCircle, BrainCircuit, Gem, BookUser, CalendarDays, Loader2, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Header } from '@/components/header';
@@ -13,7 +13,6 @@ import { RecentQuizzes } from '@/components/recent-quizzes';
 import type { QuizAttempt } from '@/lib/types';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { Loader2 } from 'lucide-react';
 import { collection, query, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -127,6 +126,12 @@ function DashboardContent() {
               <Link href="/quiz/create">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Create New Quiz
+              </Link>
+            </Button>
+            <Button asChild variant="destructive">
+              <Link href="/most-expected-questions">
+                <Target className="mr-2 h-4 w-4" />
+                Most Expected Questions
               </Link>
             </Button>
             <Dialog open={isPlanDialogOpen} onOpenChange={setIsPlanDialogOpen}>
