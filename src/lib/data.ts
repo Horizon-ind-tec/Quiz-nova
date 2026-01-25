@@ -1,6 +1,6 @@
 
 import type { LucideIcon } from 'lucide-react';
-import { Calculator, Atom, FlaskConical, Leaf, Scroll, Globe, Scale, Landmark, Rocket, Microscope, Presentation, Plane, Cpu, BrainCircuit, Palette, Briefcase } from 'lucide-react';
+import { Calculator, Atom, FlaskConical, Scroll, Globe, Scale, Landmark, Microscope, Cpu, BrainCircuit, Palette, Briefcase } from 'lucide-react';
 
 export const CLASSES = ['7th', '8th', '9th', '10th', '11th', '12th', 'JEE (Mains + Advanced)', 'NEET'];
 
@@ -18,26 +18,12 @@ export const SUBJECTS_DATA: {
       { name: 'Advance', description: 'Complex topics and problem-solving.' }
     ]
   },
-  {
-    name: 'Science',
-    icon: Microscope,
-    multiSelect: true,
-    subCategories: [
-      { name: 'Physics' },
-      { name: 'Chemistry' },
-      { name: 'Biology' }
-    ]
-  },
-  {
-    name: 'Social Science',
-    icon: Landmark,
-    multiSelect: true,
-    subCategories: [
-      { name: 'History' },
-      { name: 'Geography' },
-      { name: 'Politics/Civics', }
-    ]
-  },
+  { name: 'Physics', icon: Atom },
+  { name: 'Chemistry', icon: FlaskConical },
+  { name: 'Biology', icon: Microscope },
+  { name: 'History', icon: Landmark },
+  { name: 'Geography', icon: Globe },
+  { name: 'Civics', icon: Scale },
   {
     name: 'English',
     icon: Scroll,
