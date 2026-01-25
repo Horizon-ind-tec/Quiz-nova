@@ -65,7 +65,7 @@ Output format:
 - Structure the entire response as a single block of markdown text.
 - Use markdown headings for mark sections (e.g., "### 1–2 Mark Questions").
 - For each question:
-    - Present the question using a markdown list.
+    - Present the question using a markdown list with a hyphen (e.g., "- The question text...").
     - If it's an MCQ, list the options.
     - Provide the answer clearly, like \`**Ans.** (2)\`.
     - Provide a brief solution, starting with \`**Sol.**\`.
@@ -73,8 +73,8 @@ Output format:
 - Do NOT mention percentages, guarantees, or paper prediction.
 - Do NOT claim exact paper matching.
 
-End with a short note in markdown italics:
-*This list is generated using examiner-style analysis and exam trends for effective preparation.*
+End with a short note in markdown bold:
+**This list is generated using examiner-style analysis and exam trends for effective preparation.**
 
 Now generate the Most Expected Questions with solutions.
 `,

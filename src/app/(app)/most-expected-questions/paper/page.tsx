@@ -71,8 +71,9 @@ export default function PaperPage() {
                           if (line.startsWith('### ')) {
                               return <h3 key={index} className="font-bold text-lg bg-gray-200 p-2 rounded-md my-4 text-center">{line.replace('### ', '')}</h3>
                           }
-                          if (line.startsWith('*This list')) {
-                              return <p key={index} className="text-center italic text-muted-foreground mt-8">{line}</p>
+                          if (line.startsWith('**This list')) {
+                              const cleanLine = line.replace(/\*/g, '');
+                              return <p key={index} className="text-center font-bold text-muted-foreground mt-8">{cleanLine}</p>
                           }
                            if (line.startsWith('**Ans.**')) {
                               return <p key={index} className="!my-1"><strong className="text-green-700">{line.substring(0, 7)}</strong>{line.substring(7)}</p>
