@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BrainCircuit, LayoutDashboard, PlusCircle, TrendingUp, MessageSquareHeart, Gem, BookUser, Shield, Bell, CalendarCheck } from 'lucide-react';
+import { BrainCircuit, LayoutDashboard, PlusCircle, TrendingUp, MessageSquareHeart, Gem, BookUser, Shield, Bell, CalendarCheck, Target } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -69,6 +69,19 @@ export function SideNav() {
               <Link href="/quiz/create">
                 <PlusCircle />
                 <span>New Quiz</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+           <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              size="lg"
+              isActive={isActive('/most-expected-questions')}
+              tooltip={{ children: 'Most Expected' }}
+            >
+              <Link href="/most-expected-questions">
+                <Target />
+                <span>Most Expected</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

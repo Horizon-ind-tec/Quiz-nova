@@ -20,12 +20,21 @@ import { notifyAdminOfPayment, type NotifyAdminOfPaymentInput } from '@/ai/flows
 import { generateStudyPlan } from '@/ai/flows/generate-study-plan';
 import { getAdminDb } from '@/firebase/admin';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  generateMostExpectedQuestions,
+  type GenerateMostExpectedQuestionsInput,
+  type GenerateMostExpectedQuestionsOutput,
+} from '@/ai/flows/generate-most-expected-questions';
 
 
 export async function generateQuizAction(
   input: Omit<GenerateCustomQuizInput, 'generationMode'>,
 ): Promise<GenerateCustomQuizOutput> {
-  return await generateCustomQuiz(input);
+  const result = await generateCustomQuiz(input);
+  if (!result || !result.questions) {
+    throw new Error('AI failed to return valid questions.');
+  }
+  return result;
 }
 
 
@@ -132,4 +141,11 @@ export async function generateStudyPlanAction(input: {
   await planRef.set(newStudyPlan);
 
   return newStudyPlan.id;
+}
+
+
+export async function generateMostExpectedQuestionsAction(
+  input: GenerateMostExpectedQuestionsInput
+): Promise<GenerateMostExpectedQuestionsOutput> {
+    return await generateMostExpectedQuestions(input);
 }

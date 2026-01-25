@@ -8,3 +8,4 @@ import '@/ai/flows/grade-exam-flow.ts';
 import '@/ai/flows/get-performance-report.ts';
 import '@/ai/flows/notify-admin-of-payment.ts';
 import '@/ai/flows/generate-study-plan.ts';
+import '@/ai/flows/generate-most-expected-questions.ts';
