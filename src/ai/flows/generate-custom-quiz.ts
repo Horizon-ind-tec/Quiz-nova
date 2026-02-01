@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -125,11 +126,8 @@ Your task is to generate a set of questions based on the user's request.
 
 **ASSESSMENT DETAILS:**
 - Type: {{{quizType}}}
-{{#if numberOfQuestions}}
-- Number of Questions: {{{numberOfQuestions}}}
-{{else}}
-- Total Marks: {{{totalMarks}}}
-{{/if}}
+{{#if numberOfQuestions}}- Target Number of Questions: {{{numberOfQuestions}}}{{/if}}
+{{#if totalMarks}}- Target Total Marks: {{{totalMarks}}}{{/if}}
 
 **INSTRUCTIONS:**
 1.  **Question Types:**
@@ -138,9 +136,10 @@ Your task is to generate a set of questions based on the user's request.
     - If this is a paper-style **'exam'**, generate a mix of question types (MCQ, Match, Numerical, Short Answer, Long Answer).
 
 2.  **Quantity & Marks:**
-    - If 'Number of Questions' is given, generate EXACTLY that many questions. Assign reasonable 'marks' to each.
-    - If 'Total Marks' is given, generate a suitable number of questions so their marks add up to the total.
-    - For JEE/NEET exams, be aware that questions often have different values (e.g., some are worth 4 marks, some 2). Distribute marks realistically based on the question type and difficulty.
+    - If 'Number of Questions' is given, try to generate EXACTLY that many questions.
+    - If 'Total Marks' is given, distribute marks across questions so the sum matches the total.
+    - If BOTH are given, you MUST generate exactly 'Number of Questions' and ensure their marks add up to exactly 'Total Marks'.
+    - Assign reasonable 'marks' to each question based on its type and complexity (e.g., MCQs are usually 1-4 marks, Long Answers 5-10).
 `,
 });
 

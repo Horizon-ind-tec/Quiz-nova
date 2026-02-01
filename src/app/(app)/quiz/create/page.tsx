@@ -44,10 +44,6 @@ const formSchema = z.object({
     (data) => data.totalMarks || data.numberOfQuestions, {
     message: "Either Total Marks or Number of Questions must be provided.",
     path: ["totalMarks"],
-}).refine(
-    (data) => !(data.totalMarks && data.numberOfQuestions), {
-    message: "Please provide either Total Marks or Number of Questions, not both.",
-    path: ["numberOfQuestions"],
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -156,9 +152,8 @@ export default function CreateQuizPage() {
             return q;
         });
         
-        const finalTotalMarks = generationInput.numberOfQuestions
-            ? result.questions.reduce((sum, q) => sum + q.marks, 0)
-            : generationInput.totalMarks!;
+        // Final marks calculation logic: prioritize defined total marks if provided, else sum questions.
+        const finalTotalMarks = generationInput.totalMarks || result.questions.reduce((sum, q) => sum + q.marks, 0);
 
         let timeLimitInSeconds: number;
         if (generationInput.timeLimit && generationInput.timeLimit > 0) {
@@ -267,9 +262,11 @@ export default function CreateQuizPage() {
                                                         <Checkbox
                                                             checked={field.value?.includes(sub.name)}
                                                             onCheckedChange={(checked) => {
-                                                                return checked
-                                                                    ? form.setValue('subCategories', [...(field.value || []), sub.name])
-                                                                    : form.setValue('subCategories', field.value?.filter(value => value !== sub.name));
+                                                                const current = field.value || [];
+                                                                const updated = checked
+                                                                    ? [...current, sub.name]
+                                                                    : current.filter(v => v !== sub.name);
+                                                                form.setValue('subCategories', updated, { shouldValidate: true });
                                                             }}
                                                         />
                                                     </FormControl>
@@ -376,10 +373,15 @@ export default function CreateQuizPage() {
                             <FormItem>
                                 <FormLabel>Total Marks (Optional)</FormLabel>
                                 <FormControl>
-                                <Input type="number" min="5" max="100" placeholder="e.g., 20" {...field} value={field.value || ''} onChange={e => {
-                                    field.onChange(e.target.valueAsNumber);
-                                    if(e.target.value) form.setValue('numberOfQuestions', undefined, { shouldValidate: true });
-                                }} />
+                                <Input 
+                                    type="number" 
+                                    min="5" 
+                                    max="100" 
+                                    placeholder="e.g., 20" 
+                                    {...field} 
+                                    value={field.value || ''} 
+                                    onChange={e => field.onChange(e.target.valueAsNumber || undefined)} 
+                                />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -392,10 +394,15 @@ export default function CreateQuizPage() {
                             <FormItem>
                                 <FormLabel>Number of Questions (Optional)</FormLabel>
                                 <FormControl>
-                                <Input type="number" min="1" max="100" placeholder="e.g., 10" {...field} value={field.value || ''} onChange={e => {
-                                    field.onChange(e.target.valueAsNumber);
-                                    if(e.target.value) form.setValue('totalMarks', undefined, { shouldValidate: true });
-                                }} />
+                                <Input 
+                                    type="number" 
+                                    min="1" 
+                                    max="100" 
+                                    placeholder="e.g., 10" 
+                                    {...field} 
+                                    value={field.value || ''} 
+                                    onChange={e => field.onChange(e.target.valueAsNumber || undefined)} 
+                                />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
