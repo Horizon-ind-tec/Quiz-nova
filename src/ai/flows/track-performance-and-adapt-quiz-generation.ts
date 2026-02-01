@@ -1,44 +1,35 @@
-
 'use server';
 /**
- * @fileOverview This file defines a Genkit flow to track user quiz performance and adapt future quiz generation accordingly.
- *
- * - trackPerformanceAndAdaptQuizGeneration - The main function to initiate the flow.
- * - TrackPerformanceAndAdaptQuizGenerationInput - The input type for the flow, including quiz results and user preferences.
- * - TrackPerformanceAndAdaptQuizGenerationOutput - The output type for the flow, providing updated quiz generation parameters.
+ * @fileOverview This file defines a Genkit flow to track user quiz performance.
  */
 
 import {ai} from '@/ai/genkit';
-import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
-// Input schema for the flow
 const TrackPerformanceAndAdaptQuizGenerationInputSchema = z.object({
-  userId: z.string().describe('The unique identifier of the user.'),
+  userId: z.string(),
   quizResults: z.array(
     z.object({
-      subject: z.string().describe('The subject of the quiz.'),
-      score: z.number().describe('The score obtained in the quiz (0-100).'),
-      difficulty: z.string().describe('The difficulty level of the quiz (e.g., easy, medium, hard).'),
+      subject: z.string(),
+      score: z.number(),
+      difficulty: z.string(),
     })
-  ).describe('An array of quiz results for the user.'),
+  ),
   userPreferences: z.object({
-    class: z.string().describe('The class of the user.'),
-    board: z.string().describe('The educational board of the user.'),
-  }).describe('User preferences for quiz generation.'),
-  currentDifficulty: z.string().optional().describe('The current difficulty level for quiz generation.'),
+    class: z.string(),
+    board: z.string(),
+  }),
+  currentDifficulty: z.string().optional(),
 });
 export type TrackPerformanceAndAdaptQuizGenerationInput = z.infer<typeof TrackPerformanceAndAdaptQuizGenerationInputSchema>;
 
-// Output schema for the flow
 const TrackPerformanceAndAdaptQuizGenerationOutputSchema = z.object({
-  newDifficulty: z.string().describe('The adjusted difficulty level for future quiz generation.'),
-  focusAreas: z.array(z.string()).describe('Specific areas or subjects to focus on in future quizzes.'),
-  explanation: z.string().describe('An explanation of why these adjustments were made.'),
+  newDifficulty: z.string(),
+  focusAreas: z.array(z.string()),
+  explanation: z.string(),
 });
 export type TrackPerformanceAndAdaptQuizGenerationOutput = z.infer<typeof TrackPerformanceAndAdaptQuizGenerationOutputSchema>;
 
-// Main function to initiate the flow
 export async function trackPerformanceAndAdaptQuizGeneration(
   input: TrackPerformanceAndAdaptQuizGenerationInput
 ): Promise<TrackPerformanceAndAdaptQuizGenerationOutput> {
@@ -48,8 +39,8 @@ export async function trackPerformanceAndAdaptQuizGeneration(
 const adaptQuizPrompt = ai.definePrompt({
   name: 'adaptQuizPrompt',
   model: 'googleai/gemini-2.5-flash',
-  output: { schema: TrackPerformanceAndAdaptQuizGenerationOutputSchema },
-  prompt: `You are an AI quiz adaptation expert. Analyze the student's quiz performance and determine how to adjust future quiz generation to focus on their weaker areas.
+  input: { schema: TrackPerformanceAndAdaptQuizGenerationInputSchema },
+  prompt: `You are an AI quiz adaptation expert. Analyze the student's quiz performance and determine how to adjust future quiz generation.
 
   User ID: {{{userId}}}
   User Class: {{{userPreferences.class}}}
@@ -62,7 +53,7 @@ const adaptQuizPrompt = ai.definePrompt({
   {{/each}}
 
   Based on this data, recommend a new difficulty level and specific focus areas for future quizzes.
-  Briefly explain your recommendation in one sentence.
+  Return your response as a valid JSON object with: "newDifficulty", "focusAreas" (array), and "explanation".
   `,
 });
 
@@ -78,7 +69,6 @@ function extractJson(text: string) {
   return null;
 }
 
-// Genkit flow definition
 const trackPerformanceAndAdaptQuizGenerationFlow = ai.defineFlow(
   {
     name: 'trackPerformanceAndAdaptQuizGenerationFlow',
@@ -87,17 +77,12 @@ const trackPerformanceAndAdaptQuizGenerationFlow = ai.defineFlow(
   },
   async input => {
     const response = await adaptQuizPrompt(input);
-    let output = response.output;
+    const extracted = extractJson(response.text);
 
-    if (!output) {
-      const extracted = extractJson(response.text);
-      if (extracted && extracted.newDifficulty) {
-        output = extracted;
-      } else {
-        throw new Error("The AI failed to adapt the quiz generation.");
-      }
+    if (extracted && extracted.newDifficulty) {
+      return extracted as TrackPerformanceAndAdaptQuizGenerationOutput;
     }
 
-    return output!;
+    throw new Error("The AI failed to adapt the quiz generation.");
   }
 );

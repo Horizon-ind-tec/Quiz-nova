@@ -1,34 +1,23 @@
-
 'use server';
 /**
  * @fileOverview AI flow for generating "Most Expected Questions" for exams.
- *
- * This file defines a Genkit flow that takes class, board, subject, and chapter,
- * and generates a curated list of high-probability exam questions with solutions,
- * mimicking an examiner's perspective.
- *
- * @exports generateMostExpectedQuestions - The main function to generate questions.
- * @exports GenerateMostExpectedQuestionsInput - The input type for the function.
- * @exports GenerateMostExpectedQuestionsOutput - The output type for the function.
  */
 
 import { ai } from '@/ai/genkit';
-import { googleAI } from '@genkit-ai/google-genai';
 import { z } from 'genkit';
 
 const GenerateMostExpectedQuestionsInputSchema = z.object({
-  class: z.string().describe('The class for which to generate questions (e.g., "12th").'),
-  board: z.string().describe('The educational board (e.g., "CBSE", "ICSE").'),
-  subject: z.string().describe('The subject (e.g., "Physics").'),
-  chapter: z.string().describe('The specific chapter or topic.'),
+  class: z.string(),
+  board: z.string(),
+  subject: z.string(),
+  chapter: z.string(),
 });
 export type GenerateMostExpectedQuestionsInput = z.infer<typeof GenerateMostExpectedQuestionsInputSchema>;
 
 const GenerateMostExpectedQuestionsOutputSchema = z.object({
-  questions: z.string().describe("The formatted list of most expected questions with solutions, in Markdown format."),
+  questions: z.string(),
 });
 export type GenerateMostExpectedQuestionsOutput = z.infer<typeof GenerateMostExpectedQuestionsOutputSchema>;
-
 
 export async function generateMostExpectedQuestions(
   input: GenerateMostExpectedQuestionsInput
@@ -36,11 +25,10 @@ export async function generateMostExpectedQuestions(
   return generateMostExpectedQuestionsFlow(input);
 }
 
-
 const generateMostExpectedQuestionsPrompt = ai.definePrompt({
   name: 'generateMostExpectedQuestionsPrompt',
   model: 'googleai/gemini-2.5-flash',
-  output: { schema: GenerateMostExpectedQuestionsOutputSchema },
+  input: { schema: GenerateMostExpectedQuestionsInputSchema },
   prompt: `You are an experienced subject teacher and board-exam question paper setter.
 
 Your task is to generate “Most Expected Questions” with solutions for the given:
@@ -89,15 +77,9 @@ const generateMostExpectedQuestionsFlow = ai.defineFlow(
   },
   async (input) => {
     const response = await generateMostExpectedQuestionsPrompt(input);
-    let output = response.output;
-
-    if (!output || !output.questions) {
-      if (response.text) {
-        return { questions: response.text };
-      }
-      throw new Error('AI failed to generate a valid list of questions.');
+    if (response.text) {
+      return { questions: response.text };
     }
-    
-    return output;
+    throw new Error('AI failed to generate a valid list of questions.');
   }
 );

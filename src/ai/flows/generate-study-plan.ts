@@ -1,39 +1,30 @@
-
 'use server';
 /**
  * @fileOverview AI flow for generating a personalized study plan.
- *
- * This file defines a Genkit flow that takes an exam date, a list of subjects with chapters,
- * and generates a day-by-day study schedule to cover all topics before the exam.
- *
- * @exports generateStudyPlan - The main function to generate a study plan.
- * @exports GenerateStudyPlanInput - The input type for the function.
- * @exports GenerateStudyPlanOutput - The output type for the function.
  */
 
 import { ai } from '@/ai/genkit';
-import { googleAI } from '@genkit-ai/google-genai';
 import { z } from 'genkit';
 import { format } from 'date-fns';
 
 const GenerateStudyPlanInputSchema = z.object({
   examDate: z.string().describe("The final exam date in YYYY-MM-DD format."),
   subjects: z.array(z.object({
-    name: z.string().describe("The name of the subject."),
-    chapters: z.array(z.string()).describe("The list of chapters to study for this subject."),
-  })).describe("The list of subjects and chapters to include in the plan."),
-  startDate: z.string().describe("The start date for the plan in YYYY-MM-DD format (usually today)."),
+    name: z.string(),
+    chapters: z.array(z.string()),
+  })),
+  startDate: z.string(),
 });
 export type GenerateStudyPlanInput = z.infer<typeof GenerateStudyPlanInputSchema>;
 
 const StudyTaskSchema = z.object({
-  date: z.string().describe("The date for this study task in YYYY-MM-DD format."),
-  subject: z.string().describe("The subject to study on this date."),
-  chapter: z.string().describe("The specific chapter to study."),
+  date: z.string(),
+  subject: z.string(),
+  chapter: z.string(),
 });
 
 const GenerateStudyPlanOutputSchema = z.object({
-  schedule: z.array(StudyTaskSchema).describe("The day-by-day study schedule."),
+  schedule: z.array(StudyTaskSchema),
 });
 export type GenerateStudyPlanOutput = z.infer<typeof GenerateStudyPlanOutputSchema>;
 
@@ -51,7 +42,7 @@ export async function generateStudyPlan(
 const generateStudyPlanPrompt = ai.definePrompt({
   name: 'generateStudyPlanPrompt',
   model: 'googleai/gemini-2.5-flash',
-  output: { schema: GenerateStudyPlanOutputSchema },
+  input: { schema: GenerateStudyPlanInputSchema },
   prompt: `You are an expert academic planner. Your task is to create a realistic, balanced, and effective study schedule for a student.
 
   **Student's Goal:**
@@ -65,9 +56,9 @@ const generateStudyPlanPrompt = ai.definePrompt({
   **Your Instructions:**
   1.  Create a day-by-day schedule starting from the 'Start Date' and ending a day or two before the 'Exam Date' to leave time for revision.
   2.  Distribute the chapters evenly across the available days. Avoid overloading any single day.
-  3.  Try to alternate between different subjects to keep the studying engaging. For example, don't schedule the same subject for more than two consecutive days if possible.
+  3.  Try to alternate between different subjects to keep the studying engaging.
   4.  Ensure every single chapter provided is included in the schedule exactly once.
-  5.  The final output must be a JSON object that strictly follows the provided schema. Do not include any extra text or explanations.
+  5.  The final output must be a valid JSON object with a "schedule" array. Each item in the array must have "date", "subject", and "chapter" fields.
   `,
 });
 
@@ -91,17 +82,12 @@ const generateStudyPlanFlow = ai.defineFlow(
   },
   async (input) => {
     const response = await generateStudyPlanPrompt(input);
-    let output = response.output;
+    const extracted = extractJson(response.text);
 
-    if (!output?.schedule) {
-      const extracted = extractJson(response.text);
-      if (extracted && extracted.schedule) {
-        output = extracted;
-      } else {
-        throw new Error('AI failed to generate a valid study plan.');
-      }
+    if (extracted && Array.isArray(extracted.schedule)) {
+      return extracted as GenerateStudyPlanOutput;
     }
     
-    return output!;
+    throw new Error('AI failed to generate a valid study plan.');
   }
 );

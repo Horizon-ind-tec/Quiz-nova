@@ -1,68 +1,45 @@
-
 'use server';
 /**
  * @fileOverview AI flow for grading handwritten exam answers from images.
- *
- * This file defines a Genkit flow that takes images of handwritten answers and a quiz object,
- * then uses a multimodal LLM to analyze the images, extract the user's answers, compare them
- * to the correct answers, and calculate a final score.
- *
- * @exports gradeExam - The main function to grade an exam from images.
- * @exports GradeExamInput - The input type for the gradeExam function.
- * @exports GradeExamOutput - The output type for the gradeExam function.
  */
 
 import { ai } from '@/ai/genkit';
-import { googleAI } from '@genkit-ai/google-genai';
 import { z } from 'genkit';
-import type { Question } from '@/lib/types';
 
-// Define the schema for a single question to be passed to the AI
 const QuestionSchemaForAI = z.object({
   type: z.enum(['mcq', 'match', 'numerical', 'shortAnswer', 'longAnswer']),
   question: z.string(),
-  // For the AI, correctAnswer can be string, number, or array of pairs for matching
-  correctAnswer: z.union([
-    z.string(), 
-    z.number(), 
-    z.array(z.object({ item: z.string(), match: z.string() }))
-  ]),
-  // Options are only for MCQs
+  correctAnswer: z.any(),
   options: z.array(z.string()).optional(),
 });
 
-
 const GradeExamInputSchema = z.object({
-  answerSheetImages: z.array(z.string()).describe(
-    "An array of photos of the user's handwritten answer sheets, as data URIs. Each URI must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
-  ),
-  questions: z.array(QuestionSchemaForAI).describe('The array of questions from the exam, including their correct answers.'),
+  answerSheetImages: z.array(z.string()),
+  questions: z.array(QuestionSchemaForAI),
 });
 export type GradeExamInput = z.infer<typeof GradeExamInputSchema>;
 
 const GradedAnswerSchema = z.object({
-  questionIndex: z.number().describe("The index of the question being graded."),
-  userAnswer: z.string().describe("The answer the user wrote, as interpreted from the image."),
-  isCorrect: z.boolean().describe("Whether the user's answer is correct."),
+  questionIndex: z.number(),
+  userAnswer: z.string(),
+  isCorrect: z.boolean(),
 });
 
 const GradeExamOutputSchema = z.object({
-  score: z.number().describe('The final calculated score as a percentage (0-100).'),
-  gradedAnswers: z.array(GradedAnswerSchema).describe("An array of the user's graded answers."),
-  generalFeedback: z.string().describe("Overall feedback on the user's performance."),
+  score: z.number(),
+  gradedAnswers: z.array(GradedAnswerSchema),
+  generalFeedback: z.string(),
 });
 export type GradeExamOutput = z.infer<typeof GradeExamOutputSchema>;
 
-// Main function to initiate the flow
 export async function gradeExam(input: GradeExamInput): Promise<GradeExamOutput> {
   return gradeExamFlow(input);
 }
 
-
 const gradeExamPrompt = ai.definePrompt({
     name: 'gradeExamPrompt',
     model: 'googleai/gemini-2.5-flash',
-    output: { schema: GradeExamOutputSchema },
+    input: { schema: GradeExamInputSchema },
     prompt: `You are an expert AI Exam Grader. Your task is to analyze images of a student's handwritten answer sheet and grade them.
 
     **Instructions:**
@@ -78,9 +55,10 @@ const gradeExamPrompt = ai.definePrompt({
           - Correct Answer: [Redacted for brevity]
         {{/each}}
 
-    3.  For each question, find the student's answer in the images and determine if it is correct. For subjective answers (short/long), assess if the key points are captured. Be lenient with phrasing.
+    3.  For each question, find the student's answer in the images and determine if it is correct. For subjective answers (short/long), assess if the key points are captured.
     4. Calculate the final score as a percentage.
     5. Provide a single sentence of general feedback.
+    6. Return the result as a valid JSON object with: "score", "gradedAnswers" (array of {questionIndex, userAnswer, isCorrect}), and "generalFeedback".
     `,
 });
 
@@ -104,17 +82,12 @@ const gradeExamFlow = ai.defineFlow(
   },
   async (input) => {
     const response = await gradeExamPrompt(input);
-    let output = response.output;
+    const extracted = extractJson(response.text);
 
-    if (!output) {
-      const extracted = extractJson(response.text);
-      if (extracted && extracted.score !== undefined) {
-        output = extracted;
-      } else {
-        throw new Error("The AI failed to grade the exam.");
-      }
+    if (extracted && typeof extracted.score === 'number') {
+      return extracted as GradeExamOutput;
     }
     
-    return output!;
+    throw new Error("The AI failed to grade the exam.");
   }
 );

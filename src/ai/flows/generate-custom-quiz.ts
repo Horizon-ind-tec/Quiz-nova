@@ -1,20 +1,10 @@
-
 'use server';
 
 /**
  * @fileOverview AI flow for generating custom quizzes based on user-specified criteria.
- *
- * This file defines a Genkit flow that takes in subject, difficulty, and educational board preferences,
- * and generates a custom quiz tailored to the user's needs. The flow uses a prompt to instruct the
- * language model to create the quiz and formats the output into a structured JSON.
- *
- * @exports generateCustomQuiz - The main function to generate a custom quiz.
- * @exports GenerateCustomQuizInput - The input type for the generateCustomQuiz function.
- * @exports GenerateCustomQuizOutput - The output type for the generateCustomQuiz function.
  */
 
 import {ai} from '@/ai/genkit';
-import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const GenerateCustomQuizInputSchema = z.object({
@@ -24,7 +14,7 @@ const GenerateCustomQuizInputSchema = z.object({
   board: z.string().optional().describe('The educational board for the quiz (e.g., CBSE, ICSE, State Board).'),
   chapter: z.string().optional().describe('The specific chapter or topic for the quiz.'),
   totalMarks: z.number().describe('The total marks for the entire assessment.'),
-  numberOfQuestions: z.coerce.number().min(1, "Must have at least 1 question.").max(100, "Cannot exceed 100 questions."),
+  numberOfQuestions: z.coerce.number().min(1).max(100),
   quizType: z.enum(['quiz', 'exam']).describe('The type of assessment: a short interactive quiz or a formal, paper-style exam.'),
   ncert: z.boolean().optional().describe('Whether the quiz should be based on the NCERT curriculum.'),
   class: z.string().optional().describe('The class of the student.'),
@@ -35,56 +25,53 @@ const GenerateCustomQuizInputSchema = z.object({
 export type GenerateCustomQuizInput = z.infer<typeof GenerateCustomQuizInputSchema>;
 
 const MCQSchema = z.object({
-  type: z.enum(['mcq']).describe("The type of the question: Multiple Choice Question."),
-  question: z.string().describe('The quiz question.'),
-  options: z.array(z.string()).describe('The multiple-choice options for the question.'),
-  correctAnswer: z.string().describe('The correct answer to the question.'),
-  explanation: z.string().describe('The explanation for the correct answer.'),
-  marks: z.number().describe('The marks assigned to this question.'),
+  type: z.literal('mcq'),
+  question: z.string(),
+  options: z.array(z.string()),
+  correctAnswer: z.string(),
+  explanation: z.string(),
+  marks: z.number(),
 });
 
 const MatchSchema = z.object({
-  type: z.enum(['match']).describe("The type of the question: Match the Following."),
-  question: z.string().describe('A title or instruction for the matching question (e.g., "Match the capitals to their countries").'),
+  type: z.literal('match'),
+  question: z.string(),
   pairs: z.array(z.object({
-    item: z.string().describe("The item in the first column."),
-    match: z.string().describe("The corresponding correct match in the second column."),
-  })).describe("The pairs to be matched. The 'match' values will be shuffled for the user."),
-  explanation: z.string().describe('An explanation for the correct pairings.'),
-  marks: z.number().describe('The marks assigned to this question.'),
+    item: z.string(),
+    match: z.string(),
+  })),
+  explanation: z.string(),
+  marks: z.number(),
 });
 
 const NumericalSchema = z.object({
-  type: z.enum(['numerical']).describe("The type of the question: Numerical Answer."),
-  question: z.string().describe('The question that requires a numerical answer.'),
-  correctAnswer: z.number().describe('The correct numerical answer.'),
-  explanation: z.string().describe('The explanation for how to arrive at the correct answer.'),
-  marks: z.number().describe('The marks assigned to this question.'),
+  type: z.literal('numerical'),
+  question: z.string(),
+  correctAnswer: z.number(),
+  explanation: z.string(),
+  marks: z.number(),
 });
 
 const ShortAnswerSchema = z.object({
-  type: z.enum(['shortAnswer']).describe("The type of the question: Short Answer (e.g., one-word, define the term, 2-3 sentences)."),
-  question: z.string().describe('The question that requires a short textual answer.'),
-  correctAnswer: z.string().describe('The model correct answer.'),
-  explanation: z.string().describe('An explanation for the correct answer.'),
-  marks: z.number().describe('The marks assigned to this question.'),
+  type: z.literal('shortAnswer'),
+  question: z.string(),
+  correctAnswer: z.string(),
+  explanation: z.string(),
+  marks: z.number(),
 });
 
 const LongAnswerSchema = z.object({
-  type: z.enum(['longAnswer']).describe("The type of the question: Long Answer (e.g., paragraph-length response)."),
-  question: z.string().describe('The question that requires a detailed, long textual answer.'),
-  correctAnswer: z.string().describe('A model answer providing key points and structure.'),
-  explanation: z.string().describe('An explanation of what a good answer should contain.'),
-  marks: z.number().describe('The marks assigned to this question.'),
+  type: z.literal('longAnswer'),
+  question: z.string(),
+  correctAnswer: z.string(),
+  explanation: z.string(),
+  marks: z.number(),
 });
 
 const QuestionSchema = z.union([MCQSchema, MatchSchema, NumericalSchema, ShortAnswerSchema, LongAnswerSchema]);
 
-
 const GenerateCustomQuizOutputSchema = z.object({
-  questions: z
-    .array(QuestionSchema)
-    .describe('The generated quiz questions, options, and answers.'),
+  questions: z.array(QuestionSchema),
 });
 export type GenerateCustomQuizOutput = z.infer<typeof GenerateCustomQuizOutputSchema>;
 
@@ -92,14 +79,9 @@ export async function generateCustomQuiz(
   input: GenerateCustomQuizInput
 ): Promise<GenerateCustomQuizOutput> {
   const isJeeOrNeet = input.class === 'JEE (Mains + Advanced)' || input.class === 'NEET';
-  const isQuizTypeQuiz = input.quizType === 'quiz';
-  const isQuizTypeExam = input.quizType === 'exam';
-
   const inputWithUniqueness = { 
       ...input, 
       isJeeOrNeet,
-      isQuizTypeQuiz,
-      isQuizTypeExam,
       seed: input.seed || Math.random(),
       timestamp: Date.now(),
     };
@@ -109,7 +91,7 @@ export async function generateCustomQuiz(
 const generateCustomQuizPrompt = ai.definePrompt({
   name: 'generateCustomQuizPrompt',
   model: 'googleai/gemini-2.5-flash',
-  output: { schema: GenerateCustomQuizOutputSchema },
+  input: { schema: GenerateCustomQuizInputSchema },
   prompt: `You are an expert exam question generator.
 
 Your task is to generate a set of questions based on the user's request.
@@ -140,7 +122,9 @@ Your task is to generate a set of questions based on the user's request.
     - Assign reasonable 'marks' to each question based on its type and complexity (e.g., MCQs are usually 1-4 marks, Long Answers 5-10).
 
 3. **Format:**
-    - Return the result as a JSON object with a 'questions' array.
+    - You MUST return ONLY a valid JSON object.
+    - The JSON object must have a "questions" key containing an array of question objects.
+    - Each question object must have: "type", "question", "correctAnswer", "explanation", "marks", and optionally "options" (for MCQ) or "pairs" (for match).
 `,
 });
 
@@ -165,17 +149,12 @@ const generateCustomQuizFlow = ai.defineFlow(
   },
   async input => {
     const response = await generateCustomQuizPrompt(input);
-    let output = response.output;
+    const extracted = extractJson(response.text);
     
-    if (!output || !output.questions || output.questions.length === 0) {
-      const extracted = extractJson(response.text);
-      if (extracted && extracted.questions && Array.isArray(extracted.questions)) {
-        output = extracted;
-      } else {
-        throw new Error('AI failed to generate a valid quiz structure.');
-      }
+    if (extracted && extracted.questions && Array.isArray(extracted.questions)) {
+      return extracted as GenerateCustomQuizOutput;
     }
     
-    return output!;
+    throw new Error('AI failed to generate a valid quiz structure.');
   }
 );
