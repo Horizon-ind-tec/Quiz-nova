@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -109,7 +108,7 @@ export async function generateCustomQuiz(
 
 const generateCustomQuizPrompt = ai.definePrompt({
   name: 'generateCustomQuizPrompt',
-  model: googleAI.model('gemini-2.5-flash'),
+  model: googleAI.model('gemini-2.0-flash'),
   output: { schema: GenerateCustomQuizOutputSchema },
   prompt: `You are an expert exam question generator.
 
@@ -136,11 +135,30 @@ Your task is to generate a set of questions based on the user's request.
     - If this is a paper-style **'exam'**, generate a mix of question types (MCQ, Match, Numerical, Short Answer, Long Answer).
 
 2.  **Quantity & Marks:**
-    - You MUST generate exactly 'Number of Questions'.
-    - You MUST ensure their marks add up to exactly 'Total Marks'.
+    - You MUST generate EXACTLY {{{numberOfQuestions}}} questions.
+    - You MUST ensure the 'marks' for all generated questions add up to EXACTLY {{{totalMarks}}}.
     - Assign reasonable 'marks' to each question based on its type and complexity (e.g., MCQs are usually 1-4 marks, Long Answers 5-10).
+
+3. **Format:**
+    - Return the result as a JSON object with a 'questions' array.
 `,
 });
+
+/**
+ * Helper function to extract JSON from a string if structured output fails.
+ */
+function extractJson(text: string) {
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      return JSON.parse(jsonMatch[0]);
+    } catch (e) {
+      console.error("Failed to parse extracted JSON:", e);
+      return null;
+    }
+  }
+  return null;
+}
 
 const generateCustomQuizFlow = ai.defineFlow(
   {
@@ -150,13 +168,19 @@ const generateCustomQuizFlow = ai.defineFlow(
   },
   async input => {
     const response = await generateCustomQuizPrompt(input);
-    const output = response.output;
+    let output = response.output;
     
-    if (!output || !output.questions) {
-      console.error("AI did not return the expected output format.", response);
-      throw new Error('AI failed to generate a valid quiz structure.');
+    if (!output || !output.questions || output.questions.length === 0) {
+      console.warn("AI did not return structured output for quiz. Attempting manual extraction.");
+      const extracted = extractJson(response.text);
+      if (extracted && extracted.questions && Array.isArray(extracted.questions)) {
+        output = extracted;
+      } else {
+        console.error("AI failed to generate a valid quiz structure. Raw text:", response.text);
+        throw new Error('AI failed to generate a valid quiz structure.');
+      }
     }
     
-    return output;
+    return output!;
   }
 );

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -135,7 +134,7 @@ export default function CreateQuizPage() {
         timestamp: Date.now(),
       });
 
-      if (result && result.questions.length > 0) {
+      if (result && result.questions && result.questions.length > 0) {
         const shuffledQuestions = result.questions.map(q => {
             if (q.type === 'mcq') {
                 const allOptions = [...q.options];
@@ -177,12 +176,13 @@ export default function CreateQuizPage() {
         setQuiz(newQuiz);
         router.push('/quiz/take');
       } else {
-        throw new Error('AI failed to generate a quiz. Please try again.');
+        throw new Error('AI failed to generate questions. Please try again.');
       }
     } catch (error) {
+      console.error("Quiz creation error:", error);
       toast({
         variant: 'destructive',
-        title: 'Error',
+        title: 'Generation Failed',
         description: (error as Error).message || 'Something went wrong.',
       });
       setIsLoading(false);
