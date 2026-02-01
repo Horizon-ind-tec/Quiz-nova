@@ -13,6 +13,7 @@ export const SUBJECTS_DATA: {
   { 
     name: 'Mathematics', 
     icon: Calculator,
+    multiSelect: true,
     subCategories: [
       { name: 'Basic', description: 'Core concepts and fundamentals.' },
       { name: 'Advance', description: 'Complex topics and problem-solving.' }
@@ -21,6 +22,7 @@ export const SUBJECTS_DATA: {
   { 
     name: 'Science', 
     icon: Atom,
+    multiSelect: true,
     subCategories: [
       { name: 'Physics' },
       { name: 'Chemistry' },
@@ -30,6 +32,7 @@ export const SUBJECTS_DATA: {
   { 
     name: 'Social Science', 
     icon: Landmark,
+    multiSelect: true,
     subCategories: [
       { name: 'History' },
       { name: 'Geography' },
@@ -39,6 +42,7 @@ export const SUBJECTS_DATA: {
   {
     name: 'English',
     icon: Scroll,
+    multiSelect: true,
     subCategories: [
         { name: 'English' },
         { name: 'Supplementary' }
@@ -47,6 +51,7 @@ export const SUBJECTS_DATA: {
   {
     name: 'Hindi',
     icon: Scroll,
+    multiSelect: true,
     subCategories: [
         { name: 'Hindi' },
         { name: 'Supplementary' }
@@ -65,6 +70,7 @@ export const SUBJECTS_DATA: {
   {
     name: 'Computer',
     icon: Cpu,
+    multiSelect: true,
     subCategories: [
         { name: 'Computer Science' },
         { name: 'Information Practices' }
@@ -73,6 +79,7 @@ export const SUBJECTS_DATA: {
   {
     name: 'AI',
     icon: BrainCircuit,
+    multiSelect: true,
     subCategories: [
         { name: 'Basics', description: 'Fundamental concepts of AI.' },
         { name: 'Advanced', description: 'In-depth topics and theories.' }
@@ -81,6 +88,7 @@ export const SUBJECTS_DATA: {
   {
     name: 'Art',
     icon: Palette,
+    multiSelect: true,
      subCategories: [
         { name: 'Painting' },
         { name: 'Sculpture' },

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -13,16 +14,20 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/use-local-storage';
+import { cn } from '@/lib/utils';
 
 import { generateMostExpectedQuestionsAction } from '@/app/actions';
-import { CLASSES, SUBJECTS, BOARDS } from '@/lib/data';
+import { CLASSES, SUBJECTS_DATA, BOARDS } from '@/lib/data';
 import { useUser } from '@/firebase';
 
 const formSchema = z.object({
   class: z.string().min(1, 'Please select a class.'),
   subject: z.string().min(1, 'Please select a subject.'),
+  subCategories: z.array(z.string()).optional(),
   board: z.string().min(1, 'Please select a board.'),
   chapter: z.string().min(1, 'Chapter is required.'),
 });
@@ -35,17 +40,26 @@ export default function MostExpectedQuestionsPage() {
   const { user } = useUser();
   const router = useRouter();
   const [, setGeneratedPaper] = useLocalStorage<string | null>('generatedPaper', null);
-  const [, setPaperDetails] = useLocalStorage<FormValues | null>('paperDetails', null);
+  const [, setPaperDetails] = useLocalStorage<any | null>('paperDetails', null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       class: '',
       subject: '',
+      subCategories: [],
       board: '',
       chapter: '',
     },
   });
+
+  const selectedSubjectName = form.watch('subject');
+  const selectedSubject = SUBJECTS_DATA.find(s => s.name === selectedSubjectName);
+
+  const handleSubjectChange = (value: string) => {
+    form.setValue('subject', value, { shouldValidate: true });
+    form.setValue('subCategories', [], { shouldValidate: false });
+  };
 
   const onSubmit = async (data: FormValues) => {
     if (!user) {
@@ -59,10 +73,21 @@ export default function MostExpectedQuestionsPage() {
     setIsLoading(true);
 
     try {
-      const result = await generateMostExpectedQuestionsAction(data);
+      const subjectTitle = data.subCategories && data.subCategories.length > 0
+        ? `${data.subject} (${data.subCategories.join(', ')})`
+        : data.subject;
+
+      const result = await generateMostExpectedQuestionsAction({
+        ...data,
+        subject: subjectTitle,
+      });
+
       if (result && result.questions) {
         setGeneratedPaper(result.questions);
-        setPaperDetails(data);
+        setPaperDetails({
+            ...data,
+            subject: subjectTitle
+        });
         router.push('/most-expected-questions/paper');
       } else {
         throw new Error('AI failed to generate questions. Please try again.');
@@ -121,13 +146,73 @@ export default function MostExpectedQuestionsPage() {
                     <FormField name="subject" control={form.control} render={({ field }) => (
                       <FormItem>
                         <FormLabel>Subject</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={handleSubjectChange} value={field.value}>
                           <FormControl><SelectTrigger><SelectValue placeholder="Select a subject" /></SelectTrigger></FormControl>
-                          <SelectContent>{SUBJECTS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                          <SelectContent>{SUBJECTS_DATA.map(s => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}</SelectContent>
                         </Select>
                         <FormMessage />
                       </FormItem>
                     )} />
+
+                    {selectedSubject && selectedSubject.subCategories && (
+                        <FormField
+                            name="subCategories"
+                            control={form.control}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{selectedSubject.name} Category</FormLabel>
+                                <FormControl>
+                                    {selectedSubject.multiSelect ? (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            {selectedSubject.subCategories?.map(sub => (
+                                                <FormItem key={sub.name} className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                                                    <FormControl>
+                                                        <Checkbox
+                                                            checked={field.value?.includes(sub.name)}
+                                                            onCheckedChange={(checked) => {
+                                                                const current = field.value || [];
+                                                                const updated = checked
+                                                                    ? [...current, sub.name]
+                                                                    : current.filter(value => value !== sub.name);
+                                                                field.onChange(updated);
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                    <FormLabel className="font-normal cursor-pointer">
+                                                        {sub.name}
+                                                    </FormLabel>
+                                                </FormItem>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <RadioGroup
+                                            onValueChange={(val) => field.onChange([val])}
+                                            value={field.value?.[0]}
+                                            className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+                                        >
+                                            {selectedSubject.subCategories?.map(sub => (
+                                                <FormItem key={sub.name} className="flex-1">
+                                                    <FormControl>
+                                                        <RadioGroupItem value={sub.name} id={`sub-${sub.name}`} className="sr-only" />
+                                                    </FormControl>
+                                                    <FormLabel
+                                                        htmlFor={`sub-${sub.name}`}
+                                                        className={cn(
+                                                            "flex flex-col items-start justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-500 [&:has([data-state=checked])]:border-green-500 cursor-pointer"
+                                                        )}
+                                                    >
+                                                        <span className="font-semibold">{sub.name}</span>
+                                                    </FormLabel>
+                                                </FormItem>
+                                            ))}
+                                        </RadioGroup>
+                                    )}
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                      )}
 
                     <FormField
                       control={form.control}
