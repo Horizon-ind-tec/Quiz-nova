@@ -60,7 +60,7 @@ export async function gradeExam(input: GradeExamInput): Promise<GradeExamOutput>
 
 const gradeExamPrompt = ai.definePrompt({
     name: 'gradeExamPrompt',
-    model: googleAI.model('gemini-2.5-flash'),
+    model: googleAI.model('gemini-1.5-flash'),
     output: { schema: GradeExamOutputSchema },
     prompt: `You are an expert AI Exam Grader. Your task is to analyze images of a student's handwritten answer sheet and grade them.
 

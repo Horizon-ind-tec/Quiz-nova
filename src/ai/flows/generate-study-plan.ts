@@ -49,7 +49,7 @@ export async function generateStudyPlan(
 
 const generateStudyPlanPrompt = ai.definePrompt({
   name: 'generateStudyPlanPrompt',
-  model: googleAI.model('gemini-2.5-flash'),
+  model: googleAI.model('gemini-1.5-flash'),
   output: { schema: GenerateStudyPlanOutputSchema },
   prompt: `You are an expert academic planner. Your task is to create a realistic, balanced, and effective study schedule for a student.
 

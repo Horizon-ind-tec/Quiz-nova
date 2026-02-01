@@ -108,7 +108,7 @@ export async function generateCustomQuiz(
 
 const generateCustomQuizPrompt = ai.definePrompt({
   name: 'generateCustomQuizPrompt',
-  model: googleAI.model('gemini-2.0-flash'),
+  model: googleAI.model('gemini-1.5-flash'),
   output: { schema: GenerateCustomQuizOutputSchema },
   prompt: `You are an expert exam question generator.
 

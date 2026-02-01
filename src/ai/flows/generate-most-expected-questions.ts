@@ -38,7 +38,7 @@ export async function generateMostExpectedQuestions(
 
 const generateMostExpectedQuestionsPrompt = ai.definePrompt({
   name: 'generateMostExpectedQuestionsPrompt',
-  model: googleAI.model('gemini-2.5-flash'),
+  model: googleAI.model('gemini-1.5-flash'),
   output: { schema: GenerateMostExpectedQuestionsOutputSchema },
   prompt: `You are an experienced subject teacher and board-exam question paper setter.
 
