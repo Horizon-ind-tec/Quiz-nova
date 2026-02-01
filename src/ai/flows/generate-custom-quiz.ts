@@ -124,7 +124,7 @@ Your task is to generate a set of questions based on the user's request.
 3. **Format:**
     - You MUST return ONLY a valid JSON object.
     - The JSON object must have a "questions" key containing an array of question objects.
-    - Each question object must have: "type", "question", "correctAnswer", "explanation", "marks", and optionally "options" (for MCQ) or "pairs" (for match).
+    - Each question object must have: "type" (MUST be lowercase: 'mcq', 'match', 'numerical', 'shortAnswer', 'longAnswer'), "question", "correctAnswer", "explanation", "marks", and optionally "options" (for mcq) or "pairs" (for match).
 `,
 });
 
@@ -152,6 +152,11 @@ const generateCustomQuizFlow = ai.defineFlow(
     const extracted = extractJson(response.text);
     
     if (extracted && extracted.questions && Array.isArray(extracted.questions)) {
+      // Normalize question types to lowercase to avoid schema validation errors
+      extracted.questions = extracted.questions.map((q: any) => ({
+        ...q,
+        type: typeof q.type === 'string' ? q.type.toLowerCase() : q.type
+      }));
       return extracted as GenerateCustomQuizOutput;
     }
     
