@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -74,7 +75,7 @@ export default function CreateQuizPage() {
       board: '',
       chapter: '',
       difficulty: 'medium',
-      totalMarks: 20,
+      totalMarks: undefined,
       numberOfQuestions: undefined,
       timeLimit: undefined,
       ncert: false,
@@ -272,7 +273,7 @@ export default function CreateQuizPage() {
                                                             }}
                                                         />
                                                     </FormControl>
-                                                    <FormLabel className="font-normal">
+                                                    <FormLabel className="font-normal cursor-pointer">
                                                         {sub.name}
                                                     </FormLabel>
                                                 </FormItem>
