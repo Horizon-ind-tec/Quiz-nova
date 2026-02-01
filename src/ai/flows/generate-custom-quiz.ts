@@ -23,8 +23,8 @@ const GenerateCustomQuizInputSchema = z.object({
   difficulty: z.enum(['easy', 'medium', 'hard']).describe('The difficulty level of the quiz.'),
   board: z.string().optional().describe('The educational board for the quiz (e.g., CBSE, ICSE, State Board).'),
   chapter: z.string().optional().describe('The specific chapter or topic for the quiz.'),
-  totalMarks: z.number().describe('The total marks for the entire assessment.').optional(),
-  numberOfQuestions: z.coerce.number().min(1, "Must have at least 1 question.").max(100, "Cannot exceed 100 questions.").optional(),
+  totalMarks: z.number().describe('The total marks for the entire assessment.'),
+  numberOfQuestions: z.coerce.number().min(1, "Must have at least 1 question.").max(100, "Cannot exceed 100 questions."),
   quizType: z.enum(['quiz', 'exam']).describe('The type of assessment: a short interactive quiz or a formal, paper-style exam.'),
   ncert: z.boolean().optional().describe('Whether the quiz should be based on the NCERT curriculum.'),
   class: z.string().optional().describe('The class of the student.'),
@@ -126,8 +126,8 @@ Your task is to generate a set of questions based on the user's request.
 
 **ASSESSMENT DETAILS:**
 - Type: {{{quizType}}}
-{{#if numberOfQuestions}}- Target Number of Questions: {{{numberOfQuestions}}}{{/if}}
-{{#if totalMarks}}- Target Total Marks: {{{totalMarks}}}{{/if}}
+- Target Number of Questions: {{{numberOfQuestions}}}
+- Target Total Marks: {{{totalMarks}}}
 
 **INSTRUCTIONS:**
 1.  **Question Types:**
@@ -136,9 +136,8 @@ Your task is to generate a set of questions based on the user's request.
     - If this is a paper-style **'exam'**, generate a mix of question types (MCQ, Match, Numerical, Short Answer, Long Answer).
 
 2.  **Quantity & Marks:**
-    - If 'Number of Questions' is given, try to generate EXACTLY that many questions.
-    - If 'Total Marks' is given, distribute marks across questions so the sum matches the total.
-    - If BOTH are given, you MUST generate exactly 'Number of Questions' and ensure their marks add up to exactly 'Total Marks'.
+    - You MUST generate exactly 'Number of Questions'.
+    - You MUST ensure their marks add up to exactly 'Total Marks'.
     - Assign reasonable 'marks' to each question based on its type and complexity (e.g., MCQs are usually 1-4 marks, Long Answers 5-10).
 `,
 });

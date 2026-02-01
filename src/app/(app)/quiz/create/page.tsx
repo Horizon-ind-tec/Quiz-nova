@@ -35,15 +35,11 @@ const formSchema = z.object({
   board: z.string().optional(),
   chapter: z.string().optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']),
-  totalMarks: z.coerce.number().min(5, "Total marks must be at least 5.").max(100, "Total marks can be at most 100.").optional(),
-  numberOfQuestions: z.coerce.number().min(1, "Must have at least 1 question.").max(100, "Cannot exceed 100 questions.").optional(),
+  totalMarks: z.coerce.number({ required_error: "Total marks is required" }).min(5, "Total marks must be at least 5.").max(100, "Total marks can be at most 100."),
+  numberOfQuestions: z.coerce.number({ required_error: "Number of questions is required" }).min(1, "Must have at least 1 question.").max(100, "Cannot exceed 100 questions."),
   timeLimit: z.coerce.number().min(1, "Time limit must be at least 1 minute.").optional(),
   quizType: z.enum(['quiz', 'exam'], { required_error: 'Please select an assessment type.' }),
   ncert: z.boolean().optional(),
-}).refine(
-    (data) => data.totalMarks || data.numberOfQuestions, {
-    message: "Either Total Marks or Number of Questions must be provided.",
-    path: ["totalMarks"],
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -71,8 +67,8 @@ export default function CreateQuizPage() {
       board: '',
       chapter: '',
       difficulty: 'medium',
-      totalMarks: undefined,
-      numberOfQuestions: undefined,
+      totalMarks: 20,
+      numberOfQuestions: 10,
       timeLimit: undefined,
       ncert: false,
     },
@@ -371,7 +367,7 @@ export default function CreateQuizPage() {
                             name="totalMarks"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Total Marks (Optional)</FormLabel>
+                                <FormLabel>Total Marks</FormLabel>
                                 <FormControl>
                                 <Input 
                                     type="number" 
@@ -392,7 +388,7 @@ export default function CreateQuizPage() {
                             name="numberOfQuestions"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Number of Questions (Optional)</FormLabel>
+                                <FormLabel>Number of Questions</FormLabel>
                                 <FormControl>
                                 <Input 
                                     type="number" 
