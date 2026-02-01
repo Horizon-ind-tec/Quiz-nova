@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview AI flow for generating "Most Expected Questions" for exams.
@@ -38,7 +39,7 @@ export async function generateMostExpectedQuestions(
 
 const generateMostExpectedQuestionsPrompt = ai.definePrompt({
   name: 'generateMostExpectedQuestionsPrompt',
-  model: googleAI.model('gemini-1.5-flash'),
+  model: 'googleai/gemini-2.5-flash',
   output: { schema: GenerateMostExpectedQuestionsOutputSchema },
   prompt: `You are an experienced subject teacher and board-exam question paper setter.
 
@@ -88,10 +89,12 @@ const generateMostExpectedQuestionsFlow = ai.defineFlow(
   },
   async (input) => {
     const response = await generateMostExpectedQuestionsPrompt(input);
-    const output = response.output;
+    let output = response.output;
 
     if (!output || !output.questions) {
-      console.error("AI did not return the expected output format for most expected questions.", response);
+      if (response.text) {
+        return { questions: response.text };
+      }
       throw new Error('AI failed to generate a valid list of questions.');
     }
     

@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview AI flow for generating a personalized study plan.
@@ -49,7 +50,7 @@ export async function generateStudyPlan(
 
 const generateStudyPlanPrompt = ai.definePrompt({
   name: 'generateStudyPlanPrompt',
-  model: googleAI.model('gemini-1.5-flash'),
+  model: 'googleai/gemini-2.5-flash',
   output: { schema: GenerateStudyPlanOutputSchema },
   prompt: `You are an expert academic planner. Your task is to create a realistic, balanced, and effective study schedule for a student.
 
@@ -70,6 +71,18 @@ const generateStudyPlanPrompt = ai.definePrompt({
   `,
 });
 
+function extractJson(text: string) {
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      return JSON.parse(jsonMatch[0]);
+    } catch (e) {
+      return null;
+    }
+  }
+  return null;
+}
+
 const generateStudyPlanFlow = ai.defineFlow(
   {
     name: 'generateStudyPlanFlow',
@@ -78,13 +91,17 @@ const generateStudyPlanFlow = ai.defineFlow(
   },
   async (input) => {
     const response = await generateStudyPlanPrompt(input);
-    const output = response.output;
+    let output = response.output;
 
     if (!output?.schedule) {
-      console.error("AI did not return the expected schedule format.", response);
-      throw new Error('AI failed to generate a valid study plan.');
+      const extracted = extractJson(response.text);
+      if (extracted && extracted.schedule) {
+        output = extracted;
+      } else {
+        throw new Error('AI failed to generate a valid study plan.');
+      }
     }
     
-    return output;
+    return output!;
   }
 );

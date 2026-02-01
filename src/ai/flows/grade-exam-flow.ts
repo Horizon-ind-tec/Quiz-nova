@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview AI flow for grading handwritten exam answers from images.
@@ -60,7 +61,7 @@ export async function gradeExam(input: GradeExamInput): Promise<GradeExamOutput>
 
 const gradeExamPrompt = ai.definePrompt({
     name: 'gradeExamPrompt',
-    model: googleAI.model('gemini-1.5-flash'),
+    model: 'googleai/gemini-2.5-flash',
     output: { schema: GradeExamOutputSchema },
     prompt: `You are an expert AI Exam Grader. Your task is to analyze images of a student's handwritten answer sheet and grade them.
 
@@ -83,6 +84,18 @@ const gradeExamPrompt = ai.definePrompt({
     `,
 });
 
+function extractJson(text: string) {
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      return JSON.parse(jsonMatch[0]);
+    } catch (e) {
+      return null;
+    }
+  }
+  return null;
+}
+
 const gradeExamFlow = ai.defineFlow(
   {
     name: 'gradeExamFlow',
@@ -91,13 +104,17 @@ const gradeExamFlow = ai.defineFlow(
   },
   async (input) => {
     const response = await gradeExamPrompt(input);
-    const output = response.output;
+    let output = response.output;
 
     if (!output) {
-      console.error("AI did not return the expected output format for grading.", response);
-      throw new Error("The AI failed to grade the exam.");
+      const extracted = extractJson(response.text);
+      if (extracted && extracted.score !== undefined) {
+        output = extracted;
+      } else {
+        throw new Error("The AI failed to grade the exam.");
+      }
     }
     
-    return output;
+    return output!;
   }
 );

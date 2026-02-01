@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview This file defines a Genkit flow to track user quiz performance and adapt future quiz generation accordingly.
@@ -46,7 +47,7 @@ export async function trackPerformanceAndAdaptQuizGeneration(
 
 const adaptQuizPrompt = ai.definePrompt({
   name: 'adaptQuizPrompt',
-  model: googleAI.model('gemini-1.5-flash'),
+  model: 'googleai/gemini-2.5-flash',
   output: { schema: TrackPerformanceAndAdaptQuizGenerationOutputSchema },
   prompt: `You are an AI quiz adaptation expert. Analyze the student's quiz performance and determine how to adjust future quiz generation to focus on their weaker areas.
 
@@ -65,6 +66,18 @@ const adaptQuizPrompt = ai.definePrompt({
   `,
 });
 
+function extractJson(text: string) {
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      return JSON.parse(jsonMatch[0]);
+    } catch (e) {
+      return null;
+    }
+  }
+  return null;
+}
+
 // Genkit flow definition
 const trackPerformanceAndAdaptQuizGenerationFlow = ai.defineFlow(
   {
@@ -74,13 +87,17 @@ const trackPerformanceAndAdaptQuizGenerationFlow = ai.defineFlow(
   },
   async input => {
     const response = await adaptQuizPrompt(input);
-    const output = response.output;
+    let output = response.output;
 
     if (!output) {
-      console.error("AI did not return the expected output format for adaptation.", response);
-      throw new Error("The AI failed to adapt the quiz generation.");
+      const extracted = extractJson(response.text);
+      if (extracted && extracted.newDifficulty) {
+        output = extracted;
+      } else {
+        throw new Error("The AI failed to adapt the quiz generation.");
+      }
     }
 
-    return output;
+    return output!;
   }
 );

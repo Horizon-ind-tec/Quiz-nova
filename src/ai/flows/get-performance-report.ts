@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview AI flow for generating a performance report based on user's quiz history.
@@ -47,7 +48,7 @@ export async function getPerformanceReport(input: {
 
 const getPerformanceReportPrompt = ai.definePrompt({
   name: 'getPerformanceReportPrompt',
-  model: googleAI.model('gemini-1.5-flash'),
+  model: 'googleai/gemini-2.5-flash',
   output: { schema: GetPerformanceReportOutputSchema },
   prompt: `You are Nova, an expert AI academic advisor. Your task is to generate a **brief, conversational performance summary** for a student based on their quiz and exam history and their specific question.
 
@@ -87,10 +88,7 @@ const getPerformanceReportFlow = ai.defineFlow(
     const output = response.output;
 
     if (!output || !output.report) {
-       console.error("AI did not return the expected output format for report.", response);
-       // Fallback to raw text if structured output fails
-       const rawText = response.text;
-       if(rawText) return { report: rawText };
+       if(response.text) return { report: response.text };
        throw new Error('AI failed to generate a valid report.');
     }
     

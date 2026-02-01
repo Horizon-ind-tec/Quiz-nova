@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -94,7 +95,6 @@ export async function generateCustomQuiz(
   const isQuizTypeQuiz = input.quizType === 'quiz';
   const isQuizTypeExam = input.quizType === 'exam';
 
-  // Add a random seed and timestamp to ensure uniqueness
   const inputWithUniqueness = { 
       ...input, 
       isJeeOrNeet,
@@ -108,7 +108,7 @@ export async function generateCustomQuiz(
 
 const generateCustomQuizPrompt = ai.definePrompt({
   name: 'generateCustomQuizPrompt',
-  model: googleAI.model('gemini-1.5-flash'),
+  model: 'googleai/gemini-2.5-flash',
   output: { schema: GenerateCustomQuizOutputSchema },
   prompt: `You are an expert exam question generator.
 
@@ -144,9 +144,6 @@ Your task is to generate a set of questions based on the user's request.
 `,
 });
 
-/**
- * Helper function to extract JSON from a string if structured output fails.
- */
 function extractJson(text: string) {
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
@@ -171,12 +168,10 @@ const generateCustomQuizFlow = ai.defineFlow(
     let output = response.output;
     
     if (!output || !output.questions || output.questions.length === 0) {
-      console.warn("AI did not return structured output for quiz. Attempting manual extraction.");
       const extracted = extractJson(response.text);
       if (extracted && extracted.questions && Array.isArray(extracted.questions)) {
         output = extracted;
       } else {
-        console.error("AI failed to generate a valid quiz structure. Raw text:", response.text);
         throw new Error('AI failed to generate a valid quiz structure.');
       }
     }

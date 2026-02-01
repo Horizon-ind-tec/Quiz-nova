@@ -1,3 +1,4 @@
+
 'use server';
 
 import { initializeApp, getApps, App, applicationDefault } from 'firebase-admin/app';
@@ -5,7 +6,7 @@ import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { firebaseConfig } from '@/firebase/config';
 
 // Define a unique name for the admin app to avoid conflicts.
-const ADMIN_APP_NAME = '__ADMIN_APP__';
+const ADMIN_APP_NAME = 'QUIZNOVA_ADMIN_APP';
 
 /**
  * Initializes and returns a singleton Firebase Admin SDK App instance.
