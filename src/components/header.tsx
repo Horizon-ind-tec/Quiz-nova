@@ -1,4 +1,3 @@
-
 'use client';
 
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -7,13 +6,21 @@ import { useAuth, useFirestore, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { LogOut, Gem, ShieldCheck, Bell } from 'lucide-react';
+import { LogOut, Gem, ShieldCheck, Bell, MoreVertical, User, CreditCard, HelpCircle } from 'lucide-react';
 import { useUser } from '@/firebase/auth/use-user';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import type { UserProfile } from '@/lib/types';
 import { doc, collection, query, where } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 
 interface HeaderProps {
@@ -68,20 +75,52 @@ export function Header({ title }: HeaderProps) {
       <h1 className="text-lg font-semibold md:text-xl flex-1">{title}</h1>
        <div className="flex items-center gap-2">
             {renderPlanIcon()}
-            <span className="text-sm font-medium">{user?.displayName}</span>
+            <span className="text-sm font-medium hidden sm:inline-block">{user?.displayName}</span>
        </div>
-       <Button asChild variant="outline" size="icon" className="relative">
-           <Link href="/notifications">
-                <Bell className="h-4 w-4" />
-                {isUserAdmin && notificationCount > 0 && (
-                    <Badge className="absolute -top-2 -right-2 h-5 w-5 justify-center p-0">{notificationCount}</Badge>
-                )}
-           </Link>
-       </Button>
-       <Button variant="outline" size="sm" onClick={handleSignOut}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-        </Button>
+       <div className="flex items-center gap-1 sm:gap-2">
+           <Button asChild variant="outline" size="icon" className="relative h-9 w-9">
+               <Link href="/notifications">
+                    <Bell className="h-4 w-4" />
+                    {isUserAdmin && notificationCount > 0 && (
+                        <Badge className="absolute -top-2 -right-2 h-5 w-5 justify-center p-0">{notificationCount}</Badge>
+                    )}
+               </Link>
+           </Button>
+
+           <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <MoreVertical className="h-4 w-4" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard" className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/plans" className="cursor-pointer">
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    <span>Plans & Billing</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
+                  <HelpCircle className="mr-2 h-4 w-4" />
+                  <span>Support</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive cursor-pointer">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+       </div>
     </header>
   );
 }
