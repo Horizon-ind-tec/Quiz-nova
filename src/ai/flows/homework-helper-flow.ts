@@ -1,14 +1,15 @@
 'use server';
 /**
- * @fileOverview AI flow for the Exam and Homework Helper.
+ * @fileOverview AI flow for the Exam and Homework Helper with multimodal support.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const HomeworkHelperInputSchema = z.object({
-  question: z.string().describe('The homework or exam question to help with.'),
+  question: z.string().optional().describe('The homework or exam question to help with.'),
   context: z.string().optional().describe('Any additional context (e.g., subject, grade level).'),
+  mediaDataUri: z.string().optional().describe("A photo or PDF of the homework, as a data URI. Expected format: 'data:<mimetype>;base64,<encoded_data>'."),
 });
 export type HomeworkHelperInput = z.infer<typeof HomeworkHelperInputSchema>;
 
@@ -27,18 +28,22 @@ const homeworkHelperPrompt = ai.definePrompt({
   input: { schema: HomeworkHelperInputSchema },
   prompt: `You are Nova, an expert academic tutor. Your goal is to help students understand their homework and exam questions.
 
-**Student's Question:**
-"{{{question}}}"
+{{#if question}}**Student's Question:**
+"{{{question}}}"{{/if}}
+
+{{#if mediaDataUri}}**Attached Media (Scan this for questions/content):**
+{{media url=mediaDataUri}}{{/if}}
 
 {{#if context}}**Context/Subject:** {{{context}}}{{/if}}
 
 **Instructions:**
-1. Provide a clear, step-by-step explanation of how to arrive at the answer.
-2. Don't just give the answer; teach the underlying concept.
-3. Use a friendly, encouraging, and mentoring tone.
-4. Keep the formatting clean using Markdown (bolding, lists, etc.).
-5. If the question is ambiguous, ask for clarification or provide the most likely interpretation.
-6. **Constraint:** Do NOT use the sequence '*#' in your response unless explicitly asked about '*#' by the student.
+1. Analyze both the text and any provided media (image or PDF) to understand the student's problem.
+2. Provide a clear, step-by-step explanation of how to arrive at the answer.
+3. Don't just give the answer; teach the underlying concept.
+4. Use a friendly, encouraging, and mentoring tone.
+5. Keep the formatting clean using Markdown (bolding, lists, etc.).
+6. If the input is empty or ambiguous, ask for clarification.
+7. **Constraint:** Do NOT use the sequence '*#' in your response unless explicitly asked about '*#' by the student.
 
 Response Format:
 Return your response as a valid JSON object with a single key "explanation".

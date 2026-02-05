@@ -1,4 +1,3 @@
-
 'use server';
 
 import {
@@ -46,11 +45,9 @@ export async function generateQuizAction(
 export async function gradeExamAction(
   input: { answerSheetImages: string[], questions: Question[] }
 ): Promise<GradeExamOutput> {
-  // Ensure we are passing the correct structure to the flow
   const gradeInput: GradeExamInput = {
     answerSheetImages: input.answerSheetImages,
     questions: input.questions.map(q => {
-      // The AI prompt expects the correctAnswer structure for matching questions to be the pairs array
       if (q.type === 'match') {
         return { ...q, correctAnswer: q.pairs as any };
       }
@@ -112,7 +109,7 @@ export async function handlePaymentAction(input: { targetUserId: string, action:
     }
   } else { // deny
     await userRef.update({
-      paymentStatus: null, // Or 'denied'
+      paymentStatus: null,
       pendingPlan: null,
     });
   }
