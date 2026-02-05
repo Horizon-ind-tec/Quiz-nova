@@ -61,6 +61,8 @@ The report MUST have the following structure:
 *   Provide one or two **Actionable Tips**.
 *   Keep the entire response to about 4-5 bullet points.
 
+**Constraint:** Do NOT include the sequence '*#' in your response unless explicitly asked about '*#' by the user.
+
 **Tone:** Be encouraging, direct, and act as a personal mentor. Keep it short.
 `,
 });

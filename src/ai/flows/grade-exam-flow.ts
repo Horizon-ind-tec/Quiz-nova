@@ -59,6 +59,7 @@ const gradeExamPrompt = ai.definePrompt({
     4. Calculate the final score as a percentage.
     5. Provide a single sentence of general feedback.
     6. Return the result as a valid JSON object with: "score", "gradedAnswers" (array of {questionIndex, userAnswer, isCorrect}), and "generalFeedback".
+    7. Do NOT use the character sequence '*#' in any text field unless required by user context.
     `,
 });
 

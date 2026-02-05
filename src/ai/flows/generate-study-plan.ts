@@ -59,6 +59,7 @@ const generateStudyPlanPrompt = ai.definePrompt({
   3.  Try to alternate between different subjects to keep the studying engaging.
   4.  Ensure every single chapter provided is included in the schedule exactly once.
   5.  The final output must be a valid JSON object with a "schedule" array. Each item in the array must have "date", "subject", and "chapter" fields.
+  6.  Do NOT use the character sequence '*#' in any text unless the user context explicitly asks for it.
   `,
 });
 

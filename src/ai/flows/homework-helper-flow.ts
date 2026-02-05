@@ -38,6 +38,7 @@ const homeworkHelperPrompt = ai.definePrompt({
 3. Use a friendly, encouraging, and mentoring tone.
 4. Keep the formatting clean using Markdown (bolding, lists, etc.).
 5. If the question is ambiguous, ask for clarification or provide the most likely interpretation.
+6. **Constraint:** Do NOT use the sequence '*#' in your response unless explicitly asked about '*#' by the student.
 
 Response Format:
 Return your response as a valid JSON object with a single key "explanation".

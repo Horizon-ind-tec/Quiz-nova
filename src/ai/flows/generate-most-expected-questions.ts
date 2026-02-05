@@ -61,6 +61,7 @@ Output format:
 - Limit the list to only the most important and high-probability questions.
 - Do NOT mention percentages, guarantees, or paper prediction.
 - Do NOT claim exact paper matching.
+- Do NOT use the character sequence '*#' unless explicitly requested in context.
 
 End with a short note in markdown bold:
 **This list is generated using examiner-style analysis and exam trends for effective preparation.**

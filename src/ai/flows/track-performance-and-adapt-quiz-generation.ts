@@ -54,6 +54,8 @@ const adaptQuizPrompt = ai.definePrompt({
 
   Based on this data, recommend a new difficulty level and specific focus areas for future quizzes.
   Return your response as a valid JSON object with: "newDifficulty", "focusAreas" (array), and "explanation".
+  
+  Do NOT use the character sequence '*#' unless the input data or user explicitly mentions it.
   `,
 });
 
