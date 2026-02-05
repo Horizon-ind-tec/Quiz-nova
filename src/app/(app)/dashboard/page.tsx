@@ -1,10 +1,9 @@
-
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PlusCircle, BrainCircuit, Gem, BookUser, CalendarDays, Loader2, Target } from 'lucide-react';
+import { PlusCircle, BrainCircuit, Gem, BookUser, CalendarDays, Loader2, Target, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Header } from '@/components/header';
@@ -15,7 +14,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { differenceInCalendarDays } from 'date-fns';
@@ -51,7 +49,6 @@ function DashboardContent() {
         description: `Your ${plan} plan is now active. Enjoy your new features!`,
         duration: 5000,
       });
-      // Clean the URL
       router.replace('/dashboard', { scroll: false });
     } else if (status === 'error') {
        toast({
@@ -60,7 +57,6 @@ function DashboardContent() {
         description: 'There was an issue activating your plan. Please contact support.',
         duration: 5000,
       });
-      // Clean the URL
        router.replace('/dashboard', { scroll: false });
     }
   }, [status, plan, router, toast]);
@@ -104,6 +100,12 @@ function DashboardContent() {
             <p className="text-muted-foreground">Your personalized learning hub.</p>
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+             <Button asChild className="bg-indigo-600 hover:bg-indigo-700">
+                <Link href="/helper">
+                    <GraduationCap className="mr-2 h-4 w-4" />
+                    Exam & Homework Helper
+                </Link>
+             </Button>
              <Button asChild className="bg-blue-600 hover:bg-blue-700">
                 <Link href="/report">
                     <BrainCircuit className="mr-2 h-4 w-4" />
@@ -136,7 +138,7 @@ function DashboardContent() {
             </Button>
             <Dialog open={isPlanDialogOpen} onOpenChange={setIsPlanDialogOpen}>
                 <DialogTrigger asChild>
-                    <Button variant="destructive">
+                    <Button variant="secondary">
                         <CalendarDays className="mr-2 h-4 w-4" />
                         {daysLeft !== null && daysLeft >= 0 ? `${daysLeft} Days Left` : 'AI Study Planner'}
                     </Button>

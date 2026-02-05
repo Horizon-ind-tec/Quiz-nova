@@ -25,6 +25,11 @@ import {
   type GenerateMostExpectedQuestionsInput,
   type GenerateMostExpectedQuestionsOutput,
 } from '@/ai/flows/generate-most-expected-questions';
+import {
+  homeworkHelper,
+  type HomeworkHelperInput,
+  type HomeworkHelperOutput
+} from '@/ai/flows/homework-helper-flow';
 
 
 export async function generateQuizAction(
@@ -148,4 +153,8 @@ export async function generateMostExpectedQuestionsAction(
   input: GenerateMostExpectedQuestionsInput
 ): Promise<GenerateMostExpectedQuestionsOutput> {
     return await generateMostExpectedQuestions(input);
+}
+
+export async function homeworkHelperAction(input: HomeworkHelperInput): Promise<HomeworkHelperOutput> {
+  return await homeworkHelper(input);
 }
