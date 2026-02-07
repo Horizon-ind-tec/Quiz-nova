@@ -3,11 +3,6 @@
  * All data, including user profiles, quizzes, questions, and results, is private
  * and accessible only by the user who created it. The security model is designed
  * for simplicity, performance, and strong authorization guarantees.
- *
- * Core Philosophy:
- * The fundamental principle is that users own their data. There are no public or
- * shared resources. All access control decisions are based on the authenticated
- * user's UID.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -46,43 +41,6 @@ service cloud.firestore {
       return isAdmin() && isOwner(userId) && request.resource.data.id == userId && hasNoPaymentStatus && hasNoPendingPlan;
     }
 
-    function isUpdatingToInitiatePayment(userId) {
-        let incomingData = request.resource.data;
-        let existingData = resource.data;
-        return isOwner(userId)
-            && incomingData.paymentStatus == 'pending'
-            && 'pendingPlan' in incomingData
-            && incomingData.plan == existingData.plan
-            && incomingData.id == existingData.id
-            && incomingData.email == existingData.email
-            && incomingData.createdAt == existingData.createdAt;
-    }
-
-    function isCreatingOwnQuiz(userId) {
-      return request.resource.data.userId == userId;
-    }
-
-    function isUpdatingOwnQuiz() {
-      return request.resource.data.userId == resource.data.userId;
-    }
-
-    function isCreatingOwnQuestion(quizId) {
-      return request.resource.data.quizId == quizId;
-    }
-
-    function isUpdatingOwnQuestion() {
-      return request.resource.data.quizId == resource.data.quizId;
-    }
-
-    function isCreatingOwnQuizResult(userId) {
-      return request.resource.data.userId == userId;
-    }
-
-    function isUpdatingOwnQuizResult() {
-      return request.resource.data.userId == resource.data.userId;
-    }
-
-
     //-------------------------------------------------------------------------
     // Collection Rules
     //-------------------------------------------------------------------------
@@ -95,15 +53,11 @@ service cloud.firestore {
     match /videos/{videoId} {
       allow read: if isSignedIn();
       allow create, delete: if isAdmin();
+      
+      // Allow students to update engagement metrics (likes/views)
       allow update: if isAdmin() || (
         isSignedIn() &&
-        // Allow students to update only likes and views
-        request.resource.data.title == resource.data.title &&
-        request.resource.data.youtubeUrl == resource.data.youtubeUrl &&
-        request.resource.data.class == resource.data.class &&
-        request.resource.data.subject == resource.data.subject &&
-        request.resource.data.chapter == resource.data.chapter &&
-        request.resource.data.createdAt == resource.data.createdAt
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views', 'likes'])
       );
 
       match /comments/{commentId} {
@@ -123,32 +77,34 @@ service cloud.firestore {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin(); 
       allow create: if isCreatingOwnProfile(userId) || isCreatingOwnAdminProfile(userId);
-      allow update: if isUpdatingToInitiatePayment(userId) || isAdmin();
-      allow delete: if isExistingOwner(userId);
+      
+      // Allow flexible updates for admins or owners (owners update for payments/confirmations)
+      allow update: if isAdmin() || isOwner(userId);
+      allow delete: if isExistingOwner(userId) || isAdmin();
 
       match /quizzes/{quizId} {
-        allow get, list: if isOwner(userId);
-        allow create: if isOwner(userId) && isCreatingOwnQuiz(userId);
-        allow update: if isExistingOwner(userId) && isUpdatingOwnQuiz();
-        allow delete: if isExistingOwner(userId);
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId);
+        allow update: if isOwner(userId) || isAdmin();
+        allow delete: if isOwner(userId) || isAdmin();
 
         match /questions/{questionId} {
-          allow get, list: if isOwner(userId);
-          allow create: if isOwner(userId) && isCreatingOwnQuestion(quizId);
-          allow update: if isExistingOwner(userId) && isUpdatingOwnQuestion();
-          allow delete: if isExistingOwner(userId);
+          allow get, list: if isOwner(userId) || isAdmin();
+          allow create: if isOwner(userId);
+          allow update: if isOwner(userId) || isAdmin();
+          allow delete: if isOwner(userId) || isAdmin();
         }
       }
 
       match /quiz_results/{quizResultId} {
-        allow get, list: if isOwner(userId);
-        allow create: if isOwner(userId) && isCreatingOwnQuizResult(userId);
-        allow update: if isExistingOwner(userId) && isUpdatingOwnQuizResult();
-        allow delete: if isExistingOwner(userId);
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId);
+        allow update: if isOwner(userId) || isAdmin();
+        allow delete: if isOwner(userId) || isAdmin();
       }
 
       match /studyPlans/{studyPlanId} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId) || isAdmin();
       }
     }
   }
