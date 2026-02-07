@@ -93,66 +93,83 @@ function DashboardContent() {
   return (
     <div className="flex flex-col">
       <Header title="Dashboard" />
-      <main className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex-1">
-            <h2 className="text-3xl font-bold tracking-tight">Welcome back, {user.displayName || 'Student'}!</h2>
-            <p className="text-muted-foreground">Your personalized learning hub.</p>
-          </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-             <Button asChild className="bg-indigo-600 hover:bg-indigo-700">
-                <Link href="/helper">
-                    <GraduationCap className="mr-2 h-4 w-4" />
-                    Exam & Homework Helper
-                </Link>
-             </Button>
-             <Button asChild className="bg-blue-600 hover:bg-blue-700">
-                <Link href="/report">
-                    <BrainCircuit className="mr-2 h-4 w-4" />
-                    AI Learning Report
-                </Link>
-             </Button>
-              <Button asChild className="bg-gradient-to-r from-yellow-400 to-amber-500 text-white shadow-lg hover:from-yellow-500 hover:to-amber-600">
-                <Link href="/plans">
-                    <Gem className="mr-2 h-4 w-4" />
-                    Upgrade to Premium
-                </Link>
-             </Button>
-             <Button asChild variant="outline">
-                <Link href="/coaching">
-                    <BookUser className="mr-2 h-4 w-4" />
-                    Coaching
-                </Link>
-             </Button>
-            <Button asChild>
-              <Link href="/quiz/create">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Create New Quiz
-              </Link>
-            </Button>
-            <Button asChild variant="destructive">
-              <Link href="/most-expected-questions">
-                <Target className="mr-2 h-4 w-4" />
-                Most Expected Questions
-              </Link>
-            </Button>
-            <Dialog open={isPlanDialogOpen} onOpenChange={setIsPlanDialogOpen}>
-                <DialogTrigger asChild>
-                    <Button variant="secondary">
-                        <CalendarDays className="mr-2 h-4 w-4" />
-                        {daysLeft !== null && daysLeft >= 0 ? `${daysLeft} Days Left` : 'AI Study Planner'}
-                    </Button>
-                </DialogTrigger>
-                <StudyPlanDialog onOpenChange={setIsPlanDialogOpen} />
-            </Dialog>
-          </div>
+      <main className="flex-1 space-y-6 p-4 pt-6 md:p-8">
+        <div className="space-y-1">
+          <h2 className="text-3xl font-bold tracking-tight">Welcome back, {user.displayName || 'Student'}!</h2>
+          <p className="text-muted-foreground">Your personalized learning hub.</p>
+        </div>
+
+        {/* --- Main Action Buttons Stack --- */}
+        <div className="flex flex-col gap-3 w-full max-w-2xl mx-auto md:mx-0">
+          <Button asChild className="h-12 w-full bg-[#6366f1] hover:bg-[#5558e3] text-white text-md font-semibold rounded-md shadow-sm">
+            <Link href="/helper">
+              <GraduationCap className="mr-2 h-5 w-5" />
+              Exam & Homework Helper
+            </Link>
+          </Button>
+
+          <Button asChild className="h-12 w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-md font-semibold rounded-md shadow-sm">
+            <Link href="/report">
+              <BrainCircuit className="mr-2 h-5 w-5" />
+              AI Learning Report
+            </Link>
+          </Button>
+
+          <Button asChild className="h-12 w-full bg-[#f59e0b] hover:bg-[#d97706] text-white text-md font-semibold rounded-md shadow-sm">
+            <Link href="/plans">
+              <Gem className="mr-2 h-5 w-5" />
+              Upgrade to Premium
+            </Link>
+          </Button>
+
+          <Button asChild variant="outline" className="h-12 w-full border-2 text-md font-semibold rounded-md shadow-sm">
+            <Link href="/coaching">
+              <BookUser className="mr-2 h-5 w-5" />
+              Coaching
+            </Link>
+          </Button>
+
+          <Button asChild className="h-12 w-full bg-[#5c85b1] hover:bg-[#4a6d91] text-white text-md font-semibold rounded-md shadow-sm">
+            <Link href="/quiz/create">
+              <PlusCircle className="mr-2 h-5 w-5" />
+              Create New Quiz
+            </Link>
+          </Button>
+
+          <Button asChild className="h-12 w-full bg-[#ef4444] hover:bg-[#dc2626] text-white text-md font-semibold rounded-md shadow-sm">
+            <Link href="/most-expected-questions">
+              <Target className="mr-2 h-5 w-5" />
+              Most Expected Questions
+            </Link>
+          </Button>
+
+          <Dialog open={isPlanDialogOpen} onOpenChange={setIsPlanDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" className="h-12 w-full hover:bg-accent text-md font-semibold rounded-md">
+                <CalendarDays className="mr-2 h-5 w-5" />
+                {daysLeft !== null && daysLeft >= 0 ? `${daysLeft} Days Left` : 'AI Study Planner'}
+              </Button>
+            </DialogTrigger>
+            <StudyPlanDialog onOpenChange={setIsPlanDialogOpen} />
+          </Dialog>
         </div>
 
         <Tabs value={view} onValueChange={(value) => setView(value as ViewType)} className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="quiz">Quiz Performance</TabsTrigger>
-            <TabsTrigger value="exam">Exam Performance</TabsTrigger>
+          <TabsList className="bg-transparent border-b rounded-none h-auto p-0 gap-6">
+            <TabsTrigger 
+              value="quiz" 
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent shadow-none px-0 pb-2 text-md"
+            >
+              Quiz Performance
+            </TabsTrigger>
+            <TabsTrigger 
+              value="exam" 
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent shadow-none px-0 pb-2 text-md"
+            >
+              Exam Performance
+            </TabsTrigger>
           </TabsList>
+          
           <TabsContent value="quiz">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 <Card className="col-span-4">
@@ -175,6 +192,7 @@ function DashboardContent() {
                 </Card>
               </div>
           </TabsContent>
+          
           <TabsContent value="exam">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 <Card className="col-span-4">
