@@ -77,50 +77,34 @@ export async function notifyAdminOfPaymentAction(input: NotifyAdminOfPaymentInpu
 }
 
 
-export async function handlePaymentAction(input: { targetUserId: string, action: 'approve' | 'deny' }): Promise<void> {
-  const db = await getAdminDb();
-  const { targetUserId, action } = input;
+/**
+ * Handles payment verification notifications.
+ * Note: Firestore updates are handled on the client by the admin to avoid Admin SDK auth issues.
+ */
+export async function handlePaymentAction(input: { targetUserId: string, targetUserEmail: string, targetUserName: string, pendingPlan: string, action: 'approve' | 'deny' }): Promise<void> {
+  const { targetUserId, targetUserEmail, targetUserName, pendingPlan, action } = input;
   
-  const userRef = db.collection('users').doc(targetUserId);
-  const userDoc = await userRef.get();
-
-  if (!userDoc.exists) {
-    throw new Error('User not found.');
-  }
-
-  const userData = userDoc.data()!;
-
   if (action === 'approve') {
-    if (userData.pendingPlan) {
-      await userRef.update({
-        paymentStatus: 'confirmed',
-      });
       await notifyAdminOfPayment({
         userId: targetUserId,
-        userName: userData.name,
-        userEmail: userData.email,
-        planName: userData.pendingPlan,
-        planPrice: userData.pendingPlan === 'premium' ? '₹500' : '₹1000',
-        transactionId: `Nova${userData.pendingPlan === 'premium' ? '+' : '$'}${targetUserId.slice(0, 9).toLowerCase()}`,
+        userName: targetUserName,
+        userEmail: targetUserEmail,
+        planName: pendingPlan,
+        planPrice: pendingPlan === 'premium' ? '₹500' : '₹1000',
+        transactionId: `Nova${pendingPlan === 'premium' ? '+' : '$'}${targetUserId.slice(0, 9).toLowerCase()}`,
         isApproval: true,
       });
-    } else {
-      throw new Error('User has no pending plan to approve.');
-    }
-  } else { // deny
-    await userRef.update({
-      paymentStatus: null,
-      pendingPlan: null,
-    });
   }
 }
 
+/**
+ * Generates a study plan. The client is responsible for saving it to Firestore.
+ */
 export async function generateStudyPlanAction(input: {
   examDate: Date;
   subjects: { name: string; chapters: string[] }[];
-  userId: string;
-}): Promise<string> {
-  const { examDate, subjects, userId } = input;
+}): Promise<StudyPlan> {
+  const { examDate, subjects } = input;
 
   const aiResult = await generateStudyPlan({ examDate, subjects });
 
@@ -131,18 +115,14 @@ export async function generateStudyPlanAction(input: {
 
   const newStudyPlan: StudyPlan = {
     id: uuidv4(),
-    userId,
+    userId: '', // To be filled by client
     examDate: examDate.getTime(),
     subjects,
     schedule: scheduleWithCompletion,
     createdAt: Date.now(),
   };
 
-  const db = await getAdminDb();
-  const planRef = db.collection('users').doc(userId).collection('studyPlans').doc(newStudyPlan.id);
-  await planRef.set(newStudyPlan);
-
-  return newStudyPlan.id;
+  return newStudyPlan;
 }
 
 

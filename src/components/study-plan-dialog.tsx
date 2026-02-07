@@ -14,10 +14,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import { SUBJECTS_DATA } from '@/lib/data';
 import { generateStudyPlanAction } from '@/app/actions';
 import { addDays } from 'date-fns';
+import { doc, setDoc } from 'firebase/firestore';
 
 const studyPlanSchema = z.object({
   examDate: z.date({ required_error: "Please select an exam date." }),
@@ -43,6 +44,7 @@ interface StudyPlanDialogProps {
 
 export function StudyPlanDialog({ onOpenChange }: StudyPlanDialogProps) {
     const { user } = useUser();
+    const firestore = useFirestore();
     const router = useRouter();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
@@ -59,7 +61,7 @@ export function StudyPlanDialog({ onOpenChange }: StudyPlanDialogProps) {
     const watchedSubjects = form.watch('selectedSubjects');
 
     const onSubmit = async (data: StudyPlanFormData) => {
-        if (!user) {
+        if (!user || !firestore) {
             toast({ variant: "destructive", title: "You must be logged in." });
             return;
         }
@@ -71,9 +73,15 @@ export function StudyPlanDialog({ onOpenChange }: StudyPlanDialogProps) {
                 chapters: data.chapters[subjectName].split(',').map(c => c.trim()).filter(Boolean),
             }));
 
-            await generateStudyPlanAction({
+            const newPlanData = await generateStudyPlanAction({
                 examDate: data.examDate,
                 subjects: subjectsPayload,
+            });
+
+            // Save to Firestore on the client side to avoid Admin SDK auth issues
+            const planRef = doc(firestore, 'users', user.uid, 'studyPlans', newPlanData.id);
+            await setDoc(planRef, {
+                ...newPlanData,
                 userId: user.uid,
             });
 

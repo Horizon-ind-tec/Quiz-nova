@@ -30,6 +30,17 @@ export default function PaperPage() {
         }
     }, [isClient, generatedPaper, router]);
 
+    const renderFormattedLine = (line: string) => {
+        // Simple formatter to handle **bold** text within a line
+        const parts = line.split(/(\*\*.*?\*\*)/g);
+        return parts.map((part, i) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={i}>{part.slice(2, -2)}</strong>;
+            }
+            return part;
+        });
+    };
+
     if (!isClient || !generatedPaper || !paperDetails) {
         return (
              <div className="flex h-screen w-full items-center justify-center">
@@ -68,20 +79,22 @@ export default function PaperPage() {
 
                     <div className="prose prose-sm max-w-none whitespace-pre-wrap font-sans">
                       {generatedPaper.split('\n').map((line, index) => {
+                          if (line.trim() === '') return <br key={index} />;
+
                           if (line.startsWith('### ')) {
-                              return <h3 key={index} className="font-bold text-lg bg-gray-200 p-2 rounded-md my-4 text-center">{line.replace('### ', '')}</h3>
+                              return <h3 key={index} className="font-bold text-lg bg-gray-200 p-2 rounded-md my-4 text-center">{renderFormattedLine(line.replace('### ', ''))}</h3>
                           }
                           if (line.startsWith('**This list')) {
                               const cleanLine = line.replace(/\*/g, '');
                               return <p key={index} className="text-center font-bold text-muted-foreground mt-8">{cleanLine}</p>
                           }
                            if (line.startsWith('**Ans.**')) {
-                              return <p key={index} className="!my-1"><strong className="text-green-700">{line.substring(0, 7)}</strong>{line.substring(7)}</p>
+                              return <p key={index} className="!my-1"><strong className="text-green-700">{line.substring(0, 7)}</strong>{renderFormattedLine(line.substring(7))}</p>
                           }
                            if (line.startsWith('**Sol.**')) {
-                              return <p key={index} className="!my-1"><strong className="text-blue-700">{line.substring(0, 7)}</strong>{line.substring(7)}</p>
+                              return <p key={index} className="!my-1"><strong className="text-blue-700">{line.substring(0, 7)}</strong>{renderFormattedLine(line.substring(7))}</p>
                           }
-                          return <p key={index} className="!my-2">{line}</p>
+                          return <p key={index} className="!my-2">{renderFormattedLine(line)}</p>
                       })}
                     </div>
                 </div>

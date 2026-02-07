@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useEffect } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
 import { Loader2, UserCheck, ShieldQuestion, Bell } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,8 +34,31 @@ export default function NotificationsPage() {
   }, [user, userLoading, router]);
 
   const onPaymentAction = async (targetUser: UserProfile, action: 'approve' | 'deny') => {
+    if (!firestore || !targetUser.pendingPlan) return;
+
     try {
-        await handlePaymentAction({ targetUserId: targetUser.id, action });
+        // 1. Update Firestore on the client side (leveraging isAdmin rule) to bypass Admin SDK issues
+        const userDocRef = doc(firestore, 'users', targetUser.id);
+        if (action === 'approve') {
+            await updateDoc(userDocRef, {
+                paymentStatus: 'confirmed',
+            });
+        } else {
+            await updateDoc(userDocRef, {
+                paymentStatus: null,
+                pendingPlan: null,
+            });
+        }
+
+        // 2. Trigger non-blocking email notifications via server action
+        await handlePaymentAction({ 
+            targetUserId: targetUser.id, 
+            targetUserEmail: targetUser.email,
+            targetUserName: targetUser.name,
+            pendingPlan: targetUser.pendingPlan,
+            action 
+        });
+
         if (action === 'approve') {
             toast({
                 title: 'Payment Approved',
