@@ -1,3 +1,4 @@
+
 'use server';
 
 import {
@@ -29,6 +30,11 @@ import {
   type HomeworkHelperInput,
   type HomeworkHelperOutput
 } from '@/ai/flows/homework-helper-flow';
+import {
+  generateChapterNotes,
+  type GenerateChapterNotesInput,
+  type GenerateChapterNotesOutput,
+} from '@/ai/flows/generate-chapter-notes';
 
 
 export async function generateQuizAction(
@@ -134,4 +140,10 @@ export async function generateMostExpectedQuestionsAction(
 
 export async function homeworkHelperAction(input: HomeworkHelperInput): Promise<HomeworkHelperOutput> {
   return await homeworkHelper(input);
+}
+
+export async function generateChapterNotesAction(
+  input: GenerateChapterNotesInput
+): Promise<GenerateChapterNotesOutput> {
+  return await generateChapterNotes(input);
 }

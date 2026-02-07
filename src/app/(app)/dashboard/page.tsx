@@ -1,9 +1,10 @@
+
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PlusCircle, BrainCircuit, Gem, BookUser, CalendarDays, Loader2, Target, GraduationCap, ChevronRight } from 'lucide-react';
+import { PlusCircle, BrainCircuit, Gem, BookUser, CalendarDays, Loader2, Target, GraduationCap, ChevronRight, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Header } from '@/components/header';
@@ -129,6 +130,12 @@ function DashboardContent() {
               <Link href="/quiz/create">
                 <PlusCircle className="h-6 w-6 mb-1 transition-transform group-hover:scale-110" />
                 <span className="font-semibold">Create New Quiz</span>
+              </Link>
+            </Button>
+            <Button asChild className="h-24 bg-violet-600 hover:bg-violet-700 text-white shadow-md flex flex-col items-center justify-center gap-1 group">
+              <Link href="/notes">
+                <FileText className="h-6 w-6 mb-1 transition-transform group-hover:scale-110" />
+                <span className="font-semibold">AI Chapter Notes</span>
               </Link>
             </Button>
             <Button asChild variant="destructive" className="h-24 shadow-md flex flex-col items-center justify-center gap-1 group">

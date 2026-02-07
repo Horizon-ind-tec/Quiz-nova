@@ -1,8 +1,9 @@
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BrainCircuit, LayoutDashboard, PlusCircle, TrendingUp, MessageSquareHeart, Gem, BookUser, Shield, Bell, CalendarCheck, Target, GraduationCap } from 'lucide-react';
+import { BrainCircuit, LayoutDashboard, PlusCircle, TrendingUp, MessageSquareHeart, Gem, BookUser, Shield, Bell, CalendarCheck, Target, GraduationCap, FileText } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -69,6 +70,19 @@ export function SideNav() {
               <Link href="/quiz/create">
                 <PlusCircle />
                 <span>New Quiz</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              size="lg"
+              isActive={isActive('/notes')}
+              tooltip={{ children: 'Chapter Notes' }}
+            >
+              <Link href="/notes">
+                <FileText />
+                <span>Chapter Notes</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
