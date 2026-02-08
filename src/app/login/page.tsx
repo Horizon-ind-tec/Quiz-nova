@@ -7,8 +7,8 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { BrainCircuit, Loader2 } from 'lucide-react';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, User } from 'firebase/auth';
+import { BrainCircuit, Loader2, Bot } from 'lucide-react';
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, User, signInAnonymously } from 'firebase/auth';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,6 +28,7 @@ const ADMIN_EMAIL = 'wizofclassknowledge@gmail.com';
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isGuestLoading, setIsGuestLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
   const auth = useAuth();
@@ -44,6 +45,7 @@ export default function LoginPage() {
     
     // Check if the user is the admin
     const isAdmin = user.email === ADMIN_EMAIL;
+    const isGuest = user.isAnonymous;
     const userPlan = isAdmin ? 'ultimate' : 'free';
 
     // Check if document exists
@@ -51,8 +53,8 @@ export default function LoginPage() {
     if (!docSnap.exists()) {
         await setDoc(userDocRef, {
             id: user.uid,
-            email: user.email,
-            name: user.displayName || 'New User',
+            email: user.email || 'guest@quiznova.ai',
+            name: user.displayName || (isGuest ? 'AI Guest' : 'New User'),
             createdAt: new Date().toISOString(),
             plan: userPlan,
         });
@@ -66,7 +68,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      createUserProfile(userCredential.user);
+      await createUserProfile(userCredential.user);
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -92,7 +94,7 @@ export default function LoginPage() {
     try {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
-      createUserProfile(userCredential.user);
+      await createUserProfile(userCredential.user);
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -101,6 +103,31 @@ export default function LoginPage() {
         description: error.message || 'Could not sign in with Google.',
       });
       setIsGoogleLoading(false);
+    }
+  };
+
+  const handleGuestSignIn = async () => {
+    setIsGuestLoading(true);
+    if (!auth || !firestore) {
+        toast({
+            variant: 'destructive',
+            title: 'Guest Login Failed',
+            description: 'Firebase not initialized. Please try again later.',
+        });
+        setIsGuestLoading(false);
+        return;
+    }
+    try {
+      const userCredential = await signInAnonymously(auth);
+      await createUserProfile(userCredential.user);
+      router.push('/dashboard');
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Guest Login Failed',
+        description: error.message || 'Could not sign in as guest.',
+      });
+      setIsGuestLoading(false);
     }
   };
 
@@ -159,13 +186,20 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
-                 {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 
-                 <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
-                    <path fill="currentColor" d="M488 261.8C488 403.3 381.5 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 21.2 173.4 58.2l-67.4 66.2C324.5 98.4 289.3 80 248 80c-82.3 0-149.3 66.9-149.3 148.7s67 148.7 149.3 148.7c97.1 0 131.3-72.8 135.2-109.9H248v-85.3h236.1c2.3 12.7 3.9 26.9 3.9 41.4z"></path>
-                 </svg>}
-                Google
-            </Button>
+            <div className="space-y-2">
+                <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
+                    {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 
+                    <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+                        <path fill="currentColor" d="M488 261.8C488 403.3 381.5 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 21.2 173.4 58.2l-67.4 66.2C324.5 98.4 289.3 80 248 80c-82.3 0-149.3 66.9-149.3 148.7s67 148.7 149.3 148.7c97.1 0 131.3-72.8 135.2-109.9H248v-85.3h236.1c2.3 12.7 3.9 26.9 3.9 41.4z"></path>
+                    </svg>}
+                    Google
+                </Button>
+
+                <Button variant="ghost" className="w-full text-muted-foreground" onClick={handleGuestSignIn} disabled={isGuestLoading}>
+                    {isGuestLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
+                    Register as AI Guest (Test Mode)
+                </Button>
+            </div>
 
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
