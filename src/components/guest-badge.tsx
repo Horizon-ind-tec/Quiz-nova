@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-const GUEST_DURATION_MS = 1 * 60 * 1000; // 1 minute for guest testing (preview mode)
+const GUEST_DURATION_MS = 30 * 60 * 1000; // 30 minutes for guest session
 
 export function GuestBadge() {
   const { user } = useUser();
