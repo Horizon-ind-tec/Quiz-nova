@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { Firestore } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/firebase/admin';
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:6000';
 
 
 export async function GET(request: NextRequest) {

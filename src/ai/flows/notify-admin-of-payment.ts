@@ -32,7 +32,7 @@ const notifyAdminOfPaymentFlow = ai.defineFlow(
   },
   async (input) => {
     const { userId, userName, userEmail, planName, planPrice, transactionId, isApproval } = input;
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:9002';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:6000';
     
     if (isApproval) {
       // Send activation request email to the STUDENT with YES/NO
