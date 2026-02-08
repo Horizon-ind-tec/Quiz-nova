@@ -2,6 +2,14 @@
 # https://firebase.google.com/docs/app-hosting/configure
 
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
-  maxInstances: 1
+  # The number of concurrent requests each instance can handle.
+  concurrency: 80
+  # The CPU and Memory allocated to each instance.
+  cpu: 1
+  memoryMiB: 512
+  # Control the number of instances to handle your 24/7 traffic.
+  minInstances: 0
+  maxInstances: 10
+
+# Environment variables for production can be managed in the Firebase Console
+# or defined here if they are not sensitive.
