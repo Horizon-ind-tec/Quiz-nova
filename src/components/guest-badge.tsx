@@ -12,10 +12,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-const GUEST_DURATION_MS = 15 * 60 * 1000; // 15 minutes for guest testing
+const GUEST_DURATION_MS = 1 * 60 * 1000; // 1 minute for guest testing (preview mode)
 
 export function GuestBadge() {
   const { user } = useUser();
