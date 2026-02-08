@@ -82,6 +82,14 @@ export default function TakeQuizPage() {
   }, [quiz]);
 
   const [timeElapsed, setTimeElapsed] = useState(0);
+
+  /**
+   * Helper to strip AI-generated prefixes like "a) ", "1. ", "(A) " from option text.
+   */
+  const stripOptionPrefix = (text: string) => {
+    if (!text) return '';
+    return text.replace(/^([a-zA-Z0-9])[\.\)\-]\s+|^(\([a-zA-Z0-9]\))\s+/i, '').trim();
+  };
   
   const shuffleArray = useCallback((array: any[]) => {
     const newArray = [...array];
@@ -159,7 +167,7 @@ export default function TakeQuizPage() {
   }, [quiz, user, firestore, toast, userAnswers, timeElapsed, calculateScore, router, setScore, setQuizState]);
 
   // Using a ref to hold the finishQuiz function to avoid stale closures in setInterval.
-  const savedFinishQuiz = useRef<() => void>();
+  const savedFinishQuiz = useRef<() => void>(undefined);
   useEffect(() => {
     savedFinishQuiz.current = finishQuiz;
   });
@@ -236,7 +244,7 @@ export default function TakeQuizPage() {
                 if (!prevQuiz) return null;
                 
                 const updatedQuestions = [...prevQuiz.questions, newQuestion];
-                const updatedTotalMarks = prevQuiz.totalMarks + newQuestion.marks;
+                const updatedTotalMarks = (prevQuiz.totalMarks || 0) + newQuestion.marks;
 
                 // Also update related states
                 setMarkedForReview(prev => [...prev, false]);
@@ -390,7 +398,7 @@ export default function TakeQuizPage() {
             {q.options.map((option, index) => (
               <div key={option + index} className="flex items-center">
                 <span className="mr-2 font-semibold">({String.fromCharCode(65 + index)})</span>
-                <span>{option}</span>
+                <span>{stripOptionPrefix(option)}</span>
               </div>
             ))}
           </div>
@@ -408,6 +416,7 @@ export default function TakeQuizPage() {
                  disabled={inQuizMode && isAnswered}
             >
                 {q.options.map((option, index) => {
+                    const cleanOption = stripOptionPrefix(option);
                     const isCorrect = option === q.correctAnswer;
                     const isSelected = option === userAnswer;
                     const getOptionStyle = () => {
@@ -432,7 +441,7 @@ export default function TakeQuizPage() {
                                 <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0">
                                     {String.fromCharCode(65 + index)}
                                 </div>
-                                <span className="flex-1">{option}</span>
+                                <span className="flex-1">{cleanOption}</span>
                                 {inQuizMode && isAnswered && isSelected && isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
                                 {inQuizMode && isAnswered && isSelected && !isCorrect && <XCircle className="h-5 w-5 text-red-600" />}
                                 {inQuizMode && isAnswered && !isSelected && isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
@@ -816,9 +825,19 @@ export default function TakeQuizPage() {
                                         <p className="font-semibold">{q.question}</p>
                                         
                                         {q.type === 'mcq' && (
-                                            <p className="mt-2 text-sm">
-                                                Correct answer: <span className="font-semibold text-green-600">{q.correctAnswer}</span>
-                                            </p>
+                                            <div className="mt-2 text-sm">
+                                                <p className="font-semibold mb-2">Options:</p>
+                                                <ul className="space-y-1">
+                                                    {q.options.map((opt, i) => (
+                                                        <li key={i} className={cn(opt === q.correctAnswer ? "text-green-600 font-bold" : "")}>
+                                                            {String.fromCharCode(65 + i)}) {stripOptionPrefix(opt)}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                                <p className="mt-2">
+                                                    Correct answer: <span className="font-semibold text-green-600">{stripOptionPrefix(q.correctAnswer)}</span>
+                                                </p>
+                                            </div>
                                         )}
 
                                         {q.type === 'numerical' && (
@@ -892,7 +911,7 @@ export default function TakeQuizPage() {
 
                   if (q.type === 'mcq') {
                     isCorrect = userAnswer === q.correctAnswer;
-                    userFriendlyAnswer = (userAnswer as string) || "Not Answered";
+                    userFriendlyAnswer = stripOptionPrefix(userAnswer as string) || "Not Answered";
                   } else if (q.type === 'numerical') {
                     isCorrect = Number(userAnswer) === q.correctAnswer;
                     userFriendlyAnswer = (userAnswer as string) || "Not Answered";
@@ -917,16 +936,34 @@ export default function TakeQuizPage() {
                         <p className="font-semibold">{q.question}</p>
                         
                         {q.type === 'mcq' && (
-                          <>
-                            <p className="mt-2 text-sm">
+                          <div className="mt-2 text-sm">
+                            <p className="font-semibold mb-2">Options:</p>
+                            <ul className="space-y-1 mb-3">
+                                {q.options.map((opt, i) => {
+                                    const cleanOpt = stripOptionPrefix(opt);
+                                    const isUserChoice = opt === userAnswer;
+                                    const isCorrectOpt = opt === q.correctAnswer;
+                                    return (
+                                        <li key={i} className={cn(
+                                            "flex items-center gap-2",
+                                            isCorrectOpt ? "text-green-600 font-bold" : isUserChoice ? "text-destructive font-bold" : ""
+                                        )}>
+                                            {String.fromCharCode(65 + i)}) {cleanOpt}
+                                            {isUserChoice && <span className="text-[10px] uppercase">(Your Answer)</span>}
+                                            {isCorrectOpt && <CheckCircle className="h-3 w-3" />}
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                            <p className="mt-2">
                               Your answer: <span className={cn(isCorrect ? 'text-green-600' : 'text-destructive', 'font-semibold')}>{userFriendlyAnswer}</span>
                             </p>
                             {!isCorrect && (
                               <p className="mt-1 text-sm">
-                                Correct answer: <span className="font-semibold text-green-600">{q.correctAnswer}</span>
+                                Correct answer: <span className="font-semibold text-green-600">{stripOptionPrefix(q.correctAnswer)}</span>
                               </p>
                             )}
-                          </>
+                          </div>
                         )}
 
                         {q.type === 'numerical' && (

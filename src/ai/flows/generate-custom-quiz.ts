@@ -125,6 +125,7 @@ Your task is to generate a set of questions based on the user's request.
     - You MUST return ONLY a valid JSON object.
     - The JSON object must have a "questions" key containing an array of question objects.
     - Each question object must have: "type" (MUST be lowercase: 'mcq', 'match', 'numerical', 'shortAnswer', 'longAnswer'), "question", "correctAnswer", "explanation", "marks", and optionally "options" (for mcq) or "pairs" (for match).
+    - **CRITICAL:** For Multiple Choice Questions (MCQ), the "options" MUST contain ONLY the plain text of the option. Do NOT include any prefixes like "a)", "b.", "(C)", or "1." inside the option strings. The frontend will handle the labeling.
 
 4. **Constraint:**
     - Do NOT use the character sequence '*#' in your output unless explicitly mentioned or asked about in the user request.
