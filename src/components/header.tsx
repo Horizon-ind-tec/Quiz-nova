@@ -13,6 +13,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import type { UserProfile } from '@/lib/types';
 import { doc, collection, query, where } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
+import { GuestBadge } from '@/components/guest-badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,6 +52,7 @@ export function Header({ title }: HeaderProps) {
     const notificationCount = pendingUsers?.length || 0;
 
     const handleSignOut = async () => {
+        localStorage.removeItem('guestStartTime');
         await signOut(auth);
         router.push('/login');
     }
@@ -73,9 +75,12 @@ export function Header({ title }: HeaderProps) {
         <SidebarTrigger />
       </div>
       <h1 className="text-lg font-semibold md:text-xl flex-1">{title}</h1>
-       <div className="flex items-center gap-2">
-            {renderPlanIcon()}
-            <span className="text-sm font-medium hidden sm:inline-block">{user?.displayName}</span>
+       <div className="flex items-center gap-3">
+            <GuestBadge />
+            <div className="flex items-center gap-2">
+                {renderPlanIcon()}
+                <span className="text-sm font-medium hidden sm:inline-block">{user?.displayName}</span>
+            </div>
        </div>
        <div className="flex items-center gap-1 sm:gap-2">
            <Button asChild variant="outline" size="icon" className="relative h-9 w-9">

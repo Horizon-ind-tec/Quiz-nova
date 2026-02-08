@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -61,6 +60,10 @@ export default function LoginPage() {
     } else if (isAdmin) {
         // If the admin logs in, ensure their plan is ultimate
         await setDoc(userDocRef, { plan: 'ultimate' }, { merge: true });
+    }
+
+    if (isGuest) {
+      localStorage.setItem('guestStartTime', Date.now().toString());
     }
   };
 
