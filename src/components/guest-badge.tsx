@@ -105,7 +105,7 @@ export function GuestBadge() {
                 <div className="absolute inset-0 bg-red-500/20 rounded-full animate-pulse -z-10 blur-md" />
               )}
             </div>
-            <span className="text-[7px] font-bold text-red-600 mt-0.5 leading-none uppercase text-center max-w-[60px] whitespace-pre-wrap">Guest access remaining</span>
+            <span className="text-[8px] font-black text-red-600 mt-1 leading-tight uppercase text-center max-w-[70px] tracking-tighter">Guest access remaining</span>
           </div>
         </TooltipTrigger>
         <TooltipContent>

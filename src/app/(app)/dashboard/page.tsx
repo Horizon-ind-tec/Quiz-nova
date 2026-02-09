@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
@@ -92,119 +91,126 @@ function DashboardContent() {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col bg-background">
       <Header title="Dashboard" />
-      <main className="flex-1 space-y-6 p-4 pt-6 md:p-8">
+      <main className="flex-1 space-y-8 p-4 pt-8 md:p-8 max-w-4xl mx-auto w-full">
         <div className="flex flex-col space-y-2">
-            <h2 className="text-3xl font-bold tracking-tight">Welcome back, {user.displayName || 'Student'}!</h2>
-            <p className="text-muted-foreground">Your personalized AI learning hub.</p>
+            <h2 className="text-4xl font-extrabold tracking-tight text-slate-900">Welcome back, {user.displayName || 'Student'}!</h2>
+            <p className="text-lg text-muted-foreground font-medium">Your personalized AI learning hub.</p>
         </div>
 
-        {/* --- Feature Grid --- */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-             <Button asChild className="h-24 bg-indigo-600 hover:bg-indigo-700 shadow-md flex flex-col items-center justify-center gap-1 group">
+        {/* --- Feature Stack (Mobile-friendly vertical layout like the reference image) --- */}
+        <div className="flex flex-col gap-4">
+             <Button asChild className="h-28 bg-[#5850ec] hover:bg-[#4a45c7] shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
                 <Link href="/helper">
-                    <GraduationCap className="h-6 w-6 mb-1 transition-transform group-hover:scale-110" />
-                    <span className="font-semibold">Homework Helper AI</span>
+                    <GraduationCap className="h-7 w-7 transition-transform" />
+                    <span className="text-lg font-bold">Homework Helper AI</span>
                 </Link>
              </Button>
-             <Button asChild className="h-24 bg-blue-600 hover:bg-blue-700 shadow-md flex flex-col items-center justify-center gap-1 group">
+
+             <Button asChild className="h-28 bg-[#2563eb] hover:bg-[#1d4ed8] shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
                 <Link href="/report">
-                    <BrainCircuit className="h-6 w-6 mb-1 transition-transform group-hover:scale-110" />
-                    <span className="font-semibold">AI Learning Report</span>
+                    <BrainCircuit className="h-7 w-7 transition-transform" />
+                    <span className="text-lg font-bold">AI Learning Report</span>
                 </Link>
              </Button>
-              <Button asChild className="h-24 bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-lg hover:brightness-110 flex flex-col items-center justify-center gap-1 group">
+
+              <Button asChild className="h-28 bg-gradient-to-r from-amber-400 via-orange-400 to-orange-500 text-white shadow-xl hover:brightness-110 flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
                 <Link href="/plans">
-                    <Gem className="h-6 w-6 mb-1 transition-transform group-hover:scale-110" />
-                    <span className="font-semibold">Upgrade to Premium</span>
+                    <Gem className="h-7 w-7 transition-transform" />
+                    <span className="text-lg font-bold">Upgrade to Premium</span>
                 </Link>
              </Button>
-             <Button asChild variant="outline" className="h-24 border-2 flex flex-col items-center justify-center gap-1 group">
+
+             <Button asChild variant="outline" className="h-28 bg-white border-2 border-slate-100 shadow-md flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01] hover:bg-slate-50">
                 <Link href="/coaching">
-                    <BookUser className="h-6 w-6 mb-1 text-primary transition-transform group-hover:scale-110" />
-                    <span className="font-semibold text-foreground">Video Coaching</span>
+                    <BookUser className="h-7 w-7 text-blue-600 transition-transform" />
+                    <span className="text-lg font-bold text-slate-800">Video Coaching</span>
                 </Link>
              </Button>
-            <Button asChild className="h-24 shadow-md flex flex-col items-center justify-center gap-1 group">
+
+            <Button asChild className="h-28 bg-[#60a5fa]/80 hover:bg-[#3b82f6] shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
               <Link href="/quiz/create">
-                <PlusCircle className="h-6 w-6 mb-1 transition-transform group-hover:scale-110" />
-                <span className="font-semibold">Create New Quiz</span>
+                <PlusCircle className="h-7 w-7 transition-transform" />
+                <span className="text-lg font-bold">Create New Quiz</span>
               </Link>
             </Button>
-            <Button asChild className="h-24 bg-violet-600 hover:bg-violet-700 text-white shadow-md flex flex-col items-center justify-center gap-1 group">
+
+            <Button asChild className="h-28 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
               <Link href="/notes">
-                <FileText className="h-6 w-6 mb-1 transition-transform group-hover:scale-110" />
-                <span className="font-semibold">AI Chapter Notes</span>
+                <FileText className="h-7 w-7 transition-transform" />
+                <span className="text-lg font-bold">AI Chapter Notes</span>
               </Link>
             </Button>
-            <Button asChild variant="destructive" className="h-24 shadow-md flex flex-col items-center justify-center gap-1 group">
+
+            <Button asChild variant="destructive" className="h-28 bg-[#ef4444] hover:bg-[#dc2626] shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
               <Link href="/most-expected-questions">
-                <Target className="h-6 w-6 mb-1 transition-transform group-hover:scale-110" />
-                <span className="font-semibold">Expected Questions</span>
+                <Target className="h-7 w-7 transition-transform" />
+                <span className="text-lg font-bold">Expected Questions</span>
               </Link>
             </Button>
+
             <Dialog open={isPlanDialogOpen} onOpenChange={setIsPlanDialogOpen}>
                 <DialogTrigger asChild>
-                    <Button variant="secondary" className="h-24 shadow-md flex flex-col items-center justify-center gap-1 group">
-                        <CalendarDays className="h-6 w-6 mb-1 text-primary transition-transform group-hover:scale-110" />
-                        <span className="font-semibold">{daysLeft !== null && daysLeft >= 0 ? `${daysLeft} Days Left` : 'AI Study Planner'}</span>
+                    <Button variant="secondary" className="h-28 bg-[#10b981] hover:bg-[#059669] text-white shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
+                        <CalendarDays className="h-7 w-7" />
+                        <span className="text-lg font-bold">{daysLeft !== null && daysLeft >= 0 ? `${daysLeft} Days Left` : 'AI Study Planner'}</span>
                     </Button>
                 </DialogTrigger>
                 <StudyPlanDialog onOpenChange={setIsPlanDialogOpen} />
             </Dialog>
         </div>
 
-        <Tabs value={view} onValueChange={(value) => setView(value as ViewType)} className="space-y-4 pt-4">
+        <Tabs value={view} onValueChange={(value) => setView(value as ViewType)} className="space-y-4 pt-8 border-t">
           <div className="flex items-center justify-between">
-            <TabsList>
-                <TabsTrigger value="quiz">Quiz Performance</TabsTrigger>
-                <TabsTrigger value="exam">Exam Performance</TabsTrigger>
+            <TabsList className="bg-slate-100 p-1">
+                <TabsTrigger value="quiz" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">Quiz Trends</TabsTrigger>
+                <TabsTrigger value="exam" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">Exam Trends</TabsTrigger>
             </TabsList>
-            <Button variant="ghost" size="sm" asChild>
-                <Link href="/performance">View All <ChevronRight className="ml-1 h-4 w-4" /></Link>
+            <Button variant="ghost" size="sm" asChild className="text-blue-600 hover:text-blue-700">
+                <Link href="/performance" className="font-bold">View History <ChevronRight className="ml-1 h-4 w-4" /></Link>
             </Button>
           </div>
           <TabsContent value="quiz" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4 shadow-sm">
+                <Card className="col-span-4 shadow-sm border-slate-200">
                   <CardHeader>
-                    <CardTitle>Quiz Trends</CardTitle>
-                    <CardDescription>Your score history for generated quizzes.</CardDescription>
+                    <CardTitle className="text-lg">Score Progression</CardTitle>
+                    <CardDescription>Your last 10 quiz results.</CardDescription>
                   </CardHeader>
                   <CardContent className="pl-2">
-                     {historyLoading ? <div className="flex h-[350px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div> : <PerformanceChart data={quizHistory || []} />}
+                     {historyLoading ? <div className="flex h-[300px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <PerformanceChart data={quizHistory || []} />}
                   </CardContent>
                 </Card>
-                <Card className="col-span-4 lg:col-span-3 shadow-sm">
+                <Card className="col-span-4 lg:col-span-3 shadow-sm border-slate-200">
                   <CardHeader>
-                    <CardTitle>Recent Activity</CardTitle>
-                    <CardDescription>Your last 5 quiz attempts.</CardDescription>
+                    <CardTitle className="text-lg">Recent Quizzes</CardTitle>
+                    <CardDescription>Your latest attempts.</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {historyLoading ? <div className="flex h-[350px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div> : <RecentQuizzes data={quizHistory || []} />}
+                    {historyLoading ? <div className="flex h-[300px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <RecentQuizzes data={quizHistory || []} />}
                   </CardContent>
                 </Card>
               </div>
           </TabsContent>
           <TabsContent value="exam" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4 shadow-sm">
+                <Card className="col-span-4 shadow-sm border-slate-200">
                   <CardHeader>
-                    <CardTitle>Exam Performance</CardTitle>
-                    <CardDescription>Handwritten paper scores graded by AI.</CardDescription>
+                    <CardTitle className="text-lg">Paper Performance</CardTitle>
+                    <CardDescription>Handwritten scores graded by AI.</CardDescription>
                   </CardHeader>
                   <CardContent className="pl-2">
-                    {historyLoading ? <div className="flex h-[350px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div> : <PerformanceChart data={quizHistory || []} />}
+                    {historyLoading ? <div className="flex h-[300px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <PerformanceChart data={quizHistory || []} />}
                   </CardContent>
                 </Card>
-                <Card className="col-span-4 lg:col-span-3 shadow-sm">
+                <Card className="col-span-4 lg:col-span-3 shadow-sm border-slate-200">
                   <CardHeader>
-                    <CardTitle>Recent Exams</CardTitle>
-                    <CardDescription>Latest paper assessments.</CardDescription>
+                    <CardTitle className="text-lg">Recent Exams</CardTitle>
+                    <CardDescription>Latest assessments.</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {historyLoading ? <div className="flex h-[350px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div> : <RecentQuizzes data={quizHistory || []} />}
+                    {historyLoading ? <div className="flex h-[300px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <RecentQuizzes data={quizHistory || []} />}
                   </CardContent>
                 </Card>
               </div>
