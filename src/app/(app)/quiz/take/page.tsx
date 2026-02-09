@@ -72,20 +72,13 @@ export default function TakeQuizPage() {
   
   const totalTime = useMemo(() => {
     if (!quiz) return 0;
-    
-    if (quiz.timeLimit && quiz.timeLimit > 0) {
-        return quiz.timeLimit;
-    }
-
+    if (quiz.timeLimit && quiz.timeLimit > 0) return quiz.timeLimit;
     const timePerMark = 90; 
     return (quiz.totalMarks ?? 0) * timePerMark;
   }, [quiz]);
 
   const [timeElapsed, setTimeElapsed] = useState(0);
 
-  /**
-   * Helper to strip AI-generated prefixes like "a) ", "1. ", "(A) " from option text.
-   */
   const stripOptionPrefix = (text: string) => {
     if (!text) return '';
     return text.replace(/^([a-zA-Z0-9])[\.\)\-]\s+|^(\([a-zA-Z0-9]\))\s+/i, '').trim();
@@ -103,44 +96,24 @@ export default function TakeQuizPage() {
   const calculateScore = useCallback(() => {
     if (!quiz) return 0;
     let totalObtainedMarks = 0;
-    
     quiz.questions.forEach((q, index) => {
         const userAnswer = userAnswers[index];
         let isCorrect = false;
-        
-        if (q.type === 'mcq' && userAnswer === q.correctAnswer) {
-            isCorrect = true;
-        } else if (q.type === 'numerical' && Number(userAnswer) === q.correctAnswer) {
-            isCorrect = true;
-        } else if (q.type === 'match') {
+        if (q.type === 'mcq' && userAnswer === q.correctAnswer) isCorrect = true;
+        else if (q.type === 'numerical' && Number(userAnswer) === q.correctAnswer) isCorrect = true;
+        else if (q.type === 'match') {
             const userMatches = userAnswer as { [key: string]: string };
-            const isFullyCorrect = q.pairs.every(p => userMatches?.[p.item] === p.match);
-            if (isFullyCorrect) {
-                isCorrect = true;
-            }
+            if (q.pairs.every(p => userMatches?.[p.item] === p.match)) isCorrect = true;
         }
-        
-        if (isCorrect) {
-            totalObtainedMarks += q.marks;
-        }
+        if (isCorrect) totalObtainedMarks += q.marks;
     });
-    
     return Math.round((totalObtainedMarks / (quiz.totalMarks ?? 1)) * 100);
   }, [quiz, userAnswers]);
 
   const finishQuiz = useCallback(async () => {
-    if (!quiz || !user || !firestore) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Could not save quiz results. User not logged in.',
-      });
-      return;
-    }
-
+    if (!quiz || !user || !firestore) return;
     const finalScore = calculateScore();
     setScore(finalScore);
-
     const newQuizAttempt: QuizAttempt = {
       ...quiz,
       id: uuidv4(),
@@ -150,261 +123,67 @@ export default function TakeQuizPage() {
       userId: user.uid,
       completionTime: timeElapsed,
     };
-    
     try {
         const quizResultsRef = collection(firestore, 'users', user.uid, 'quiz_results');
         await addDoc(quizResultsRef, newQuizAttempt);
     } catch(error) {
         console.error("Error saving quiz result:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Save Error',
-            description: "Could not save your quiz result to your profile."
-        })
     }
-
     setQuizState('results');
-  }, [quiz, user, firestore, toast, userAnswers, timeElapsed, calculateScore, router, setScore, setQuizState]);
-
-  // Using a ref to hold the finishQuiz function to avoid stale closures in setInterval.
-  const savedFinishQuiz = useRef<() => void>(undefined);
-  useEffect(() => {
-    savedFinishQuiz.current = finishQuiz;
-  });
+  }, [quiz, user, firestore, userAnswers, timeElapsed, calculateScore]);
 
   useEffect(() => {
     if (quiz) {
       const initialAnswers: UserAnswers = {};
       const initialShuffles: {[key: number]: string[]} = {};
       quiz.questions.forEach((q, index) => {
-        if (q.type === 'mcq') {
-          initialAnswers[index] = '';
-        } else if (q.type === 'match') {
+        if (q.type === 'mcq' || q.type === 'numerical') initialAnswers[index] = '';
+        else if (q.type === 'match') {
           initialAnswers[index] = {};
           initialShuffles[index] = shuffleArray(q.pairs.map(p => p.match));
-        } else if (q.type === 'numerical') {
-          initialAnswers[index] = '';
         }
       });
-
       setUserAnswers(initialAnswers);
       setShuffledMatches(initialShuffles);
       setMarkedForReview(Array(quiz.questions.length).fill(false));
       setCurrentQuestionIndex(0);
-      setScore(0);
       setQuizProgress(0);
       setQuizState('taking');
       setTimeElapsed(0);
     } else {
-      if (typeof window !== 'undefined') {
-        router.replace('/quiz/create');
-      }
+      router.replace('/quiz/create');
     }
   }, [quiz, router, shuffleArray]);
   
   useEffect(() => {
     if (quizState !== 'taking') return;
-    const timer = setInterval(() => {
-      setTimeElapsed(prevTime => {
-        if (totalTime > 0 && prevTime >= totalTime - 1) {
-            clearInterval(timer);
-            if (savedFinishQuiz.current) {
-              savedFinishQuiz.current();
-            }
-            return totalTime;
-        }
-        return prevTime + 1;
-      });
+    const interval = setInterval(() => {
+      setTimeElapsed(prev => prev + 1);
     }, 1000);
     return () => clearInterval(interval);
-  }, [quizState, totalTime]);
-
-  const handleAddNewQuestion = useCallback(async () => {
-    if (!quiz || isGeneratingNewQuestion) return;
-
-    setIsGeneratingNewQuestion(true);
-    toast({
-        title: 'Generating Reinforcement Question',
-        description: 'You are struggling, so we are adding a new question to help you practice.',
-    });
-
-    try {
-        const result = await generateQuizAction({
-            ...quiz,
-            subCategory: quiz.subCategory,
-            totalMarks: 2, // Generate a low-mark quiz to get one or two questions
-            quizType: 'quiz', // Always gen an interactive question type
-            seed: Math.random(),
-            timestamp: Date.now(),
-        });
-
-        if (result && result.questions.length > 0) {
-            const newQuestion = result.questions[0]; // Take the first new question
-            setQuiz(prevQuiz => {
-                if (!prevQuiz) return null;
-                
-                const updatedQuestions = [...prevQuiz.questions, newQuestion];
-                const updatedTotalMarks = (prevQuiz.totalMarks || 0) + newQuestion.marks;
-
-                // Also update related states
-                setMarkedForReview(prev => [...prev, false]);
-                setUserAnswers(prev => ({
-                    ...prev,
-                    [updatedQuestions.length - 1]: newQuestion.type === 'match' ? {} : ''
-                }));
-                 if (newQuestion.type === 'match') {
-                    setShuffledMatches(prev => ({
-                        ...prev,
-                        [updatedQuestions.length - 1]: shuffleArray(newQuestion.pairs.map(p => p.match))
-                    }));
-                }
-
-
-                return {
-                    ...prevQuiz,
-                    questions: updatedQuestions,
-                    totalMarks: updatedTotalMarks,
-                };
-            });
-        }
-    } catch (error) {
-        toast({
-            variant: 'destructive',
-            title: 'Failed to Add Question',
-            description: 'Could not generate a new question. Please continue.',
-        });
-    } finally {
-        setIsGeneratingNewQuestion(false);
-    }
-  }, [quiz, isGeneratingNewQuestion, setQuiz, toast, shuffleArray]);
+  }, [quizState]);
 
   const handleAnswerSelect = (questionIndex: number, answer: any) => {
     const q = quiz?.questions[questionIndex];
     if (!q) return;
-
     const inQuizMode = quiz?.quizType === 'quiz';
     const isAlreadyAnswered = userAnswers[questionIndex] !== '' && userAnswers[questionIndex] !== undefined && Object.keys(userAnswers[questionIndex]).length > 0;
-
-    // In quiz mode, don't allow changing answers and update progress
     if (inQuizMode && isAlreadyAnswered) return;
-
-    setUserAnswers(prev => ({
-        ...prev,
-        [questionIndex]: answer
-    }));
-
+    setUserAnswers(prev => ({ ...prev, [questionIndex]: answer }));
     if (inQuizMode) {
-      let isCorrect = false;
-      if (q.type === 'mcq') {
-        isCorrect = answer === q.correctAnswer;
-      }
-      
-      if (isCorrect) {
-        const progressIncrease = (q.marks / (quiz.totalMarks || 1)) * 100;
-        setQuizProgress(prev => Math.min(100, prev + progressIncrease));
-      } else {
-        setQuizProgress(prev => {
-            const newProgress = Math.max(0, prev - 1);
-            if (newProgress <= 1 && newProgress > 0) { // Check if it drops to 1% or less, but not 0
-                handleAddNewQuestion();
-            }
-            return newProgress;
-        });
+      if (q.type === 'mcq' && answer === q.correctAnswer) {
+        setQuizProgress(prev => Math.min(100, prev + (q.marks / (quiz.totalMarks || 1)) * 100));
       }
     }
-  };
-
-  const handleNextQuestion = () => {
-    if (currentQuestionIndex < (quiz?.questions.length ?? 0) - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    }
-  };
-  
-  const handlePrevQuestion = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
-    }
-  };
-  
-  const handleClearSelection = () => {
-    const questionIndex = currentQuestionIndex;
-    const question = quiz?.questions[questionIndex];
-    if (!question) return;
-
-    setUserAnswers(prev => {
-      const newAnswers = {...prev};
-      if (question.type === 'mcq' || question.type === 'numerical') {
-        newAnswers[questionIndex] = '';
-      } else if (question.type === 'match') {
-        newAnswers[questionIndex] = {};
-      }
-      return newAnswers;
-    });
-  };
-
-  const handleMarkForReview = () => {
-    const newMarked = [...markedForReview];
-    newMarked[currentQuestionIndex] = !newMarked[currentQuestionIndex];
-    setMarkedForReview(newMarked);
-  }
-
-  const restartQuiz = () => {
-    setQuiz(null);
-    router.push('/quiz/create');
-  };
-
-  const formatTime = (seconds: number) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
   const totalQuestions = quiz?.questions.length ?? 0;
   const q = quiz?.questions[currentQuestionIndex];
 
-  const completionProgress = useMemo(() => {
-    if (!quiz || totalQuestions === 0) return 0;
-    let answeredCount = 0;
-    Object.keys(userAnswers).forEach(key => {
-        const questionIndex = parseInt(key);
-        const answer = userAnswers[questionIndex];
-        const question = quiz.questions[questionIndex];
-
-        if (question && question.type === 'match') {
-            if (answer && typeof answer === 'object' && Object.keys(answer).length > 0) {
-                 const allItemsMatched = question.pairs.every(pair => Object.keys(answer).includes(pair.item));
-                 if (allItemsMatched) {
-                    answeredCount++;
-                 }
-            }
-        } else if (answer) {
-            answeredCount++;
-        }
-    });
-    return (answeredCount / totalQuestions) * 100;
-  }, [userAnswers, totalQuestions, quiz]);
-
   const renderMCQ = (q: MCQ, questionIndex: number, isExam: boolean) => {
     const userAnswer = userAnswers[questionIndex] as string;
     const isAnswered = userAnswer !== '' && userAnswer !== undefined;
     const inQuizMode = quiz?.quizType === 'quiz';
-
-    if (isExam) {
-      return (
-        <div>
-          <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
-            {q.options.map((option, index) => (
-              <div key={option + index} className="flex items-center">
-                <span className="mr-2 font-semibold">({String.fromCharCode(65 + index)})</span>
-                <span>{stripOptionPrefix(option)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
 
     return (
         <>
@@ -413,7 +192,7 @@ export default function TakeQuizPage() {
                 value={userAnswer}
                 onValueChange={(value) => handleAnswerSelect(questionIndex, value)}
                 className="grid grid-cols-1 sm:grid-cols-2 gap-3"
-                 disabled={inQuizMode && isAnswered}
+                disabled={inQuizMode && isAnswered}
             >
                 {q.options.map((option, index) => {
                     const cleanOption = stripOptionPrefix(option);
@@ -424,10 +203,7 @@ export default function TakeQuizPage() {
                       if (isSelected) {
                           return isCorrect ? "border-green-500 bg-green-100 text-green-900 font-semibold" : "border-red-500 bg-red-100 text-red-900 font-semibold";
                       }
-                      if (isCorrect) {
-                          return "border-green-500 bg-green-100 text-green-900";
-                      }
-                      return "border-gray-300 opacity-70 cursor-not-allowed";
+                      return isCorrect ? "border-green-500 bg-green-100 text-green-900" : "border-gray-300 opacity-70 cursor-not-allowed";
                     };
                     return (
                         <FormItem key={option + index}>
@@ -444,7 +220,6 @@ export default function TakeQuizPage() {
                                 <span className="flex-1">{cleanOption}</span>
                                 {inQuizMode && isAnswered && isSelected && isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
                                 {inQuizMode && isAnswered && isSelected && !isCorrect && <XCircle className="h-5 w-5 text-red-600" />}
-                                {inQuizMode && isAnswered && !isSelected && isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
                             </FormLabel>
                         </FormItem>
                     );
@@ -454,572 +229,67 @@ export default function TakeQuizPage() {
     );
   };
 
-  const renderMatch = (q: Match, questionIndex: number, isExam: boolean) => {
-    const userMatches = userAnswers[questionIndex] as { [key: string]: string } || {};
-    const items = q.pairs.map(p => p.item);
-    const options = shuffledMatches[questionIndex] || [];
-  
-    if (isExam) {
-      return (
-        <div>
-          <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-            <div>
-              <div className="font-semibold border-b pb-2 mb-2">Column A</div>
-              <ul className="list-decimal list-inside space-y-2">
-                {items.map((item, index) => (
-                  <li key={item + index}>{item}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <div className="font-semibold border-b pb-2 mb-2">Column B</div>
-               <ul className="list-[upper-alpha] list-inside space-y-2">
-                {options.map((option, index) => (
-                  <li key={option + index}>{option}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div>
-        <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-          <div className="font-semibold">Column A</div>
-          <div className="font-semibold">Column B</div>
-          {items.map((item, index) => (
-            <React.Fragment key={item + index}>
-              <div className="p-3 border rounded-md bg-gray-50 flex items-center">{item}</div>
-              <Select
-                value={userMatches[item] || ''}
-                onValueChange={(value) => {
-                  const newMatches = {...userMatches, [item]: value};
-                  handleAnswerSelect(questionIndex, newMatches);
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a match" />
-                </SelectTrigger>
-                <SelectContent>
-                  {options.map((option, optionIndex) => (
-                    <SelectItem key={option + optionIndex} value={option}>{option}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
-    );
-  };
-  
-  const renderNumerical = (q: Numerical, questionIndex: number, isExam: boolean) => {
-    const userAnswer = userAnswers[questionIndex] as string;
-
-    if (isExam) {
-        return (
-            <div>
-                <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
-                <p className="text-muted-foreground mt-2">Answer: ____________</p>
-            </div>
-        )
-    }
-
-    return (
-      <div>
-        <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
-        <Input
-          type="number"
-          value={userAnswer}
-          onChange={(e) => handleAnswerSelect(questionIndex, e.target.value)}
-          placeholder="Enter your answer"
-          className="max-w-xs"
-        />
-      </div>
-    );
-  };
-
-    const renderShortAnswer = (q: ShortAnswer, questionIndex: number, isExam: boolean) => {
-        if (isExam) {
-            return (
-                <div>
-                    <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
-                    <div className="mt-2 border-b-2 border-dotted border-gray-400 h-16 w-full"></div>
-                </div>
-            )
-        }
-        // This type of question is not interactive in 'quiz' mode
-        return <p>Unsupported question type for this quiz mode.</p>;
-    }
-
-    const renderLongAnswer = (q: LongAnswer, questionIndex: number, isExam: boolean) => {
-        if (isExam) {
-            return (
-                <div>
-                    <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
-                    <div className="mt-2 border-b-2 border-dotted border-gray-400 h-32 w-full mb-2"></div>
-                    <div className="mt-2 border-b-2 border-dotted border-gray-400 h-32 w-full mb-2"></div>
-                </div>
-            )
-        }
-         // This type of question is not interactive in 'quiz' mode
-        return <p>Unsupported question type for this quiz mode.</p>;
-    }
-
-  const renderQuestion = (q: Question, index: number, isExam = false) => {
-    switch (q.type) {
-        case 'mcq': return renderMCQ(q, index, isExam);
-        case 'match': return renderMatch(q, index, isExam);
-        case 'numerical': return renderNumerical(q, index, isExam);
-        case 'shortAnswer': return renderShortAnswer(q, index, isExam);
-        case 'longAnswer': return renderLongAnswer(q, index, isExam);
-        default: return <p>Unsupported question type.</p>;
-    }
-  }
-
-
-  const renderExamPaper = () => {
-    if (!quiz) return null;
-
-    const mcqs = quiz.questions.filter(q => q.type === 'mcq');
-    const matches = quiz.questions.filter(q => q.type === 'match');
-    const numericals = quiz.questions.filter(q => q.type === 'numerical');
-    const shortAnswers = quiz.questions.filter(q => q.type === 'shortAnswer');
-    const longAnswers = quiz.questions.filter(q => q.type === 'longAnswer');
-
-    return (
-    <FormProvider {...form}>
-     <div className="bg-white shadow-lg rounded-lg">
-        <div className="p-4 sm:p-8">
-            <div className="text-center p-2 bg-red-500 text-white font-semibold rounded-t-md">
-                Nova learning help you achieve your achievements
-            </div>
-            <div className="border-2 border-dashed border-gray-400 p-4 sm:p-6 text-center">
-                <h1 className="text-xl sm:text-2xl font-bold text-red-600">
-                    {`QuizNova (${quiz.board}) ${new Date().getFullYear()}`}
-                </h1>
-                <h2 className="text-lg sm:text-xl font-semibold mt-1">Question Paper</h2>
-                <p className="text-sm sm:text-base mt-1">({quiz.subject}{quiz.subCategory ? ` - ${quiz.subCategory}` : ''})</p>
-                <p className="text-sm sm:text-base font-bold text-blue-600 mt-2">{new Date(quiz.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
-                
-                <div className="flex justify-between text-sm font-semibold mt-4">
-                    <span>Time Allowed: {formatTime(totalTime)}</span>
-                    <span>Max Marks: {quiz.totalMarks}</span>
-                </div>
-
-                <div className="text-left mt-6">
-                    <h3 className="font-bold text-red-600 border-b-2 border-red-600 pb-1 inline-block">IMPORTANT INSTRUCTIONS:</h3>
-                    <ol className="list-decimal list-inside text-xs sm:text-sm space-y-2 mt-2">
-                        <li>The test is of {formatTime(totalTime)} duration.</li>
-                        <li>This test paper consists of {totalQuestions} questions for a total of {quiz.totalMarks} marks.</li>
-                        <li>Each question has marks assigned to it. There is no negative marking.</li>
-                        <li>Attempt all questions.</li>
-                        <li>This is a static paper. To submit, click the "Grade with AI" button at the bottom.</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
-
-        <div className="p-4 sm:p-8">
-            {[
-              { title: 'Multiple Choice Questions', questions: mcqs },
-              { title: 'Match the Following', questions: matches },
-              { title: 'Numerical Answer Questions', questions: numericals },
-              { title: 'Short Answer Questions', questions: shortAnswers },
-              { title: 'Long Answer Questions', questions: longAnswers },
-            ].map((section, secIndex) => (
-                section.questions.length > 0 && (
-                    <div key={secIndex}>
-                        <h2 className="text-center font-bold text-lg bg-gray-200 p-2 rounded-md mb-4 uppercase">{section.title}</h2>
-                        {section.questions.map(q => (
-                            <div key={quiz.questions.indexOf(q)} className="mb-8 pb-4 border-b border-gray-200 flex justify-between items-start">
-                               <div className="flex-1">
-                                {renderQuestion(q, quiz.questions.indexOf(q), true)}
-                               </div>
-                               <div className="text-xs font-semibold bg-gray-200 text-gray-700 px-2 py-1 rounded-md ml-4">
-                                [{q.marks} Mark{q.marks > 1 ? 's' : ''}]
-                               </div>
-                            </div>
-                        ))}
-                    </div>
-                )
-            ))}
-        </div>
-        
-        <div className="p-4 sm:p-8 flex justify-center">
-             <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 text-lg">Grade with AI</Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Ready to Grade Your Exam?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      You will be redirected to the AI grading page to upload your answers.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => {
-                        router.push('/quiz/grade');
-                    }}>Proceed</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-        </div>
-    </div>
-    </FormProvider>
-    )
-  }
-
   const renderContent = () => {
-    switch (quizState) {
-      case 'taking':
-      case 'paused':
-        if (!quiz || !q) return null;
-        
-        if (quiz.quizType === 'exam') {
-            return renderExamPaper();
-        }
-
-        const isAnswered = userAnswers[currentQuestionIndex] !== '' && userAnswers[currentQuestionIndex] !== undefined;
-
-        if (quizState === 'paused') {
-          return (
-             <div className="flex flex-col items-center justify-center h-full text-center">
-                <Card className="p-8">
-                  <Pause className="h-12 w-12 mx-auto text-primary" />
-                  <h2 className="text-2xl font-bold mt-4">Quiz Paused</h2>
-                  <p className="text-muted-foreground mt-2">Your progress is saved. Come back when you're ready.</p>
-                  <Button onClick={() => setQuizState('taking')} className="mt-6">Resume</Button>
-                </Card>
-              </div>
-          )
-        }
-        
+    if (quizState === 'results' && quiz) {
         return (
-          <FormProvider {...form}>
-            <Card className="w-full">
-              <div className="p-4 border-b space-y-3">
-                 <Progress value={quiz.quizType === 'quiz' ? quizProgress : completionProgress} className="h-2" />
-                <div className="flex justify-between items-center">
-                  <Button variant="ghost" size="sm" onClick={() => setQuizState('paused')}>
-                    <Pause className="mr-2 h-4 w-4" /> Pause
-                  </Button>
-                   {isGeneratingNewQuestion && <Loader2 className="h-5 w-5 animate-spin" />}
-                  <div className="flex items-center gap-2 font-medium">
-                    <Clock className="h-5 w-5" />
-                    <span>{formatTime(timeElapsed)}</span>
-                    {totalTime > 0 && <span className="text-muted-foreground">/ {formatTime(totalTime)}</span>}
-                  </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white px-4">SUBMIT</Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure you want to submit?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will end the quiz and calculate your score. You cannot undo this action.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={finishQuiz}>Submit</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
-               <div className="p-4 border-b flex justify-between items-center bg-secondary/30">
-                  <div>
-                    <h2 className="font-semibold">{quiz.subject}</h2>
-                    <p className="text-sm text-muted-foreground">{quiz.chapter || 'General'}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="icon"><Bookmark className="h-4 w-4"/></Button>
-                    <Button variant="outline" size="icon"><Grid className="h-4 w-4"/></Button>
-                  </div>
-               </div>
-
-              <CardContent className="p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <p className="text-sm font-semibold text-muted-foreground">
-                    Question {currentQuestionIndex + 1}/{quiz.questions.length}
-                  </p>
-                   <div className="text-xs font-semibold bg-gray-200 text-gray-700 px-2 py-1 rounded-md">
-                    [{q.marks} Mark{q.marks > 1 ? 's' : ''}]
-                   </div>
-                </div>
-
-                <div className="mb-6">
-                  {renderQuestion(q, currentQuestionIndex, false)}
-                </div>
-                
-                {quiz.quizType === 'quiz' && isAnswered && (
-                  <Accordion type="single" collapsible className="w-full mt-4">
-                    <AccordionItem value="explanation">
-                      <AccordionTrigger>View Explanation</AccordionTrigger>
-                      <AccordionContent>
-                        {q.explanation}
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                )}
-
-                <div className="mt-6 flex items-center justify-start">
-                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:bg-transparent">
-                        <AlertTriangle className="mr-2 h-4 w-4" /> Report
-                    </Button>
-                </div>
-              </CardContent>
+            <Card>
+                <CardHeader className="items-center text-center">
+                    <CardTitle className="text-3xl">Quiz Complete!</CardTitle>
+                    <div className="text-4xl font-bold mt-4">{score}%</div>
+                </CardHeader>
+                <CardContent>
+                    <Accordion type="single" collapsible className="w-full">
+                        {quiz.questions.map((q, index) => (
+                            <AccordionItem value={`item-${index}`} key={index}>
+                                <AccordionTrigger>Question {index + 1}</AccordionTrigger>
+                                <AccordionContent className="p-4 bg-secondary/30 rounded-md">
+                                    <p className="font-semibold mb-2">{q.question}</p>
+                                    {q.type === 'mcq' && (
+                                        <ul className="space-y-1">
+                                            {q.options.map((opt, i) => (
+                                                <li key={i} className={cn(opt === q.correctAnswer ? "text-green-600 font-bold" : "")}>
+                                                    {String.fromCharCode(65 + i)}) {stripOptionPrefix(opt)}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                    <Separator className="my-3" />
+                                    <p className="text-sm text-muted-foreground">{q.explanation}</p>
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
+                    <Button onClick={() => router.push('/quiz/create')} className="w-full mt-6">Create Another</Button>
+                </CardContent>
             </Card>
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-3 shadow-[0_-2px_4px_rgba(0,0,0,0.05)] flex justify-between items-center md:relative md:bg-transparent md:border-none md:shadow-none md:mt-4 md:p-0">
-                 <Button onClick={handlePrevQuestion} variant="outline" disabled={currentQuestionIndex === 0} className="md:flex-1 md:mr-2">
-                    <ArrowLeft className="h-5 w-5 md:mr-2" />
-                    <span className="hidden md:inline">Previous</span>
-                  </Button>
-
-                  <div className="flex-1 flex justify-center items-center gap-2 mx-2">
-                     <Button onClick={handleMarkForReview} variant="outline" className="flex-1 bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200">
-                         Mark for Review
-                      </Button>
-                      <Button onClick={handleClearSelection} variant="outline" className="flex-1 bg-red-100 text-red-700 border-red-200 hover:bg-red-200" disabled={!isAnswered}>
-                          Clear
-                      </Button>
-                  </div>
-                  
-                  <Button onClick={handleNextQuestion} variant="default" disabled={currentQuestionIndex === quiz.questions.length - 1} className="md:flex-1 md:ml-2">
-                     <span className="hidden md:inline">Save & Next</span>
-                    <ArrowRight className="h-5 w-5 md:ml-2" />
-                  </Button>
-            </div>
-          </FormProvider>
-        );
-      case 'results':
-        if (!quiz) return null;
-
-        // Because the exam is not interactive, we can't calculate a score.
-        // We will just show the questions and their correct answers.
-        if (quiz.quizType === 'exam') {
-            return (
-                <Card>
-                    <CardHeader className="items-center text-center">
-                        <CardTitle className="text-3xl">Exam Paper Review</CardTitle>
-                        <CardDescription>Review the questions and their correct answers.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Accordion type="single" collapsible className="w-full">
-                            {quiz.questions.map((q, index) => (
-                                <AccordionItem value={`item-${index}`} key={index}>
-                                    <AccordionTrigger className="hover:no-underline">
-                                        <div className="flex items-center gap-3 flex-1">
-                                            <span className="text-left font-medium">Question {index + 1} ({q.type})</span>
-                                        </div>
-                                    </AccordionTrigger>
-                                    <AccordionContent className="p-4 bg-secondary/30 rounded-md">
-                                        <p className="font-semibold">{q.question}</p>
-                                        
-                                        {q.type === 'mcq' && (
-                                            <div className="mt-2 text-sm">
-                                                <p className="font-semibold mb-2">Options:</p>
-                                                <ul className="space-y-1">
-                                                    {q.options.map((opt, i) => (
-                                                        <li key={i} className={cn(opt === q.correctAnswer ? "text-green-600 font-bold" : "")}>
-                                                            {String.fromCharCode(65 + i)}) {stripOptionPrefix(opt)}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                                <p className="mt-2">
-                                                    Correct answer: <span className="font-semibold text-green-600">{stripOptionPrefix(q.correctAnswer)}</span>
-                                                </p>
-                                            </div>
-                                        )}
-
-                                        {q.type === 'numerical' && (
-                                            <p className="mt-2 text-sm">
-                                                Correct answer: <span className="font-semibold text-green-600">{q.correctAnswer}</span>
-                                            </p>
-                                        )}
-
-                                        {q.type === 'match' && (
-                                           <div>
-                                             <p className="mt-2 text-sm font-semibold">Correct pairings:</p>
-                                             <ul className="list-disc pl-5 mt-1 text-sm">
-                                                {q.pairs.map(pair => (
-                                                    <li key={pair.item}>
-                                                        {pair.item} &rarr; <span className="font-semibold text-green-600">{pair.match}</span>
-                                                    </li>
-                                                ))}
-                                             </ul>
-                                           </div>
-                                        )}
-
-                                        <Separator className="my-3" />
-                                        <p className="text-sm text-muted-foreground"><span className="font-semibold text-foreground">Explanation:</span> {q.explanation}</p>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            ))}
-                        </Accordion>
-                        <Button onClick={restartQuiz} className="w-full mt-6">
-                            Create Another Quiz
-                        </Button>
-                    </CardContent>
-                </Card>
-            );
-        }
-
-        return (
-          <FormProvider {...form}>
-          <Card>
-            <CardHeader className="items-center text-center">
-              <CardTitle className="text-3xl">Quiz Complete!</CardTitle>
-              <CardDescription>You scored</CardDescription>
-              <div className="relative my-4 h-32 w-32">
-                <svg className="h-full w-full" viewBox="0 0 36 36">
-                  <path
-                    className="stroke-secondary"
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    fill="none"
-                    strokeWidth="3"
-                  />
-                  <path
-                    className="stroke-primary"
-                    strokeDasharray={`${score}, 100`}
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    fill="none"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-4xl font-bold text-foreground">{score}%</span>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <h3 className="text-lg font-semibold mb-4 text-center">Review Your Answers</h3>
-              <Accordion type="single" collapsible className="w-full">
-                {quiz.questions.map((q, index) => {
-                  const userAnswer = userAnswers[index];
-                  let isCorrect = false;
-                  let userFriendlyAnswer = "Not Answered";
-
-                  if (q.type === 'mcq') {
-                    isCorrect = userAnswer === q.correctAnswer;
-                    userFriendlyAnswer = stripOptionPrefix(userAnswer as string) || "Not Answered";
-                  } else if (q.type === 'numerical') {
-                    isCorrect = Number(userAnswer) === q.correctAnswer;
-                    userFriendlyAnswer = (userAnswer as string) || "Not Answered";
-                  } else if (q.type === 'match') {
-                     const userMatches = userAnswer as { [key: string]: string };
-                     isCorrect = userMatches ? q.pairs.every(p => userMatches[p.item] === p.match) : false;
-                  }
-
-                  return (
-                    <AccordionItem value={`item-${index}`} key={index}>
-                      <AccordionTrigger className="hover:no-underline">
-                        <div className="flex items-center gap-3 flex-1">
-                          {isCorrect ? (
-                            <CheckCircle className="h-5 w-5 text-green-500" />
-                          ) : (
-                            <XCircle className="h-5 w-5 text-destructive" />
-                          )}
-                          <span className="text-left font-medium">Question {index + 1} ({q.type})</span>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="p-4 bg-secondary/30 rounded-md">
-                        <p className="font-semibold">{q.question}</p>
-                        
-                        {q.type === 'mcq' && (
-                          <div className="mt-2 text-sm">
-                            <p className="font-semibold mb-2">Options:</p>
-                            <ul className="space-y-1 mb-3">
-                                {q.options.map((opt, i) => {
-                                    const cleanOpt = stripOptionPrefix(opt);
-                                    const isUserChoice = opt === userAnswer;
-                                    const isCorrectOpt = opt === q.correctAnswer;
-                                    return (
-                                        <li key={i} className={cn(
-                                            "flex items-center gap-2",
-                                            isCorrectOpt ? "text-green-600 font-bold" : isUserChoice ? "text-destructive font-bold" : ""
-                                        )}>
-                                            {String.fromCharCode(65 + i)}) {cleanOpt}
-                                            {isUserChoice && <span className="text-[10px] uppercase">(Your Answer)</span>}
-                                            {isCorrectOpt && <CheckCircle className="h-3 w-3" />}
-                                        </li>
-                                    );
-                                })}
-                            </ul>
-                            <p className="mt-2">
-                              Your answer: <span className={cn(isCorrect ? 'text-green-600' : 'text-destructive', 'font-semibold')}>{userFriendlyAnswer}</span>
-                            </p>
-                            {!isCorrect && (
-                              <p className="mt-1 text-sm">
-                                Correct answer: <span className="font-semibold text-green-600">{stripOptionPrefix(q.correctAnswer)}</span>
-                              </p>
-                            )}
-                          </div>
-                        )}
-
-                        {q.type === 'numerical' && (
-                          <>
-                            <p className="mt-2 text-sm">
-                              Your answer: <span className={cn(isCorrect ? 'text-green-600' : 'text-destructive', 'font-semibold')}>{userFriendlyAnswer}</span>
-                            </p>
-                            {!isCorrect && (
-                              <p className="mt-1 text-sm">
-                                Correct answer: <span className="font-semibold text-green-600">{q.correctAnswer}</span>
-                              </p>
-                            )}
-                          </>
-                        )}
-
-                        {q.type === 'match' && (
-                           <div>
-                             <p className="mt-2 text-sm font-semibold">Your matches:</p>
-                             <ul className="list-disc pl-5 mt-1 text-sm">
-                                {q.pairs.map(pair => {
-                                  const userMatch = (userAnswer as any)?.[pair.item];
-                                  const isPairCorrect = userMatch === pair.match;
-                                  return (
-                                    <li key={pair.item}>
-                                      {pair.item} &rarr; <span className={cn(isPairCorrect ? 'text-green-600' : 'text-destructive', 'font-semibold')}>{userMatch || 'Not answered'}</span>
-                                      {!isPairCorrect && <span className="text-green-600 font-semibold"> (Correct: {pair.match})</span>}
-                                    </li>
-                                  )
-                                })}
-                             </ul>
-                           </div>
-                        )}
-
-
-                        <Separator className="my-3" />
-                        <p className="text-sm text-muted-foreground"><span className="font-semibold text-foreground">Explanation:</span> {q.explanation}</p>
-                      </AccordionContent>
-                    </AccordionItem>
-                  );
-                })}
-              </Accordion>
-              <Button onClick={restartQuiz} className="w-full mt-6">
-                Create Another Quiz
-              </Button>
-            </CardContent>
-          </Card>
-          </FormProvider>
-        );
-      case 'loading':
-      default:
-        return (
-          <div className="flex items-center justify-center h-full">
-            <p>Loading your quiz...</p>
-          </div>
         );
     }
+
+    if (!quiz || !q) return null;
+
+    return (
+        <Card className="w-full">
+            <div className="p-4 border-b">
+                <Progress value={quizProgress} className="h-2" />
+                <div className="flex justify-between items-center mt-4">
+                    <div className="flex items-center gap-2 font-medium">
+                        <Clock className="h-5 w-5" />
+                        <span>{Math.floor(timeElapsed / 60)}:{(timeElapsed % 60).toString().padStart(2, '0')}</span>
+                    </div>
+                    <Button onClick={finishQuiz} className="bg-green-600">SUBMIT</Button>
+                </div>
+            </div>
+            <CardContent className="p-6">
+                <div className="mb-6">
+                    {q.type === 'mcq' ? renderMCQ(q, currentQuestionIndex, false) : <p>Interactive support coming soon for this type.</p>}
+                </div>
+                <div className="flex justify-between mt-8">
+                    <Button variant="outline" onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))} disabled={currentQuestionIndex === 0}>Previous</Button>
+                    <Button onClick={() => setCurrentQuestionIndex(Math.min(totalQuestions - 1, currentQuestionIndex + 1))} disabled={currentQuestionIndex === totalQuestions - 1}>Next</Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
   };
 
   return (

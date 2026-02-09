@@ -99,60 +99,60 @@ function DashboardContent() {
             <p className="text-lg text-muted-foreground font-medium">Your personalized AI learning hub.</p>
         </div>
 
-        {/* --- Feature Stack (Mobile-friendly vertical layout like the reference image) --- */}
+        {/* --- Feature Stack (Mobile-friendly vertical layout matching reference image) --- */}
         <div className="flex flex-col gap-4">
-             <Button asChild className="h-28 bg-[#5850ec] hover:bg-[#4a45c7] shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
+             <Button asChild className="h-28 bg-indigo-600 hover:bg-indigo-700 shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
                 <Link href="/helper">
-                    <GraduationCap className="h-7 w-7 transition-transform" />
+                    <GraduationCap className="h-7 w-7" />
                     <span className="text-lg font-bold">Homework Helper AI</span>
                 </Link>
              </Button>
 
-             <Button asChild className="h-28 bg-[#2563eb] hover:bg-[#1d4ed8] shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
+             <Button asChild className="h-28 bg-blue-600 hover:bg-blue-700 shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
                 <Link href="/report">
-                    <BrainCircuit className="h-7 w-7 transition-transform" />
+                    <BrainCircuit className="h-7 w-7" />
                     <span className="text-lg font-bold">AI Learning Report</span>
                 </Link>
              </Button>
 
               <Button asChild className="h-28 bg-gradient-to-r from-amber-400 via-orange-400 to-orange-500 text-white shadow-xl hover:brightness-110 flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
                 <Link href="/plans">
-                    <Gem className="h-7 w-7 transition-transform" />
+                    <Gem className="h-7 w-7" />
                     <span className="text-lg font-bold">Upgrade to Premium</span>
                 </Link>
              </Button>
 
              <Button asChild variant="outline" className="h-28 bg-white border-2 border-slate-100 shadow-md flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01] hover:bg-slate-50">
                 <Link href="/coaching">
-                    <BookUser className="h-7 w-7 text-blue-600 transition-transform" />
+                    <BookUser className="h-7 w-7 text-blue-600" />
                     <span className="text-lg font-bold text-slate-800">Video Coaching</span>
                 </Link>
              </Button>
 
-            <Button asChild className="h-28 bg-[#60a5fa]/80 hover:bg-[#3b82f6] shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
+            <Button asChild className="h-28 bg-blue-500/60 hover:bg-blue-500 shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
               <Link href="/quiz/create">
-                <PlusCircle className="h-7 w-7 transition-transform" />
+                <PlusCircle className="h-7 w-7" />
                 <span className="text-lg font-bold">Create New Quiz</span>
               </Link>
             </Button>
 
-            <Button asChild className="h-28 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
+            <Button asChild className="h-28 bg-violet-600 hover:bg-violet-700 text-white shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
               <Link href="/notes">
-                <FileText className="h-7 w-7 transition-transform" />
+                <FileText className="h-7 w-7" />
                 <span className="text-lg font-bold">AI Chapter Notes</span>
               </Link>
             </Button>
 
-            <Button asChild variant="destructive" className="h-28 bg-[#ef4444] hover:bg-[#dc2626] shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
+            <Button asChild variant="destructive" className="h-28 bg-red-500 hover:bg-red-600 shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
               <Link href="/most-expected-questions">
-                <Target className="h-7 w-7 transition-transform" />
+                <Target className="h-7 w-7" />
                 <span className="text-lg font-bold">Expected Questions</span>
               </Link>
             </Button>
 
             <Dialog open={isPlanDialogOpen} onOpenChange={setIsPlanDialogOpen}>
                 <DialogTrigger asChild>
-                    <Button variant="secondary" className="h-28 bg-[#10b981] hover:bg-[#059669] text-white shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
+                    <Button variant="secondary" className="h-28 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
                         <CalendarDays className="h-7 w-7" />
                         <span className="text-lg font-bold">{daysLeft !== null && daysLeft >= 0 ? `${daysLeft} Days Left` : 'AI Study Planner'}</span>
                     </Button>

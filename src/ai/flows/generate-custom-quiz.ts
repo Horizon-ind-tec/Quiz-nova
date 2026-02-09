@@ -156,7 +156,6 @@ const generateCustomQuizFlow = ai.defineFlow(
     const extracted = extractJson(response.text);
     
     if (extracted && extracted.questions && Array.isArray(extracted.questions)) {
-      // Normalize question types to lowercase to avoid schema validation errors
       extracted.questions = extracted.questions.map((q: any) => ({
         ...q,
         type: typeof q.type === 'string' ? q.type.toLowerCase() : q.type

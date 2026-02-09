@@ -63,7 +63,6 @@ export function GuestBadge() {
         <TooltipTrigger asChild>
           <div className="flex flex-col items-center justify-center cursor-help group px-1">
             <div className="relative h-8 w-8 flex items-center justify-center">
-              {/* Heart SVG with draining effect */}
               <svg 
                 viewBox="0 0 32 32" 
                 className="h-full w-full drop-shadow-sm"
@@ -76,13 +75,11 @@ export function GuestBadge() {
                   </clipPath>
                 </defs>
                 
-                {/* Background empty heart */}
                 <path 
                   d="M16 28.5L14.1 27.15C7.4 21.05 3 17.05 3 12.15C3 8.15 6.15 5 10.15 5C12.45 5 14.65 6.05 16 7.7C17.35 6.05 19.55 5 21.85 5C25.85 5 29 8.15 29 12.15C29 17.05 24.6 21.05 17.9 27.15L16 28.5Z" 
                   className="fill-muted stroke-muted-foreground stroke-1" 
                 />
                 
-                {/* Liquid filling */}
                 <g clipPath="url(#heart-clip)">
                   <rect 
                     x="0" 
@@ -93,14 +90,12 @@ export function GuestBadge() {
                   />
                 </g>
 
-                {/* Heart outline */}
                 <path 
                   d="M16 28.5L14.1 27.15C7.4 21.05 3 17.05 3 12.15C3 8.15 6.15 5 10.15 5C12.45 5 14.65 6.05 16 7.7C17.35 6.05 19.55 5 21.85 5C25.85 5 29 8.15 29 12.15C29 17.05 24.6 21.05 17.9 27.15L16 28.5Z" 
                   className="stroke-red-600 stroke-[1.5] group-hover:stroke-red-700" 
                 />
               </svg>
               
-              {/* Glow effect when low */}
               {timeLeftPercent < 20 && (
                 <div className="absolute inset-0 bg-red-500/20 rounded-full animate-pulse -z-10 blur-md" />
               )}
