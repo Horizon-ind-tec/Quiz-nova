@@ -1,0 +1,20 @@
+{
+  "landing": {
+    "hero": {
+      "url": "https://picsum.photos/seed/quiznova-hero/1200/800",
+      "hint": "student studying"
+    },
+    "quizFeature": {
+      "url": "https://picsum.photos/seed/quiz-ai/600/400",
+      "hint": "digital exam"
+    },
+    "helperFeature": {
+      "url": "https://picsum.photos/seed/homework-ai/600/400",
+      "hint": "tutor helping"
+    },
+    "notesFeature": {
+      "url": "https://picsum.photos/seed/notes-ai/600/400",
+      "hint": "organized notes"
+    }
+  }
+}

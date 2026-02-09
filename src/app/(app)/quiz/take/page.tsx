@@ -216,7 +216,7 @@ export default function TakeQuizPage() {
         return prevTime + 1;
       });
     }, 1000);
-    return () => clearInterval(timer);
+    return () => clearInterval(interval);
   }, [quizState, totalTime]);
 
   const handleAddNewQuestion = useCallback(async () => {
