@@ -99,7 +99,7 @@ function DashboardContent() {
             <p className="text-lg text-muted-foreground font-medium">Your personalized AI learning hub.</p>
         </div>
 
-        {/* --- Feature Stack (Stacked Vertical Layout) --- */}
+        {/* --- Feature Stack (Vertical Stacked Layout per user request) --- */}
         <div className="flex flex-col gap-4">
              <Button asChild className="h-28 bg-indigo-600 hover:bg-indigo-700 shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
                 <Link href="/helper">
@@ -212,8 +212,7 @@ function DashboardContent() {
                   <CardContent>
                     {historyLoading ? <div className="flex h-[300px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <RecentQuizzes data={quizHistory || []} />}
                   </CardContent>
-                </Card>
-              </div>
+                </div>
           </TabsContent>
         </Tabs>
       </main>

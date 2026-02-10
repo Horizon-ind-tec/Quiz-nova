@@ -1,24 +1,17 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   CheckCircle,
   XCircle,
   Clock,
-  Pause,
-  ArrowLeft,
-  ArrowRight,
-  AlertTriangle,
-  Bookmark,
-  Grid,
   Loader2,
 } from 'lucide-react';
-import { useForm, FormProvider } from 'react-hook-form';
 import { v4 as uuidv4 } from 'uuid';
 import { addDoc, collection } from 'firebase/firestore';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
@@ -31,52 +24,23 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useLocalStorage } from '@/hooks/use-local-storage';
-import type { Quiz, QuizAttempt, Question, MCQ, Match, Numerical, UserAnswers, ShortAnswer, LongAnswer } from '@/lib/types';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import type { Quiz, QuizAttempt, MCQ, UserAnswers } from '@/lib/types';
 import { Progress } from '@/components/ui/progress';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFirestore, useUser } from '@/firebase';
-import { useToast } from '@/hooks/use-toast';
-import { generateQuizAction } from '@/app/actions';
-
 
 type QuizState = 'loading' | 'taking' | 'paused' | 'results';
 
 export default function TakeQuizPage() {
   const [quizState, setQuizState] = useState<QuizState>('loading');
-  const [quiz, setQuiz] = useLocalStorage<Quiz | null>('currentQuiz', null);
+  const [quiz] = useLocalStorage<Quiz | null>('currentQuiz', null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<UserAnswers>({});
-  const [markedForReview, setMarkedForReview] = useState<boolean[]>([]);
   const [score, setScore] = useState(0);
   const router = useRouter();
-  const form = useForm();
   const { user } = useUser();
   const firestore = useFirestore();
-  const { toast } = useToast();
   
-  const [shuffledMatches, setShuffledMatches] = useState<{[key: number]: string[]}>({});
   const [quizProgress, setQuizProgress] = useState(0);
-  const [isGeneratingNewQuestion, setIsGeneratingNewQuestion] = useState(false);
-  
-  const totalTime = useMemo(() => {
-    if (!quiz) return 0;
-    if (quiz.timeLimit && quiz.timeLimit > 0) return quiz.timeLimit;
-    const timePerMark = 90; 
-    return (quiz.totalMarks ?? 0) * timePerMark;
-  }, [quiz]);
-
   const [timeElapsed, setTimeElapsed] = useState(0);
 
   const stripOptionPrefix = (text: string) => {
@@ -84,15 +48,6 @@ export default function TakeQuizPage() {
     // Removes patterns like "a) ", "b. ", "(c) ", "1) " from the start of the string
     return text.replace(/^([a-zA-Z0-9])[\.\)\-]\s+|^(\([a-zA-Z0-9]\))\s+/i, '').trim();
   };
-  
-  const shuffleArray = useCallback((array: any[]) => {
-    const newArray = [...array];
-    for (let i = newArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-    }
-    return newArray;
-  }, []);
   
   const calculateScore = useCallback(() => {
     if (!quiz) return 0;
@@ -136,17 +91,13 @@ export default function TakeQuizPage() {
   useEffect(() => {
     if (quiz) {
       const initialAnswers: UserAnswers = {};
-      const initialShuffles: {[key: number]: string[]} = {};
       quiz.questions.forEach((q, index) => {
         if (q.type === 'mcq' || q.type === 'numerical') initialAnswers[index] = '';
         else if (q.type === 'match') {
           initialAnswers[index] = {};
-          initialShuffles[index] = shuffleArray(q.pairs.map(p => p.match));
         }
       });
       setUserAnswers(initialAnswers);
-      setShuffledMatches(initialShuffles);
-      setMarkedForReview(Array(quiz.questions.length).fill(false));
       setCurrentQuestionIndex(0);
       setQuizProgress(0);
       setQuizState('taking');
@@ -154,7 +105,7 @@ export default function TakeQuizPage() {
     } else {
       router.replace('/quiz/create');
     }
-  }, [quiz, router, shuffleArray]);
+  }, [quiz, router]);
   
   useEffect(() => {
     if (quizState !== 'taking') return;
@@ -181,14 +132,14 @@ export default function TakeQuizPage() {
   const totalQuestions = quiz?.questions.length ?? 0;
   const q = quiz?.questions[currentQuestionIndex];
 
-  const renderMCQ = (q: MCQ, questionIndex: number, isExam: boolean) => {
+  const renderMCQ = (q: MCQ, questionIndex: number) => {
     const userAnswer = userAnswers[questionIndex] as string;
     const isAnswered = userAnswer !== '' && userAnswer !== undefined;
     const inQuizMode = quiz?.quizType === 'quiz';
 
     return (
         <>
-            <p className="font-semibold mb-4">{quiz?.questions.indexOf(q) + 1}. {q.question}</p>
+            <p className="font-semibold mb-4">{currentQuestionIndex + 1}. {q.question}</p>
             <RadioGroup
                 value={userAnswer}
                 onValueChange={(value) => handleAnswerSelect(questionIndex, value)}
@@ -280,7 +231,7 @@ export default function TakeQuizPage() {
             </div>
             <CardContent className="p-6">
                 <div className="mb-6">
-                    {q.type === 'mcq' ? renderMCQ(q, currentQuestionIndex, false) : <p>Interactive support coming soon for this type.</p>}
+                    {q.type === 'mcq' ? renderMCQ(q, currentQuestionIndex) : <p>Interactive support coming soon for this type.</p>}
                 </div>
                 <div className="flex justify-between mt-8">
                     <Button variant="outline" onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))} disabled={currentQuestionIndex === 0}>Previous</Button>
@@ -295,9 +246,7 @@ export default function TakeQuizPage() {
     <div className="flex flex-col min-h-screen bg-gray-50">
        <main className="flex-1 p-2 pt-4 md:p-6 flex justify-center items-start">
         <div className="w-full max-w-4xl pb-20 md:pb-0">
-          <FormProvider {...form}>
             {renderContent()}
-          </FormProvider>
         </div>
       </main>
     </div>
