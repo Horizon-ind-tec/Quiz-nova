@@ -21,7 +21,7 @@ import { addDoc, collection } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { FormItem, FormLabel, FormControl } from '@/components/ui/form';
+import { Label } from '@/components/ui/label';
 import {
   Accordion,
   AccordionContent,
@@ -81,6 +81,7 @@ export default function TakeQuizPage() {
 
   const stripOptionPrefix = (text: string) => {
     if (!text) return '';
+    // Removes patterns like "a) ", "b. ", "(c) ", "1) " from the start of the string
     return text.replace(/^([a-zA-Z0-9])[\.\)\-]\s+|^(\([a-zA-Z0-9]\))\s+/i, '').trim();
   };
   
@@ -206,13 +207,11 @@ export default function TakeQuizPage() {
                       return isCorrect ? "border-green-500 bg-green-100 text-green-900" : "border-gray-300 opacity-70 cursor-not-allowed";
                     };
                     return (
-                        <FormItem key={option + index}>
-                            <FormControl>
-                                <RadioGroupItem value={option} id={`q${questionIndex}-option-${index}`} className="sr-only" />
-                            </FormControl>
-                            <FormLabel
+                        <div key={option + index} className="flex items-center w-full">
+                            <RadioGroupItem value={option} id={`q${questionIndex}-option-${index}`} className="sr-only" />
+                            <Label
                                 htmlFor={`q${questionIndex}-option-${index}`}
-                                className={cn("flex items-center space-x-3 space-y-0 rounded-md border p-3 transition-all", getOptionStyle())}
+                                className={cn("flex items-center space-x-3 space-y-0 rounded-md border p-3 transition-all w-full", getOptionStyle())}
                             >
                                 <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0">
                                     {String.fromCharCode(65 + index)}
@@ -220,8 +219,8 @@ export default function TakeQuizPage() {
                                 <span className="flex-1">{cleanOption}</span>
                                 {inQuizMode && isAnswered && isSelected && isCorrect && <CheckCircle className="h-5 w-5 text-green-600" />}
                                 {inQuizMode && isAnswered && isSelected && !isCorrect && <XCircle className="h-5 w-5 text-red-600" />}
-                            </FormLabel>
-                        </FormItem>
+                            </Label>
+                        </div>
                     );
                 })}
             </RadioGroup>
@@ -296,7 +295,9 @@ export default function TakeQuizPage() {
     <div className="flex flex-col min-h-screen bg-gray-50">
        <main className="flex-1 p-2 pt-4 md:p-6 flex justify-center items-start">
         <div className="w-full max-w-4xl pb-20 md:pb-0">
-          {renderContent()}
+          <FormProvider {...form}>
+            {renderContent()}
+          </FormProvider>
         </div>
       </main>
     </div>

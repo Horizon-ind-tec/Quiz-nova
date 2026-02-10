@@ -99,7 +99,7 @@ function DashboardContent() {
             <p className="text-lg text-muted-foreground font-medium">Your personalized AI learning hub.</p>
         </div>
 
-        {/* --- Feature Stack (Mobile-friendly vertical layout matching reference image) --- */}
+        {/* --- Feature Stack (Stacked Vertical Layout) --- */}
         <div className="flex flex-col gap-4">
              <Button asChild className="h-28 bg-indigo-600 hover:bg-indigo-700 shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
                 <Link href="/helper">
