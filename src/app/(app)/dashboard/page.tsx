@@ -212,7 +212,8 @@ function DashboardContent() {
                   <CardContent>
                     {historyLoading ? <div className="flex h-[300px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <RecentQuizzes data={quizHistory || []} />}
                   </CardContent>
-                </div>
+                </Card>
+              </div>
           </TabsContent>
         </Tabs>
       </main>

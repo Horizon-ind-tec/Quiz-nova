@@ -138,8 +138,8 @@ export default function TakeQuizPage() {
     const inQuizMode = quiz?.quizType === 'quiz';
 
     return (
-        <>
-            <p className="font-semibold mb-4">{currentQuestionIndex + 1}. {q.question}</p>
+        <div className="space-y-4">
+            <p className="font-semibold text-lg">{currentQuestionIndex + 1}. {q.question}</p>
             <RadioGroup
                 value={userAnswer}
                 onValueChange={(value) => handleAnswerSelect(questionIndex, value)}
@@ -164,7 +164,7 @@ export default function TakeQuizPage() {
                                 htmlFor={`q${questionIndex}-option-${index}`}
                                 className={cn("flex items-center space-x-3 space-y-0 rounded-md border p-3 transition-all w-full", getOptionStyle())}
                             >
-                                <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0">
+                                <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 text-xs font-bold">
                                     {String.fromCharCode(65 + index)}
                                 </div>
                                 <span className="flex-1">{cleanOption}</span>
@@ -175,7 +175,7 @@ export default function TakeQuizPage() {
                     );
                 })}
             </RadioGroup>
-        </>
+        </div>
     );
   };
 
