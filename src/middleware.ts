@@ -1,5 +1,5 @@
-// This file is disabled because Middleware is not supported with 'output: export'.
-// To generate the 'out/' folder, the matcher must be empty.
+// Middleware is disabled for static exports (output: export)
+// This file is kept empty to avoid build-time resolution errors.
 export const config = {
   matcher: [],
 };
