@@ -1,42 +1,38 @@
-re
-# QuizNova - Your AI-Powered Learning App
+# QuizNova - AI-Powered Learning App
 
 QuizNova is a high-performance Next.js application designed for interactive learning and AI-driven study assistance.
 
-## 🚀 How to Make the App 24/7 Live
+## 🚀 How to Deployed the App (with AI Features)
 
-The current workstation URL is for development only. To host the app permanently for your students:
+Standard "Static Hosting" does not support AI. You must use **Firebase App Hosting**:
 
-1.  **Go to the Firebase Console**: Visit [console.firebase.google.com](https://console.firebase.google.com/).
-2.  **Enable App Hosting**: Navigate to the "App Hosting" section in the left sidebar.
-3.  **Connect your GitHub Repository**: Follow the setup wizard to connect your code.
-4.  **Configure Environment Variables**: In the App Hosting settings, ensure you add your `RESEND_API_KEY` and any other secrets.
-5.  **Deploy**: Firebase will automatically build and deploy your app to a global CDN with a permanent `web.app` or `firebaseapp.com` URL that stays live 24/7.
+1.  **Push your code to GitHub**.
+2.  **Go to the Firebase Console**: Visit [console.firebase.google.com](https://console.firebase.google.com/).
+3.  **Enable App Hosting**: Navigate to the "App Hosting" section in the left sidebar.
+4.  **Connect your Repository**: Follow the setup wizard. Firebase will detect Next.js automatically.
+5.  **Configure Secrets**: Add your `RESEND_API_KEY` and `GOOGLE_GENAI_API_KEY` in the App Hosting dashboard.
+6.  **Live URL**: Firebase will give you a `web.app` URL that supports all AI features.
 
 ---
 
-## 📱 How to Build the Android App (Native)
+## 📱 How to Build the Android App
 
-Follow these steps to generate an `.apk` file using Capacitor.
+Since this app uses AI, the Android app should point to your live hosted URL:
 
-### Prerequisites
-1.  **Node.js**: Installed from [nodejs.org](https://nodejs.org/).
-2.  **Android Studio**: Required for building the final APK.
+1.  **Deploy your web app** first using the steps above.
+2.  **Update `capacitor.config.ts`**:
+    ```ts
+    server: {
+      url: 'https://your-app-name.web.app',
+      cleartext: true
+    }
+    ```
+3.  **Sync and Build**:
+    ```bash
+    npm run build
+    npx cap sync
+    npx cap open android
+    ```
+4.  **Generate APK**: In Android Studio, go to **Build** -> **Build APK(s)**.
 
-### Step 1: Build the Web Application
-```bash
-npm run build
-```
-
-### Step 2: Sync Files with Capacitor
-```bash
-npx cap sync
-```
-
-### Step 3: Open in Android Studio
-```bash
-npx cap open android
-```
-
-### Step 4: Build the APK
-In Android Studio, go to **Build** -> **Build Bundle(s) / APK(s)** -> **Build APK(s)**. Locate the `app-debug.apk` once finished.
+**Note:** This ensures your AI tutor, homework helper, and quiz generator work perfectly inside the mobile app.
