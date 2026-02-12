@@ -11,5 +11,5 @@ runConfig:
   minInstances: 0
   maxInstances: 10
 
-# Environment variables for production can be managed in the Firebase Console
-# or defined here if they are not sensitive.
+# Environment variables for production.
+# Add your GOOGLE_GENAI_API_KEY in the Firebase Console Secrets for security.

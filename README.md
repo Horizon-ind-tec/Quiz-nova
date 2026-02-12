@@ -1,51 +1,45 @@
+# QuizNova - AI-Powered Learning Ecosystem
 
-# QuizNova - AI-Powered Learning App
+QuizNova is a next-generation educational platform built with **Next.js 15**, **Firebase**, and **Google Genkit**. It leverages Gemini AI to provide students with personalized study tools, automated exam grading, and adaptive learning paths.
 
-QuizNova is a high-performance Next.js application designed for interactive learning and AI-driven study assistance.
+## 🌟 Key Features
 
-## 🚀 Deployment Guide (9 Days to Exams!)
+- **AI Homework Helper**: Multimodal support for solving tough questions via text, images, or PDFs.
+- **Automated Exam Grader**: Scan handwritten answer sheets and get instant AI-driven scoring and feedback.
+- **Dynamic Quiz Generation**: Create custom assessments based on subject, difficulty, and educational board (CBSE, ICSE, etc.).
+- **AI Study Planner**: Generate personalized roadmaps based on your exam dates.
+- **Chapter Notes & Expected Questions**: AI-curated study material for high-efficiency revision.
 
-To ensure all AI features (Tutor, Homework Helper, Quiz Generator) work, your app needs a server. Choose one of the two methods below:
+## 🛠 Tech Stack
 
-### Method 1: No GitHub (Manual Terminal Deployment)
-If you don't want to use GitHub, use your computer's terminal:
-1.  **Enable Web Support**: Run this command first:
-    ```bash
-    firebase experiments:enable webframeworks
-    ```
-2.  **Deploy**: Run:
-    ```bash
-    firebase deploy
-    ```
-    *Note: Firebase will automatically build your Next.js app and set up the server for you.*
+- **Frontend**: Next.js 15 (App Router), React 19, Tailwind CSS, ShadCN UI.
+- **Backend**: Firebase (Auth, Firestore), Server Actions.
+- **AI Engine**: Google Genkit, Gemini 2.5 Flash.
+- **Mobile**: Capacitor (Android/iOS support).
 
-### Method 2: With GitHub (Recommended for Reliability)
-1.  **GitHub**: Push your code to a GitHub repository.
-2.  **Firebase Console**: Go to "App Hosting" in the left sidebar.
-3.  **Connect**: Connect your repo. Firebase handles every update automatically when you push code.
+## 🚀 Deployment (Optimized for GitHub)
 
----
+This project is optimized for **Firebase App Hosting**.
 
-## 📱 Android App (Capacitor)
-Since the AI needs a server, the Android app should "wrap" your live hosted URL:
-1.  Deploy your web app first using one of the methods above.
-2.  Get your live URL (e.g., `https://your-app.web.app`).
-3.  Open `capacitor.config.ts` and update the server section:
-    ```ts
-    server: {
-      url: 'https://your-app.web.app',
-      cleartext: true
-    }
-    ```
-4.  Run:
-    ```bash
-    npm run build
-    npx cap sync
-    npx cap open android
-    ```
+1. **Push to GitHub**: Ensure your latest changes are in your repository.
+2. **Connect to Firebase**:
+   - Go to the [Firebase Console](https://console.firebase.google.com/).
+   - Navigate to **App Hosting**.
+   - Click **Connect to GitHub** and select this repository.
+   - Firebase will automatically detect the Next.js environment and deploy your server-side AI features.
+3. **Set Secrets**:
+   - In the App Hosting dashboard, go to the **Secrets** tab.
+   - Add `GOOGLE_GENAI_API_KEY` with your Gemini API key to enable AI functionality.
+
+## 📱 Mobile Setup (Android)
+
+QuizNova uses Capacitor to wrap the web experience:
+
+1. Deploy the web app first to get your production URL.
+2. Update `server.url` in `capacitor.config.ts`.
+3. Run `npm run build`.
+4. Run `npx cap sync`.
+5. Open in Android Studio: `npx cap open android`.
 
 ---
-
-## 🛠 Troubleshooting
-- **"Experiment webframeworks is not enabled"**: You missed Step 1 of the "No GitHub" guide. Run `firebase experiments:enable webframeworks`.
-- **AI not responding**: Ensure your `GOOGLE_GENAI_API_KEY` is added to the "Functions" or "App Hosting" environment variables in the Firebase Console.
+*Developed for excellence in education. 9 Days to Exams Challenge!*
