@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -79,7 +78,6 @@ export default function SignUpPage() {
     }
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      // Don't block navigation on these non-critical updates
       updateProfile(userCredential.user, { displayName: values.name });
       createUserProfile(userCredential.user, values.name);
       router.push('/dashboard');
@@ -107,7 +105,6 @@ export default function SignUpPage() {
     try {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
-      // Don't block navigation
       createUserProfile(userCredential.user, userCredential.user.displayName || 'Google User');
       router.push('/dashboard');
     } catch (error: any) {
@@ -220,7 +217,7 @@ export default function SignUpPage() {
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{' '}
-            <Link href="/login" className="font-semibold text-primary hover:underline">
+            <Link href="/" className="font-semibold text-primary hover:underline">
               Sign in
             </Link>
           </p>
@@ -229,5 +226,3 @@ export default function SignUpPage() {
     </div>
   );
 }
-
-    

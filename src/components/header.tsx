@@ -54,7 +54,7 @@ export function Header({ title }: HeaderProps) {
     const handleSignOut = async () => {
         localStorage.removeItem('guestStartTime');
         await signOut(auth);
-        router.push('/login');
+        router.push('/');
     }
     
     const renderPlanIcon = () => {
