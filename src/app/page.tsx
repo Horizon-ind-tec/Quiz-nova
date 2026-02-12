@@ -1,6 +1,9 @@
 import { redirect } from 'next/navigation';
 
+/**
+ * Root page component that handles the immediate redirect to the dashboard hub.
+ * This is the unified entry point for QuizNova.
+ */
 export default function RootPage() {
-  // Automatically redirect from root to the dashboard as requested.
   redirect('/dashboard');
 }

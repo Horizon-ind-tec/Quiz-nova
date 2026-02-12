@@ -14,7 +14,7 @@ const firebaseConfig = {
   appId: "1:79648401698:web:29e11f54e360d730e2dd7b",
 };
 
-// Singleton initialization pattern
+// Singleton initialization pattern as requested
 export const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
