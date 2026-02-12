@@ -1,15 +1,9 @@
-import { NextResponse } from "next/server";
-
-/**
- * Middleware simplified for debugging.
- * All automatic navigation and redirects are disabled.
- */
-export function middleware() {
-  return NextResponse.next();
-}
-
+// This file is disabled because Middleware is not supported with 'output: export'.
+// To generate the 'out/' folder, the matcher must be empty.
 export const config = {
-  matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|manifest.json).*)',
-  ],
+  matcher: [],
 };
+
+export function middleware() {
+  return;
+}

@@ -1,4 +1,4 @@
-
+re
 # QuizNova - Your AI-Powered Learning App
 
 QuizNova is a high-performance Next.js application designed for interactive learning and AI-driven study assistance.
