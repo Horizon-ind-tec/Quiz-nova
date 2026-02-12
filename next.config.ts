@@ -11,8 +11,8 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // 'appDir' is now stable in Next.js 15, but kept here for compatibility
   experimental: {
+    // 'appDir' is stable in Next.js 15, but kept for compatibility if needed
     appDir: true
   }
 };
