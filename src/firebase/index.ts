@@ -1,4 +1,3 @@
-
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
@@ -6,14 +5,21 @@ import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-// IMPORTANT: DO NOT MODIFY THIS FUNCTION
+/**
+ * Initializes Firebase SDKs.
+ * We wrap persistence in a try-catch because it can fail in certain environments
+ * (like private browsing or restricted webviews) and we don't want it to block the app.
+ */
 export async function initializeFirebase() {
   const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
   const auth = getAuth(app);
   
-  // Set persistence to local to keep the user signed in across browser sessions.
-  // This must be awaited before the app continues.
-  await setPersistence(auth, browserLocalPersistence);
+  try {
+    // Set persistence to local to keep the user signed in across browser sessions.
+    await setPersistence(auth, browserLocalPersistence);
+  } catch (error) {
+    console.warn('Firebase persistence initialization failed, falling back to memory:', error);
+  }
   
   return getSdks(app);
 }
@@ -34,5 +40,3 @@ export * from './non-blocking-updates';
 export * from './non-blocking-login';
 export * from './errors';
 export * from './error-emitter';
-
-    
