@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   /* 
-   * NOTE: We removed 'output: export' because Server Actions (used for AI) 
-   * require a server runtime. Use Firebase App Hosting for deployment.
+   * AI-Powered Learning App Configuration
+   * We use standard deployment (not static export) to support AI Server Actions.
    */
   reactStrictMode: true,
   images: {
