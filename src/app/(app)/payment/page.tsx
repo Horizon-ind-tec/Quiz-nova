@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useState, useRef, useEffect } from 'react';
@@ -60,9 +59,6 @@ function PaymentPageContents() {
 
   
   useEffect(() => {
-    if (!userLoading && !user) {
-      router.push('/login');
-    }
      if (user && plan) {
         let prefix = 'NOVA-';
         if (plan === 'premium') {
@@ -74,7 +70,7 @@ function PaymentPageContents() {
         const uniqueId = `${prefix}${userCode}`;
         setTransactionId(uniqueId);
     }
-  }, [user, userLoading, router, plan]);
+  }, [user, plan]);
 
   useEffect(() => {
     if (upiSettings) {
@@ -149,13 +145,11 @@ function PaymentPageContents() {
     const userDocRef = doc(firestore, 'users', user.uid);
     
     try {
-      // 1. Mark payment as pending in Firestore
       await setDoc(userDocRef, {
         paymentStatus: 'pending',
         pendingPlan: plan,
       }, { merge: true });
 
-      // 2. Trigger the admin notification flow (non-blocking)
       notifyAdminOfPaymentAction({
         userId: user.uid,
         userName: user.displayName || 'N/A',
@@ -164,11 +158,9 @@ function PaymentPageContents() {
         planPrice: selectedPlan.price,
         transactionId: transactionId,
       }).catch(err => {
-         // Log the error but don't block the user flow
          console.error("Failed to send admin notification:", err);
       });
 
-      // 3. Redirect the user to a confirmation/waiting page
       router.push('/payment/confirmation');
 
     } catch (error) {
@@ -331,5 +323,3 @@ export default function PaymentPage() {
     </Suspense>
   );
 }
-
-    

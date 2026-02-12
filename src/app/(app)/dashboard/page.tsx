@@ -37,12 +37,6 @@ function DashboardContent() {
   const plan = searchParams.get('plan');
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [user, loading, router]);
-  
-  useEffect(() => {
     if (status === 'success') {
       toast({
         title: 'Plan Activated!',
@@ -82,7 +76,7 @@ function DashboardContent() {
 
   const { data: quizHistory, isLoading: historyLoading } = useCollection<QuizAttempt>(quizHistoryQuery);
 
-  if (loading || !user) {
+  if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -95,11 +89,10 @@ function DashboardContent() {
       <Header title="Dashboard" />
       <main className="flex-1 space-y-8 p-4 pt-8 md:p-8 max-w-4xl mx-auto w-full">
         <div className="flex flex-col space-y-2">
-            <h2 className="text-4xl font-extrabold tracking-tight text-slate-900">Welcome back, {user.displayName || 'Student'}!</h2>
+            <h2 className="text-4xl font-extrabold tracking-tight text-slate-900">Welcome back, {user?.displayName || 'Student'}!</h2>
             <p className="text-lg text-muted-foreground font-medium">Your personalized AI learning hub.</p>
         </div>
 
-        {/* --- High-Impact Vertical Feature Stack --- */}
         <div className="flex flex-col gap-4">
              <Button asChild className="h-28 bg-indigo-600 hover:bg-indigo-700 shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
                 <Link href="/helper">

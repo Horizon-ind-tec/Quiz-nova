@@ -1,24 +1,15 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
-
 /**
- * This page is now a redirect to /notifications to avoid code duplication.
- * The functionality has been consolidated there.
+ * Debug mode: Redirects disabled.
+ * This page previously redirected to /notifications.
  */
 export default function RedirectPage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace('/notifications');
-  }, [router]);
-
   return (
-    <div className="flex h-screen items-center justify-center">
-      <Loader2 className="h-8 w-8 animate-spin" />
-      <p className="ml-4 text-muted-foreground">Redirecting to notifications...</p>
+    <div className="flex h-screen flex-col items-center justify-center p-4 text-center">
+      <h1 className="text-xl font-bold mb-2">Debug Mode: Redirects Disabled</h1>
+      <p className="text-muted-foreground mb-4">You are currently on the confirm-payments route.</p>
+      <a href="/notifications" className="text-primary hover:underline font-medium">Click here to go to Notifications manually</a>
     </div>
   );
 }

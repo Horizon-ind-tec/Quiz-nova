@@ -36,12 +36,6 @@ export default function NotificationsPage() {
   );
   const { data: userProfile, isLoading: profileLoading } = useDoc<UserProfile>(userProfileRef);
 
-  useEffect(() => {
-    if (!userLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, userLoading, router]);
-
   const onAdminAction = async (targetUser: UserProfile, action: 'approve' | 'deny') => {
     if (!firestore || !targetUser.pendingPlan) return;
     setIsProcessing(true);
