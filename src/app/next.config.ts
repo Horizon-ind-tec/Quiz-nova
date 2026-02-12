@@ -45,4 +45,10 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+const nextConfig = {
+    output: "export",
+    };
+
+    export default nextConfig;
+
+
