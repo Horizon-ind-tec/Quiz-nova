@@ -70,60 +70,62 @@ export function Header({ title }: HeaderProps) {
     }
 
   return (
-    <header className="flex h-16 items-center gap-4 border-b bg-card px-4 md:px-6">
+    <header className="flex h-14 md:h-16 items-center gap-3 border-b bg-card px-3 md:px-6 sticky top-0 z-30 shadow-sm">
       <div className="md:hidden">
-        <SidebarTrigger />
+        <SidebarTrigger className="h-9 w-9" />
       </div>
-      <h1 className="text-lg font-semibold md:text-xl flex-1">{title}</h1>
-       <div className="flex items-center gap-3">
+      <h1 className="text-sm md:text-xl font-black truncate flex-1 tracking-tight text-slate-900 uppercase">
+        {title}
+      </h1>
+       <div className="flex items-center gap-2">
             <GuestBadge />
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded-lg border border-slate-100 hidden sm:flex">
                 {renderPlanIcon()}
-                <span className="text-sm font-medium hidden sm:inline-block">{user?.displayName}</span>
+                <span className="text-xs font-bold truncate max-w-[100px]">{user?.displayName}</span>
             </div>
        </div>
        <div className="flex items-center gap-1 sm:gap-2">
-           <Button asChild variant="outline" size="icon" className="relative h-9 w-9">
+           <Button asChild variant="outline" size="icon" className="relative h-9 w-9 rounded-full border-slate-200">
                <Link href="/notifications">
-                    <Bell className="h-4 w-4" />
+                    <Bell className="h-4 w-4 text-slate-600" />
                     {isUserAdmin && notificationCount > 0 && (
-                        <Badge className="absolute -top-2 -right-2 h-5 w-5 justify-center p-0">{notificationCount}</Badge>
+                        <Badge className="absolute -top-1 -right-1 h-4 w-4 justify-center p-0 text-[10px] bg-red-600 border-2 border-white">{notificationCount}</Badge>
                     )}
                </Link>
            </Button>
 
            <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9">
-                  <MoreVertical className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
+                  <MoreVertical className="h-4 w-4 text-slate-600" />
                   <span className="sr-only">Open menu</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-xl border-slate-100">
+                <DropdownMenuLabel className="font-black text-xs uppercase tracking-widest text-muted-foreground">My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard" className="cursor-pointer">
+                  <Link href="/dashboard" className="cursor-pointer py-3">
                     <User className="mr-2 h-4 w-4" />
-                    <span>Dashboard</span>
+                    <span className="font-semibold">Dashboard</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/plans" className="cursor-pointer">
+                  <Link href="/plans" className="cursor-pointer py-3">
                     <CreditCard className="mr-2 h-4 w-4" />
-                    <span>Plans & Billing</span>
+                    <span className="font-semibold">Plans & Billing</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/support" className="cursor-pointer">
+                  <Link href="/support" className="cursor-pointer py-3">
                     <HelpCircle className="mr-2 h-4 w-4" />
-                    <span>Support</span>
+                    <span className="font-semibold">Support</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive cursor-pointer">
+                <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive cursor-pointer py-3">
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign Out</span>
+                  <span className="font-bold">Sign Out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

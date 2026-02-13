@@ -87,72 +87,72 @@ function DashboardContent() {
   return (
     <div className="flex flex-col bg-background min-h-screen">
       <Header title="Dashboard" />
-      <main className="flex-1 space-y-6 p-4 md:p-8 max-w-6xl mx-auto w-full">
+      <main className="flex-1 space-y-4 p-3 md:p-8 max-w-6xl mx-auto w-full">
         {/* Welcome Section */}
-        <div className="flex flex-col space-y-1">
-            <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight text-slate-900">
-              Welcome, {user?.displayName?.split(' ')[0] || 'Student'}!
+        <div className="flex flex-col space-y-0.5">
+            <h2 className="text-xl md:text-3xl font-black tracking-tight text-slate-900">
+              Hey, {user?.displayName?.split(' ')[0] || 'Student'}!
             </h2>
-            <p className="text-sm md:text-lg text-muted-foreground font-medium">Your personal learning ecosystem is ready.</p>
+            <p className="text-xs md:text-base text-muted-foreground font-semibold">Your AI learning roadmap is ready.</p>
         </div>
 
-        {/* Action Grid - Optimized for Mobile (2 cols) and Desktop (3-4 cols) */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-             <Button asChild className="h-24 md:h-28 bg-indigo-600 hover:bg-indigo-700 shadow-md flex flex-col items-center justify-center gap-1 md:gap-2 rounded-xl transition-all hover:scale-[1.02]">
+        {/* Action Grid - Highly Optimized for Mobile Browsing */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4">
+             <Button asChild className="h-20 md:h-28 bg-indigo-600 hover:bg-indigo-700 shadow-sm flex flex-col items-center justify-center gap-1 rounded-xl transition-all active:scale-95">
                 <Link href="/helper">
-                    <GraduationCap className="h-5 w-5 md:h-7 md:h-7" />
-                    <span className="text-xs md:text-lg font-bold">Homework Helper</span>
+                    <GraduationCap className="h-5 w-5 md:h-7" />
+                    <span className="text-[10px] md:text-base font-bold uppercase tracking-tight">Homework Help</span>
                 </Link>
              </Button>
 
-             <Button asChild className="h-24 md:h-28 bg-blue-600 hover:bg-blue-700 shadow-md flex flex-col items-center justify-center gap-1 md:gap-2 rounded-xl transition-all hover:scale-[1.02]">
+             <Button asChild className="h-20 md:h-28 bg-blue-600 hover:bg-blue-700 shadow-sm flex flex-col items-center justify-center gap-1 rounded-xl transition-all active:scale-95">
                 <Link href="/report">
-                    <BrainCircuit className="h-5 w-5 md:h-7 md:h-7" />
-                    <span className="text-xs md:text-lg font-bold">AI Report</span>
+                    <BrainCircuit className="h-5 w-5 md:h-7" />
+                    <span className="text-[10px] md:text-base font-bold uppercase tracking-tight">AI Report</span>
                 </Link>
              </Button>
 
-              <Button asChild className="h-24 md:h-28 bg-gradient-to-br from-amber-400 to-orange-600 text-white shadow-md hover:brightness-110 flex flex-col items-center justify-center gap-1 md:gap-2 rounded-xl transition-all hover:scale-[1.02]">
+              <Button asChild className="h-20 md:h-28 bg-gradient-to-br from-amber-400 to-orange-600 text-white shadow-sm hover:brightness-110 flex flex-col items-center justify-center gap-1 rounded-xl transition-all active:scale-95">
                 <Link href="/plans">
-                    <Gem className="h-5 w-5 md:h-7 md:h-7" />
-                    <span className="text-xs md:text-lg font-bold">Premium</span>
+                    <Gem className="h-5 w-5 md:h-7" />
+                    <span className="text-[10px] md:text-base font-bold uppercase tracking-tight">Premium</span>
                 </Link>
              </Button>
 
-             <Button asChild variant="outline" className="h-24 md:h-28 bg-white border-2 border-slate-100 shadow-sm flex flex-col items-center justify-center gap-1 md:gap-2 rounded-xl transition-all hover:scale-[1.02] hover:bg-slate-50">
+             <Button asChild variant="outline" className="h-20 md:h-28 bg-white border-2 border-slate-100 shadow-sm flex flex-col items-center justify-center gap-1 rounded-xl transition-all active:scale-95 hover:bg-slate-50">
                 <Link href="/coaching">
-                    <BookUser className="h-5 w-5 md:h-7 md:h-7 text-blue-600" />
-                    <span className="text-xs md:text-lg font-bold text-slate-800">Coaching</span>
+                    <BookUser className="h-5 w-5 md:h-7 text-blue-600" />
+                    <span className="text-[10px] md:text-base font-bold uppercase tracking-tight text-slate-800">Coaching</span>
                 </Link>
              </Button>
 
-            <Button asChild className="h-24 md:h-28 bg-blue-500 hover:bg-blue-600 shadow-md flex flex-col items-center justify-center gap-1 md:gap-2 rounded-xl transition-all hover:scale-[1.02]">
+            <Button asChild className="h-20 md:h-28 bg-blue-500 hover:bg-blue-600 shadow-sm flex flex-col items-center justify-center gap-1 rounded-xl transition-all active:scale-95">
               <Link href="/quiz/create">
-                <PlusCircle className="h-5 w-5 md:h-7 md:h-7" />
-                <span className="text-xs md:text-lg font-bold">Create Quiz</span>
+                <PlusCircle className="h-5 w-5 md:h-7" />
+                <span className="text-[10px] md:text-base font-bold uppercase tracking-tight">New Quiz</span>
               </Link>
             </Button>
 
-            <Button asChild className="h-24 md:h-28 bg-violet-600 hover:bg-violet-700 text-white shadow-md flex flex-col items-center justify-center gap-1 md:gap-2 rounded-xl transition-all hover:scale-[1.02]">
+            <Button asChild className="h-20 md:h-28 bg-violet-600 hover:bg-violet-700 text-white shadow-sm flex flex-col items-center justify-center gap-1 rounded-xl transition-all active:scale-95">
               <Link href="/notes">
-                <FileText className="h-5 w-5 md:h-7 md:h-7" />
-                <span className="text-xs md:text-lg font-bold">Chapter Notes</span>
+                <FileText className="h-5 w-5 md:h-7" />
+                <span className="text-[10px] md:text-base font-bold uppercase tracking-tight">Notes</span>
               </Link>
             </Button>
 
-            <Button asChild variant="destructive" className="h-24 md:h-28 bg-red-500 hover:bg-red-600 shadow-md flex flex-col items-center justify-center gap-1 md:gap-2 rounded-xl transition-all hover:scale-[1.02]">
+            <Button asChild variant="destructive" className="h-20 md:h-28 bg-red-500 hover:bg-red-600 shadow-sm flex flex-col items-center justify-center gap-1 rounded-xl transition-all active:scale-95">
               <Link href="/most-expected-questions">
-                <Target className="h-5 w-5 md:h-7 md:h-7" />
-                <span className="text-xs md:text-lg font-bold">Expected Qs</span>
+                <Target className="h-5 w-5 md:h-7" />
+                <span className="text-[10px] md:text-base font-bold uppercase tracking-tight">Expected Qs</span>
               </Link>
             </Button>
 
             <Dialog open={isPlanDialogOpen} onOpenChange={setIsPlanDialogOpen}>
                 <DialogTrigger asChild>
-                    <Button variant="secondary" className="h-24 md:h-28 bg-emerald-500 hover:bg-emerald-600 text-white shadow-md flex flex-col items-center justify-center gap-1 md:gap-2 rounded-xl transition-all hover:scale-[1.02]">
-                        <CalendarDays className="h-5 w-5 md:h-7 md:h-7" />
-                        <span className="text-xs md:text-lg font-bold">
-                          {daysLeft !== null && daysLeft >= 0 ? `${daysLeft} Days Left` : 'Study Planner'}
+                    <Button variant="secondary" className="h-20 md:h-28 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm flex flex-col items-center justify-center gap-1 rounded-xl transition-all active:scale-95">
+                        <CalendarDays className="h-5 w-5 md:h-7" />
+                        <span className="text-[10px] md:text-base font-bold uppercase tracking-tight">
+                          {daysLeft !== null && daysLeft >= 0 ? `${daysLeft} Days Left` : 'Planner'}
                         </span>
                     </Button>
                 </DialogTrigger>
@@ -161,35 +161,35 @@ function DashboardContent() {
         </div>
 
         {/* Performance Section */}
-        <Tabs value={view} onValueChange={(value) => setView(value as ViewType)} className="space-y-4 pt-6 border-t">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <TabsList className="bg-slate-100 p-1 w-full sm:w-auto">
-                <TabsTrigger value="quiz" className="flex-1 sm:flex-none data-[state=active]:bg-white data-[state=active]:shadow-sm">Quiz Trends</TabsTrigger>
-                <TabsTrigger value="exam" className="flex-1 sm:flex-none data-[state=active]:bg-white data-[state=active]:shadow-sm">Exam Trends</TabsTrigger>
+        <Tabs value={view} onValueChange={(value) => setView(value as ViewType)} className="space-y-3 pt-4 border-t">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <TabsList className="bg-slate-100 p-1 w-full sm:w-auto grid grid-cols-2">
+                <TabsTrigger value="quiz" className="text-xs font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">Quiz Trends</TabsTrigger>
+                <TabsTrigger value="exam" className="text-xs font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">Exam Trends</TabsTrigger>
             </TabsList>
-            <Button variant="ghost" size="sm" asChild className="text-blue-600 hover:text-blue-700 w-full sm:w-auto">
-                <Link href="/performance" className="font-bold justify-center">View Full History <ChevronRight className="ml-1 h-4 w-4" /></Link>
+            <Button variant="ghost" size="sm" asChild className="text-blue-600 hover:text-blue-700 w-full sm:w-auto h-8">
+                <Link href="/performance" className="font-bold justify-center text-xs">Full History <ChevronRight className="ml-1 h-3 w-3" /></Link>
             </Button>
           </div>
           
           <TabsContent value="quiz" className="space-y-4 outline-none">
             <div className="grid gap-4 lg:grid-cols-7">
                 <Card className="lg:col-span-4 shadow-sm border-slate-200">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Score Progression</CardTitle>
-                    <CardDescription>Your last 10 quiz results.</CardDescription>
+                  <CardHeader className="pb-2 px-4">
+                    <CardTitle className="text-base md:text-lg">Score Progression</CardTitle>
+                    <CardDescription className="text-xs">Your last 10 quiz results.</CardDescription>
                   </CardHeader>
                   <CardContent className="px-2 pb-2">
-                     {historyLoading ? <div className="flex h-[300px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <PerformanceChart data={quizHistory || []} />}
+                     {historyLoading ? <div className="flex h-[250px] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div> : <PerformanceChart data={quizHistory || []} />}
                   </CardContent>
                 </Card>
                 <Card className="lg:col-span-3 shadow-sm border-slate-200">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Recent Quizzes</CardTitle>
-                    <CardDescription>Your latest attempts.</CardDescription>
+                  <CardHeader className="pb-2 px-4">
+                    <CardTitle className="text-base md:text-lg">Recent Quizzes</CardTitle>
+                    <CardDescription className="text-xs">Your latest attempts.</CardDescription>
                   </CardHeader>
                   <CardContent className="px-0">
-                    {historyLoading ? <div className="flex h-[300px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <RecentQuizzes data={quizHistory || []} />}
+                    {historyLoading ? <div className="flex h-[250px] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div> : <RecentQuizzes data={quizHistory || []} />}
                   </CardContent>
                 </Card>
               </div>
@@ -198,21 +198,21 @@ function DashboardContent() {
           <TabsContent value="exam" className="space-y-4 outline-none">
             <div className="grid gap-4 lg:grid-cols-7">
                 <Card className="lg:col-span-4 shadow-sm border-slate-200">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Paper Performance</CardTitle>
-                    <CardDescription>Handwritten scores graded by AI.</CardDescription>
+                  <CardHeader className="pb-2 px-4">
+                    <CardTitle className="text-base md:text-lg">Paper Performance</CardTitle>
+                    <CardDescription className="text-xs">Handwritten scores graded by AI.</CardDescription>
                   </CardHeader>
                   <CardContent className="px-2 pb-2">
-                    {historyLoading ? <div className="flex h-[300px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <PerformanceChart data={quizHistory || []} />}
+                    {historyLoading ? <div className="flex h-[250px] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div> : <PerformanceChart data={quizHistory || []} />}
                   </CardContent>
                 </Card>
                 <Card className="lg:col-span-3 shadow-sm border-slate-200">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Recent Exams</CardTitle>
-                    <CardDescription>Latest assessments.</CardDescription>
+                  <CardHeader className="pb-2 px-4">
+                    <CardTitle className="text-base md:text-lg">Recent Exams</CardTitle>
+                    <CardDescription className="text-xs">Latest assessments.</CardDescription>
                   </CardHeader>
                   <CardContent className="px-0">
-                    {historyLoading ? <div className="flex h-[300px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <RecentQuizzes data={quizHistory || []} />}
+                    {historyLoading ? <div className="flex h-[250px] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div> : <RecentQuizzes data={quizHistory || []} />}
                   </CardContent>
                 </Card>
               </div>
@@ -228,7 +228,7 @@ export default function Dashboard() {
     return (
         <Suspense fallback={
              <div className="flex h-screen w-full items-center justify-center">
-                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
         }>
             <DashboardContent />

@@ -132,73 +132,75 @@ export default function HomeworkHelperPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen">
-      <Header title="Exam & Homework Helper" />
-      <main className="flex-1 flex flex-col p-4 md:p-6 overflow-hidden">
-        <Card className="flex-1 flex flex-col min-h-0">
-           <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <GraduationCap className="h-6 w-6 text-primary" />
+    <div className="flex flex-col h-screen overflow-hidden">
+      <Header title="Exam Helper" />
+      <main className="flex-1 flex flex-col p-2 md:p-6 overflow-hidden">
+        <Card className="flex-1 flex flex-col min-h-0 shadow-sm border-slate-200">
+           <CardHeader className="py-3 px-4 border-b">
+                <CardTitle className="flex items-center gap-2 text-sm md:text-xl uppercase tracking-tighter font-black">
+                    <GraduationCap className="h-5 w-5 text-indigo-600" />
                     Homework Assistant
                 </CardTitle>
-                <CardDescription>
-                    Get step-by-step explanations. Type your question or upload a photo/PDF.
-                </CardDescription>
             </CardHeader>
-          <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
-             <ScrollArea className="flex-1 p-6" ref={scrollAreaRef}>
-              <div className="space-y-6">
+          <CardContent className="flex-1 flex flex-col p-0 overflow-hidden bg-slate-50/30">
+             <ScrollArea className="flex-1 p-4 md:p-6" ref={scrollAreaRef}>
+              <div className="space-y-6 max-w-4xl mx-auto">
                 {messages.map((message, index) => (
-                  <div key={index} className={cn("flex flex-col gap-3", message.role === 'user' ? 'items-end' : 'items-start')}>
-                    <div className={cn("flex items-start gap-3", message.role === 'user' ? 'flex-row-reverse' : 'flex-row')}>
-                        <Avatar className="h-8 w-8">
-                            <AvatarFallback className={cn(message.role === 'assistant' ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                  <div key={index} className={cn("flex flex-col gap-2", message.role === 'user' ? 'items-end' : 'items-start')}>
+                    <div className={cn("flex items-start gap-2.5", message.role === 'user' ? 'flex-row-reverse' : 'flex-row')}>
+                        <Avatar className="h-7 w-7 md:h-8 md:w-8 shrink-0">
+                            <AvatarFallback className={cn(message.role === 'assistant' ? "bg-indigo-600 text-white" : "bg-slate-200 text-slate-600")}>
                                 {message.role === 'assistant' ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
                             </AvatarFallback>
                         </Avatar>
-                        <div className={cn("max-w-[85%] rounded-lg p-3 text-sm prose prose-sm", message.role === 'user' ? 'bg-primary text-primary-foreground prose-invert' : 'bg-muted')}>
+                        <div className={cn(
+                            "max-w-[85%] rounded-2xl p-3 text-xs md:text-sm shadow-sm", 
+                            message.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white border text-slate-800 rounded-tl-none'
+                        )}>
                             {message.attachment && (
-                                <div className="mb-3 rounded-md overflow-hidden border border-white/20">
+                                <div className="mb-3 rounded-lg overflow-hidden border border-black/5 bg-slate-100">
                                     {message.attachment.type === 'image' ? (
                                         <Image src={message.attachment.url} alt="Attached" width={300} height={200} className="w-full h-auto object-contain" />
                                     ) : (
-                                        <div className="flex items-center gap-2 p-3 bg-white/10">
-                                            <FileText className="h-8 w-8" />
-                                            <span className="font-medium truncate">{message.attachment.name}</span>
+                                        <div className="flex items-center gap-2 p-3">
+                                            <FileText className="h-6 w-6 text-slate-500" />
+                                            <span className="font-bold truncate text-[10px]">{message.attachment.name}</span>
                                         </div>
                                     )}
                                 </div>
                             )}
-                            <p className="whitespace-pre-wrap m-0">{message.content}</p>
+                            <div className="prose prose-sm prose-slate dark:prose-invert max-w-none">
+                                <p className="whitespace-pre-wrap m-0 leading-relaxed">{message.content}</p>
+                            </div>
                         </div>
                     </div>
                   </div>
                 ))}
                  {isLoading && (
-                    <div className="flex items-start gap-3">
-                        <Avatar className="h-8 w-8">
-                            <AvatarFallback className="bg-primary text-primary-foreground"><Bot className="h-4 w-4" /></AvatarFallback>
+                    <div className="flex items-start gap-2.5">
+                        <Avatar className="h-7 w-7 md:h-8 md:w-8">
+                            <AvatarFallback className="bg-indigo-600 text-white"><Bot className="h-4 w-4" /></AvatarFallback>
                         </Avatar>
-                        <div className="bg-muted rounded-lg p-3">
-                            <Loader2 className="h-5 w-5 animate-spin" />
+                        <div className="bg-white border rounded-2xl p-3 rounded-tl-none shadow-sm">
+                            <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
                         </div>
                     </div>
                  )}
               </div>
             </ScrollArea>
 
-            <div className="border-t p-4 bg-card">
+            <div className="border-t p-3 md:p-4 bg-white">
               <form onSubmit={handleSubmit} className="flex flex-col gap-2 max-w-4xl mx-auto">
                 {attachedFile && (
-                    <div className="flex items-center gap-2 p-2 bg-muted rounded-md mb-2 w-fit">
-                        {attachedFile.type === 'image' ? <ImageIcon className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
-                        <span className="text-xs truncate max-w-[200px]">{attachedFile.file.name}</span>
-                        <Button type="button" variant="ghost" size="icon" className="h-5 w-5" onClick={() => setAttachedFile(null)}>
+                    <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-lg mb-1 w-fit border">
+                        {attachedFile.type === 'image' ? <ImageIcon className="h-3.5 w-3.5 text-slate-500" /> : <FileText className="h-3.5 w-3.5 text-slate-500" />}
+                        <span className="text-[10px] font-bold truncate max-w-[150px] uppercase">{attachedFile.file.name}</span>
+                        <Button type="button" variant="ghost" size="icon" className="h-5 w-5 hover:bg-slate-200" onClick={() => setAttachedFile(null)}>
                             <X className="h-3 w-3" />
                         </Button>
                     </div>
                 )}
-                <div className="flex items-center gap-2">
+                <div className="flex items-end gap-2">
                     <input
                         type="file"
                         ref={fileInputRef}
@@ -210,26 +212,27 @@ export default function HomeworkHelperPage() {
                         type="button" 
                         variant="outline" 
                         size="icon" 
-                        className="h-12 w-12 shrink-0 rounded-full" 
+                        className="h-10 w-10 md:h-12 md:w-12 shrink-0 rounded-full border-slate-200" 
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isLoading}
                     >
-                        <Paperclip className="h-5 w-5" />
+                        <Paperclip className="h-5 w-5 text-slate-500" />
                     </Button>
                     <Textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        placeholder="Ask a question or upload homework..."
-                        className="flex-1 resize-none"
-                        rows={2}
+                        placeholder="Ask anything..."
+                        className="flex-1 min-h-[40px] max-h-[120px] py-2 resize-none rounded-xl border-slate-200 focus:ring-indigo-500 text-sm"
+                        rows={1}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
                                 handleSubmit(e);
                             }
                         }}
                         disabled={isLoading}
                     />
-                    <Button type="submit" size="icon" className="h-12 w-12 shrink-0 rounded-full" disabled={isLoading || (!input.trim() && !attachedFile)}>
+                    <Button type="submit" size="icon" className="h-10 w-10 md:h-12 md:w-12 shrink-0 rounded-full bg-indigo-600 hover:bg-indigo-700" disabled={isLoading || (!input.trim() && !attachedFile)}>
                     {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                     </Button>
                 </div>
