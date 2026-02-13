@@ -165,3 +165,16 @@ export interface SupportRequest {
     status: 'pending' | 'resolved';
     createdAt: number;
 }
+
+export interface Challenge {
+  id: string;
+  creatorId: string;
+  creatorName: string;
+  creatorScore: number | null;
+  friendId: string | null;
+  friendName: string | null;
+  friendScore: number | null;
+  quiz: Quiz;
+  status: 'pending' | 'accepted' | 'completed';
+  createdAt: number;
+}

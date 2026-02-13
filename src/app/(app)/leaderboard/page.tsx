@@ -6,15 +6,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Trophy, Medal, Target, UserPlus, Loader2, Sparkles } from 'lucide-react';
+import { Trophy, Medal, Target, Swords, Loader2, Sparkles } from 'lucide-react';
 import type { UserProfile } from '@/lib/types';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
-import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 export default function LeaderboardPage() {
   const firestore = useFirestore();
-  const { toast } = useToast();
+  const router = useRouter();
 
   const leaderboardQuery = useMemoFirebase(
     () => (firestore ? query(collection(firestore, 'users'), orderBy('points', 'desc'), limit(50)) : null),
@@ -24,10 +24,7 @@ export default function LeaderboardPage() {
   const { data: topUsers, isLoading } = useCollection<UserProfile>(leaderboardQuery);
 
   const handleChallenge = (userName: string) => {
-    toast({
-      title: "Challenge Sent!",
-      description: `You've invited ${userName} to a head-to-head quiz challenge.`,
-    });
+    router.push(`/challenge/create?friend=${encodeURIComponent(userName)}`);
   };
 
   const getRankBadge = (rank: number) => {
@@ -149,8 +146,8 @@ export default function LeaderboardPage() {
                         <p className="text-sm font-black text-indigo-600">{userProfile.points?.toLocaleString() || 0}</p>
                         <p className="text-[10px] font-bold text-muted-foreground uppercase">Points</p>
                       </div>
-                      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full hover:bg-indigo-100 hover:text-indigo-600" onClick={() => handleChallenge(userProfile.name)}>
-                        <UserPlus className="h-4 w-4" />
+                      <Button size="icon" variant="ghost" className="h-10 w-10 rounded-full hover:bg-indigo-100 hover:text-indigo-600 group" onClick={() => handleChallenge(userProfile.name)}>
+                        <Swords className="h-5 w-5 transition-transform group-hover:scale-110" />
                       </Button>
                     </div>
                   </div>

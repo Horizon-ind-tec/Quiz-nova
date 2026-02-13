@@ -25,7 +25,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useLocalStorage } from '@/hooks/use-local-storage';
-import type { Quiz, QuizAttempt, MCQ, UserAnswers, UserProfile } from '@/lib/types';
+import type { Quiz, QuizAttempt, MCQ, UserAnswers, UserProfile, Challenge } from '@/lib/types';
 import { Progress } from '@/components/ui/progress';
 import { useFirestore, useUser } from '@/firebase';
 
@@ -34,6 +34,7 @@ type QuizState = 'loading' | 'taking' | 'paused' | 'results';
 export default function TakeQuizPage() {
   const [quizState, setQuizState] = useState<QuizState>('loading');
   const [quiz] = useLocalStorage<Quiz | null>('currentQuiz', null);
+  const [challengeId, setChallengeId] = useLocalStorage<string | null>('currentChallengeId', null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<UserAnswers>({});
   const [score, setScore] = useState(0);
@@ -76,6 +77,33 @@ export default function TakeQuizPage() {
     const pointsToAdd = Math.round((finalScore / 100) * quiz.totalMarks * 10);
     setPoints(pointsToAdd);
 
+    // 1. Handle Challenge Sync if in challenge mode
+    if (challengeId) {
+        try {
+            const chalRef = doc(firestore, 'challenges', challengeId);
+            const chalSnap = await getDoc(chalRef);
+            if (chalSnap.exists()) {
+                const chalData = chalSnap.data() as Challenge;
+                const isCreator = user.uid === chalData.creatorId;
+                
+                if (isCreator) {
+                    await updateDoc(chalRef, { creatorScore: finalScore });
+                } else {
+                    await updateDoc(chalRef, { friendScore: finalScore });
+                }
+
+                // Re-fetch to check if both finished
+                const updatedChalSnap = await getDoc(chalRef);
+                const updatedData = updatedChalSnap.data() as Challenge;
+                if (updatedData.creatorScore !== null && updatedData.friendScore !== null) {
+                    await updateDoc(chalRef, { status: 'completed' });
+                }
+            }
+        } catch (e) {
+            console.error("Challenge sync error:", e);
+        }
+    }
+
     const newQuizAttempt: QuizAttempt = {
       ...quiz,
       id: uuidv4(),
@@ -114,7 +142,7 @@ export default function TakeQuizPage() {
         console.error("Error saving quiz result:", error);
     }
     setQuizState('results');
-  }, [quiz, user, firestore, userAnswers, timeElapsed, calculateScore]);
+  }, [quiz, user, firestore, userAnswers, timeElapsed, calculateScore, challengeId]);
 
   useEffect(() => {
     if (quiz) {
@@ -157,6 +185,15 @@ export default function TakeQuizPage() {
       }
     }
   };
+
+  const handleReturn = () => {
+      if (challengeId) {
+          router.push(`/challenge/${challengeId}`);
+          setChallengeId(null);
+      } else {
+          router.push('/dashboard');
+      }
+  }
 
   const totalQuestions = quiz?.questions.length ?? 0;
   const q = quiz?.questions[currentQuestionIndex];
@@ -255,8 +292,8 @@ export default function TakeQuizPage() {
                             ))}
                         </Accordion>
                     </div>
-                    <Button onClick={() => router.push('/dashboard')} className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-lg font-black uppercase tracking-tight">
-                        Return to Dashboard
+                    <Button onClick={handleReturn} className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-lg font-black uppercase tracking-tight">
+                        {challengeId ? 'View Duel Status' : 'Return to Dashboard'}
                     </Button>
                 </CardContent>
             </Card>
