@@ -1,155 +1,67 @@
-/**
- * This ruleset enforces a strict user-ownership model for the QuizNova application.
- * All data, including user profiles, quizzes, questions, and results, is private
- * and accessible only by the user who created it. The security model is designed
- * for simplicity, performance, and strong authorization guarantees.
- *
- * Core Philosophy:
- * The fundamental principle is that users own their data. There are no public or
- * shared resources. All access control decisions are based on the authenticated
- * user's UID.
- */
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    //-------------------------------------------------------------------------
-    // Helper Functions
-    //-------------------------------------------------------------------------
-
-    function isSignedIn() {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
       return request.auth != null;
     }
-    
+
+    // Helper to check if the user is an admin
     function isAdmin() {
-      return isSignedIn() && request.auth.token.email == 'wizofclassknowledge@gmail.com';
+      return isAuthenticated() && request.auth.token.email == 'wizofclassknowledge@gmail.com';
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    function isExistingOwner(userId) {
-      return isOwner(userId) && exists(/databases/$(database)/documents/users/$(userId));
-    }
-
-    function isCreatingOwnProfile(userId) {
-      let isPlanFree = request.resource.data.plan == 'free';
-      let hasNoPaymentStatus = !('paymentStatus' in request.resource.data);
-      let hasNoPendingPlan = !('pendingPlan' in request.resource.data);
-      return isOwner(userId) && request.resource.data.id == userId && isPlanFree && hasNoPaymentStatus && hasNoPendingPlan;
-    }
-    
-    function isCreatingOwnAdminProfile(userId) {
-      let hasNoPaymentStatus = !('paymentStatus' in request.resource.data);
-      let hasNoPendingPlan = !('pendingPlan' in request.resource.data);
-      return isAdmin() && isOwner(userId) && request.resource.data.id == userId && hasNoPaymentStatus && hasNoPendingPlan;
-    }
-
-    function isUpdatingToInitiatePayment(userId) {
-        let incomingData = request.resource.data;
-        let existingData = resource.data;
-        return isOwner(userId)
-            && incomingData.paymentStatus == 'pending'
-            && 'pendingPlan' in incomingData
-            && incomingData.plan == existingData.plan
-            && incomingData.id == existingData.id
-            && incomingData.email == existingData.email
-            && incomingData.createdAt == existingData.createdAt;
-    }
-
-    function isCreatingOwnQuiz(userId) {
-      return request.resource.data.userId == userId;
-    }
-
-    function isUpdatingOwnQuiz() {
-      return request.resource.data.userId == resource.data.userId;
-    }
-
-    function isCreatingOwnQuestion(quizId) {
-      return request.resource.data.quizId == quizId;
-    }
-
-    function isUpdatingOwnQuestion() {
-      return request.resource.data.quizId == resource.data.quizId;
-    }
-
-    function isCreatingOwnQuizResult(userId) {
-      return request.resource.data.userId == userId;
-    }
-
-    function isUpdatingOwnQuizResult() {
-      return request.resource.data.userId == resource.data.userId;
-    }
-
-
-    //-------------------------------------------------------------------------
-    // Collection Rules
-    //-------------------------------------------------------------------------
-
-    match /settings/{settingId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-    
-    match /videos/{videoId} {
-      allow read: if isSignedIn();
-      allow create, delete: if isAdmin();
-      allow update: if isAdmin() || (
-        isSignedIn() &&
-        // Allow students to update only likes and views
-        request.resource.data.title == resource.data.title &&
-        request.resource.data.youtubeUrl == resource.data.youtubeUrl &&
-        request.resource.data.class == resource.data.class &&
-        request.resource.data.subject == resource.data.subject &&
-        request.resource.data.chapter == resource.data.chapter &&
-        request.resource.data.createdAt == resource.data.createdAt
-      );
-
-      match /comments/{commentId} {
-        allow read: if isSignedIn();
-        allow create: if isSignedIn() &&
-                       request.resource.data.userId == request.auth.uid &&
-                       request.resource.data.text is string &&
-                       request.resource.data.text.size() > 0 &&
-                       request.resource.data.text.size() < 500;
-        allow delete: if isAdmin() || (
-            isSignedIn() && resource.data.userId == request.auth.uid
-        );
-      }
-    }
-
+    // User Profiles
     match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
-      allow list: if isAdmin(); 
-      allow create: if isCreatingOwnProfile(userId) || isCreatingOwnAdminProfile(userId);
-      allow update: if isUpdatingToInitiatePayment(userId) || isAdmin();
-      allow delete: if isExistingOwner(userId);
-
-      match /quizzes/{quizId} {
-        allow get, list: if isOwner(userId);
-        allow create: if isOwner(userId) && isCreatingOwnQuiz(userId);
-        allow update: if isExistingOwner(userId) && isUpdatingOwnQuiz();
-        allow delete: if isExistingOwner(userId);
-
-        match /questions/{questionId} {
-          allow get, list: if isOwner(userId);
-          allow create: if isOwner(userId) && isCreatingOwnQuestion(quizId);
-          allow update: if isExistingOwner(userId) && isUpdatingOwnQuestion();
-          allow delete: if isExistingOwner(userId);
-        }
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Allow nested quiz results
+      match /quiz_results/{resultId} {
+        allow read, write: if isAuthenticated() && request.auth.uid == userId;
       }
-
-      match /quiz_results/{quizResultId} {
-        allow get, list: if isOwner(userId);
-        allow create: if isOwner(userId) && isCreatingOwnQuizResult(userId);
-        allow update: if isExistingOwner(userId) && isUpdatingOwnQuizResult();
-        allow delete: if isExistingOwner(userId);
+      
+      // Allow nested study plans
+      match /studyPlans/{planId} {
+        allow read, write: if isAuthenticated() && request.auth.uid == userId;
       }
+    }
 
-      match /studyPlans/{studyPlanId} {
-        allow read, write: if isOwner(userId);
+    // Challenges (Duels)
+    match /challenges/{challengeId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        request.auth.uid == resource.data.creatorId || 
+        request.auth.uid == request.resource.data.friendId ||
+        resource.data.friendId == null
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Coaching Videos
+    match /videos/{videoId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+      
+      match /comments/{commentId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated();
+        allow update, delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
       }
+    }
+
+    // Support Requests
+    match /support_requests/{requestId} {
+      allow create: if isAuthenticated();
+      allow read, update: if isAdmin();
+    }
+
+    // App Settings (like UPI details)
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
   }
 }
