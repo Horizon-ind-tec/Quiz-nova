@@ -1,3 +1,4 @@
+
 # dependencies
 /node_modules
 /.pnp
@@ -32,8 +33,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Firebase
+# capacitor
+/android
+/ios
+
+# firebase
 .firebase/
-firebase-debug.log*
-firestore-debug.log*
-ui-debug.log*
+backend.json
+firestore.rules

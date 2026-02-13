@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,8 +7,15 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { BrainCircuit, Loader2, Bot } from 'lucide-react';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, User, signInAnonymously } from 'firebase/auth';
+import { BrainCircuit, Loader2, Bot, keyborad } from 'lucide-react';
+import { 
+  signInWithEmailAndPassword, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  User, 
+  signInAnonymously,
+  sendPasswordResetEmail
+} from 'firebase/auth';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,6 +36,7 @@ export default function RootPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isGuestLoading, setIsGuestLoading] = useState(false);
+  const [isResetLoading, setIsResetLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
   const auth = useAuth();
@@ -79,8 +88,7 @@ export default function RootPage() {
     setIsLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      // FAST LOGIN: Don't wait for the database sync to finish.
-      // We push the user to the dashboard immediately.
+      // FAST LOGIN: Immediate redirect
       syncUserProfile(userCredential.user);
       router.push('/dashboard');
     } catch (error: any) {
@@ -90,6 +98,35 @@ export default function RootPage() {
         description: error.message || 'An unknown error occurred.',
       });
       setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    const email = form.getValues('email');
+    if (!email) {
+      toast({
+        variant: 'destructive',
+        title: 'Email Required',
+        description: 'Please type your email address above first, then click Forgot Password.',
+      });
+      return;
+    }
+
+    setIsResetLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({
+        title: 'Reset Link Sent',
+        description: 'Check your email inbox for instructions to reset your password.',
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message,
+      });
+    } finally {
+      setIsResetLoading(false);
     }
   };
 
@@ -171,7 +208,18 @@ export default function RootPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <div className="flex items-center justify-between">
+                        <FormLabel>Password</FormLabel>
+                        <Button 
+                            type="button" 
+                            variant="link" 
+                            className="px-0 font-bold text-xs" 
+                            onClick={handleForgotPassword}
+                            disabled={isResetLoading}
+                        >
+                            {isResetLoading ? "Sending..." : "Forgot Password?"}
+                        </Button>
+                    </div>
                     <FormControl>
                       <Input 
                         type="password" 
