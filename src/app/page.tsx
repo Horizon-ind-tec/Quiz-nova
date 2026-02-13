@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, useUser } from '@/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 const formSchema = z.object({
@@ -32,6 +32,14 @@ export default function RootPage() {
   const router = useRouter();
   const auth = useAuth();
   const firestore = useFirestore();
+  const { user: existingUser, isUserLoading } = useUser();
+
+  // Optimized: Auto-redirect if already logged in
+  useEffect(() => {
+    if (!isUserLoading && existingUser) {
+      router.push('/dashboard');
+    }
+  }, [existingUser, isUserLoading, router]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -46,17 +54,21 @@ export default function RootPage() {
     const isGuest = user.isAnonymous;
     const userPlan = isAdmin ? 'ultimate' : 'free';
 
-    const docSnap = await getDoc(userDocRef);
-    if (!docSnap.exists()) {
-        await setDoc(userDocRef, {
-            id: user.uid,
-            email: user.email || 'guest@quiznova.ai',
-            name: user.displayName || (isGuest ? 'AI Guest' : 'New User'),
-            createdAt: new Date().toISOString(),
-            plan: userPlan,
-        });
-    } else if (isAdmin) {
-        await setDoc(userDocRef, { plan: 'ultimate' }, { merge: true });
+    try {
+        const docSnap = await getDoc(userDocRef);
+        if (!docSnap.exists()) {
+            await setDoc(userDocRef, {
+                id: user.uid,
+                email: user.email || 'guest@quiznova.ai',
+                name: user.displayName || (isGuest ? 'AI Guest' : 'New User'),
+                createdAt: new Date().toISOString(),
+                plan: userPlan,
+            });
+        } else if (isAdmin) {
+            await setDoc(userDocRef, { plan: 'ultimate' }, { merge: true });
+        }
+    } catch (e) {
+        console.error("Profile creation error:", e);
     }
 
     if (isGuest) {
@@ -82,15 +94,6 @@ export default function RootPage() {
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
-    if (!auth || !firestore) {
-        toast({
-            variant: 'destructive',
-            title: 'Google Sign-In Failed',
-            description: 'Firebase not initialized. Please try again later.',
-        });
-        setIsGoogleLoading(false);
-        return;
-    }
     try {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
@@ -108,15 +111,6 @@ export default function RootPage() {
 
   const handleGuestSignIn = async () => {
     setIsGuestLoading(true);
-    if (!auth || !firestore) {
-        toast({
-            variant: 'destructive',
-            title: 'Guest Login Failed',
-            description: 'Firebase not initialized. Please try again later.',
-        });
-        setIsGuestLoading(false);
-        return;
-    }
     try {
       const userCredential = await signInAnonymously(auth);
       await createUserProfile(userCredential.user);
@@ -131,25 +125,41 @@ export default function RootPage() {
     }
   };
 
+  if (isUserLoading) {
+      return (
+        <div className="flex h-screen items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center">
-           <BrainCircuit className="mx-auto h-10 w-10 text-primary mb-2" />
-          <CardTitle className="text-2xl">Welcome Back!</CardTitle>
-          <CardDescription>Sign in to continue to QuizNova.</CardDescription>
+    <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4 sm:p-6">
+      <Card className="w-full max-w-md shadow-xl border-none">
+        <CardHeader className="text-center pb-2">
+           <div className="bg-primary/10 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <BrainCircuit className="h-10 w-10 text-primary" />
+           </div>
+          <CardTitle className="text-3xl font-black tracking-tight">QuizNova</CardTitle>
+          <CardDescription className="text-base">Sign in to your AI learning ecosystem.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Email Address</FormLabel>
                     <FormControl>
-                      <Input placeholder="name@example.com" {...field} />
+                      <Input 
+                        placeholder="name@example.com" 
+                        type="email"
+                        autoComplete="email"
+                        className="h-12 text-base"
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -162,50 +172,56 @@ export default function RootPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input 
+                        type="password" 
+                        placeholder="••••••••" 
+                        autoComplete="current-password"
+                        className="h-12 text-base"
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button type="submit" className="w-full h-12 text-lg font-bold" disabled={isLoading}>
+                {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
                 Sign In
               </Button>
             </form>
           </Form>
 
-           <div className="relative my-4">
+           <div className="relative my-8">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
+                <span className="w-full border-t border-slate-200" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">
+                <span className="bg-card px-4 text-muted-foreground font-semibold">
                   Or continue with
                 </span>
               </div>
             </div>
 
-            <div className="space-y-2">
-                <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
-                    {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 
-                    <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+            <div className="grid grid-cols-1 gap-3">
+                <Button variant="outline" className="h-12 text-base font-semibold border-2" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
+                    {isGoogleLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 
+                    <svg className="mr-2 h-5 w-5" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
                         <path fill="currentColor" d="M488 261.8C488 403.3 381.5 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 21.2 173.4 58.2l-67.4 66.2C324.5 98.4 289.3 80 248 80c-82.3 0-149.3 66.9-149.3 148.7s67 148.7 149.3 148.7c97.1 0 131.3-72.8 135.2-109.9H248v-85.3h236.1c2.3 12.7 3.9 26.9 3.9 41.4z"></path>
                     </svg>}
                     Google
                 </Button>
 
-                <Button variant="ghost" className="w-full text-muted-foreground" onClick={handleGuestSignIn} disabled={isGuestLoading}>
-                    {isGuestLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
+                <Button variant="ghost" className="h-12 text-muted-foreground hover:bg-slate-100" onClick={handleGuestSignIn} disabled={isGuestLoading}>
+                    {isGuestLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Bot className="mr-2 h-5 w-5" />}
                     Register as AI Guest (Test Mode)
                 </Button>
             </div>
 
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
+          <p className="mt-8 text-center text-sm text-muted-foreground">
             Don't have an account?{' '}
-            <Link href="/signup" className="font-semibold text-primary hover:underline">
-              Sign up
+            <Link href="/signup" className="font-bold text-primary hover:underline">
+              Create Account
             </Link>
           </p>
         </CardContent>

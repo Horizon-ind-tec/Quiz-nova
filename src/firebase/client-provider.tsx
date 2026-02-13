@@ -25,10 +25,11 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
   const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
-    // Safety timeout: If initialization takes more than 8 seconds, show a retry option
+    if (firebaseServices) return;
+
     const timer = setTimeout(() => {
       if (!firebaseServices) setTimedOut(true);
-    }, 8000);
+    }, 10000);
 
     const initFirebase = async () => {
       try {
@@ -48,7 +49,6 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     window.location.reload();
   };
 
-  // Show a detailed error screen if initialization completely fails
   if (error) {
     return (
       <div className="flex h-screen w-full flex-col items-center justify-center p-6 text-center bg-background">
@@ -70,26 +70,20 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     );
   }
 
-  // Show the loader while Firebase services are being initialized
   if (!firebaseServices) {
     return (
       <div className="flex h-screen w-full flex-col items-center justify-center gap-6 bg-background">
         <div className="relative">
-            <Loader2 className="h-16 w-16 animate-spin text-primary opacity-20" />
+            <Loader2 className="h-12 w-12 animate-spin text-primary/30" />
             <div className="absolute inset-0 flex items-center justify-center">
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
         </div>
         <div className="text-center space-y-2 px-4">
-            <h2 className="text-xl font-black text-slate-900 tracking-tight">Initializing QuizNova...</h2>
-            <p className="text-sm text-muted-foreground animate-pulse font-medium">
-                {timedOut ? "This is taking longer than usual..." : "Preparing your learning dashboard."}
+            <h2 className="text-lg font-bold text-slate-900 tracking-tight">Initializing QuizNova</h2>
+            <p className="text-xs text-muted-foreground font-medium max-w-[200px] mx-auto">
+                {timedOut ? "Network is slow, please wait..." : "Preparing your learning journey."}
             </p>
-            {timedOut && (
-                <Button variant="ghost" size="sm" onClick={handleRetry} className="mt-4 text-primary underline">
-                    Reload Page
-                </Button>
-            )}
         </div>
       </div>
     );
