@@ -44,24 +44,28 @@ export default function SignUpPage() {
   });
 
 
-  const createUserProfile = async (user: User, name: string) => {
+  const syncUserProfile = async (user: User, name: string) => {
     if (!firestore) return;
     const userDocRef = doc(firestore, 'users', user.uid);
     
     const isAdmin = user.email === ADMIN_EMAIL;
     const userPlan = isAdmin ? 'ultimate' : 'free';
 
-    const docSnap = await getDoc(userDocRef);
-    if (!docSnap.exists()) {
-        await setDoc(userDocRef, {
-            id: user.uid,
-            email: user.email,
-            name: name,
-            createdAt: new Date().toISOString(),
-            plan: userPlan,
-        });
-    } else if (isAdmin) {
-         await setDoc(userDocRef, { plan: 'ultimate' }, { merge: true });
+    try {
+        const docSnap = await getDoc(userDocRef);
+        if (!docSnap.exists()) {
+            await setDoc(userDocRef, {
+                id: user.uid,
+                email: user.email,
+                name: name,
+                createdAt: new Date().toISOString(),
+                plan: userPlan,
+            });
+        } else if (isAdmin) {
+             await setDoc(userDocRef, { plan: 'ultimate' }, { merge: true });
+        }
+    } catch (e) {
+        console.error("Profile sync error:", e);
     }
   };
 
@@ -78,8 +82,9 @@ export default function SignUpPage() {
     }
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      updateProfile(userCredential.user, { displayName: values.name });
-      createUserProfile(userCredential.user, values.name);
+      await updateProfile(userCredential.user, { displayName: values.name });
+      // Non-blocking sync to speed up navigation
+      syncUserProfile(userCredential.user, values.name);
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -105,7 +110,7 @@ export default function SignUpPage() {
     try {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
-      createUserProfile(userCredential.user, userCredential.user.displayName || 'Google User');
+      syncUserProfile(userCredential.user, userCredential.user.displayName || 'Google User');
       router.push('/dashboard');
     } catch (error: any) {
       toast({

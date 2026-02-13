@@ -34,7 +34,6 @@ export default function RootPage() {
   const firestore = useFirestore();
   const { user: existingUser, isUserLoading } = useUser();
 
-  // Optimized: Auto-redirect if already logged in
   useEffect(() => {
     if (!isUserLoading && existingUser) {
       router.push('/dashboard');
@@ -46,7 +45,7 @@ export default function RootPage() {
     defaultValues: { email: '', password: '' },
   });
 
-  const createUserProfile = async (user: User) => {
+  const syncUserProfile = async (user: User) => {
     if (!firestore) return;
     const userDocRef = doc(firestore, 'users', user.uid);
     
@@ -68,7 +67,7 @@ export default function RootPage() {
             await setDoc(userDocRef, { plan: 'ultimate' }, { merge: true });
         }
     } catch (e) {
-        console.error("Profile creation error:", e);
+        console.error("Profile sync error:", e);
     }
 
     if (isGuest) {
@@ -80,7 +79,8 @@ export default function RootPage() {
     setIsLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      await createUserProfile(userCredential.user);
+      // Non-blocking sync to speed up navigation
+      syncUserProfile(userCredential.user);
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -97,7 +97,7 @@ export default function RootPage() {
     try {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
-      await createUserProfile(userCredential.user);
+      syncUserProfile(userCredential.user);
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -113,7 +113,7 @@ export default function RootPage() {
     setIsGuestLoading(true);
     try {
       const userCredential = await signInAnonymously(auth);
-      await createUserProfile(userCredential.user);
+      syncUserProfile(userCredential.user);
       router.push('/dashboard');
     } catch (error: any) {
       toast({
