@@ -1,60 +1,49 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Admin email constant
-    function isAdmin() {
-      return request.auth != null && request.auth.token.email == 'wizofclassknowledge@gmail.com';
-    }
-
-    // User profiles
+    // User profiles: Anyone can read (for leaderboard), but only the owner can write
     match /users/{userId} {
-      allow get: if request.auth != null; 
-      allow list: if request.auth != null; // Needed for Leaderboard
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      
+      // Subcollections for user data
+      match /quiz_results/{resultId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      match /studyPlans/{planId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
 
-    // Quiz results (subcollection of users)
-    match /users/{userId}/quiz_results/{resultId} {
-      allow read, write: if request.auth != null && (request.auth.uid == userId || isAdmin());
-    }
-
-    // Study plans (subcollection of users)
-    match /users/{userId}/studyPlans/{planId} {
-      allow read, write: if request.auth != null && (request.auth.uid == userId || isAdmin());
-    }
-
-    // Challenges
+    // Challenges: Publicly readable so link sharing works before login.
+    // Creation and updates require authentication.
     match /challenges/{challengeId} {
-      // Allow anyone to read a challenge so invite links work for friends who aren't logged in yet
-      allow read: if true; 
+      allow read: if true;
       allow create: if request.auth != null;
-      allow update: if request.auth != null; // Participants update their scores
-      allow delete: if isAdmin();
+      allow update: if request.auth != null;
     }
 
-    // Videos
+    // Support requests: Users can create them, only admin can manage them
+    match /support_requests/{requestId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if request.auth != null && request.auth.token.email == 'wizofclassknowledge@gmail.com';
+    }
+
+    // Videos and Comments: Publicly readable, admin managed
     match /videos/{videoId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if request.auth != null && request.auth.token.email == 'wizofclassknowledge@gmail.com';
       
       match /comments/{commentId} {
         allow read: if true;
         allow create: if request.auth != null;
-        allow update, delete: if request.auth != null && (request.auth.uid == resource.data.userId || isAdmin());
       }
     }
 
-    // Support requests
-    match /support_requests/{requestId} {
-      allow create: if request.auth != null;
-      allow read, update, delete: if isAdmin();
-    }
-    
-    // Settings (UPI details etc)
+    // General settings (like UPI details)
     match /settings/{settingId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if request.auth != null && request.auth.token.email == 'wizofclassknowledge@gmail.com';
     }
   }
 }
