@@ -79,7 +79,8 @@ export default function RootPage() {
     setIsLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      // Non-blocking sync to speed up navigation
+      // FAST LOGIN: Don't wait for the database sync to finish.
+      // We push the user to the dashboard immediately.
       syncUserProfile(userCredential.user);
       router.push('/dashboard');
     } catch (error: any) {

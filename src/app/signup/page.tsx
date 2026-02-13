@@ -83,7 +83,9 @@ export default function SignUpPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       await updateProfile(userCredential.user, { displayName: values.name });
-      // Non-blocking sync to speed up navigation
+      
+      // FAST SIGNUP: Redirect to dashboard immediately after profile update.
+      // Profile sync with Firestore happens in the background.
       syncUserProfile(userCredential.user, values.name);
       router.push('/dashboard');
     } catch (error: any) {

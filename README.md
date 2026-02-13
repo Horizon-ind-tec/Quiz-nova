@@ -17,26 +17,29 @@ QuizNova is a next-generation educational platform built with **Next.js 15**, **
 - **AI Engine**: Google Genkit, Gemini 2.5 Flash.
 - **Mobile**: Capacitor (Android/iOS support).
 
-## 🚀 Deployment (Optimized for GitHub)
+## 🚀 Deployment (GitHub Workflow)
 
 This project is optimized for **Firebase App Hosting**.
 
-1. **Push to GitHub**: Ensure your latest changes are in your repository.
-2. **Connect to Firebase**:
-   - Go to the [Firebase Console](https://console.firebase.google.com/).
-   - Navigate to **App Hosting**.
-   - Click **Connect to GitHub** and select this repository.
-   - Firebase will automatically detect the Next.js environment and deploy your server-side AI features.
-3. **Set Secrets**:
-   - In the App Hosting dashboard, go to the **Secrets** tab.
-   - Add `GOOGLE_GENAI_API_KEY` with your Gemini API key to enable AI functionality.
+### How to update GitHub after changes:
+1. Open your terminal in the project folder.
+2. Run `git add .` to stage all changes.
+3. Run `git commit -m "Your description of changes"` to save them locally.
+4. Run `git push` to send the changes to GitHub.
+
+### Connecting GitHub to Firebase:
+1. Go to the [Firebase Console](https://console.firebase.google.com/).
+2. Navigate to **App Hosting**.
+3. Click **Connect to GitHub** and select this repository.
+4. Firebase will automatically detect the Next.js environment and deploy your server-side AI features every time you `git push`.
+5. **Set Secrets**: In the App Hosting dashboard, go to the **Secrets** tab and add `GOOGLE_GENAI_API_KEY` with your Gemini API key.
 
 ## 📱 Mobile Setup (Android)
 
 QuizNova uses Capacitor to wrap the web experience:
 
 1. Deploy the web app first to get your production URL.
-2. Update `server.url` in `capacitor.config.ts`.
+2. Update `server.url` in `capacitor.config.ts` with your live URL.
 3. Run `npm run build`.
 4. Run `npx cap sync`.
 5. Open in Android Studio: `npx cap open android`.
