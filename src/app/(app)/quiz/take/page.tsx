@@ -1,16 +1,15 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   CheckCircle,
   XCircle,
   Clock,
-  Loader2,
   Trophy,
 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { addDoc, collection, doc, updateDoc, getDoc, increment } from 'firebase/firestore';
+import { addDoc, collection, doc, updateDoc, getDoc } from 'firebase/firestore';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,12 +21,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import type { Quiz, QuizAttempt, MCQ, UserAnswers, UserProfile, Challenge } from '@/lib/types';
 import { Progress } from '@/components/ui/progress';
 import { useFirestore, useUser } from '@/firebase';
+import { Sparkles } from 'lucide-react';
 
 type QuizState = 'loading' | 'taking' | 'paused' | 'results';
 
@@ -73,11 +72,9 @@ export default function TakeQuizPage() {
     const finalScore = calculateScore();
     setScore(finalScore);
     
-    // Points logic: XP = (Score/100) * totalMarks * 10
     const pointsToAdd = Math.round((finalScore / 100) * quiz.totalMarks * 10);
     setPoints(pointsToAdd);
 
-    // 1. Handle Challenge Sync if in challenge mode
     if (challengeId) {
         try {
             const chalRef = doc(firestore, 'challenges', challengeId);
@@ -92,7 +89,6 @@ export default function TakeQuizPage() {
                     await updateDoc(chalRef, { friendScore: finalScore });
                 }
 
-                // Re-fetch to check if both finished
                 const updatedChalSnap = await getDoc(chalRef);
                 const updatedData = updatedChalSnap.data() as Challenge;
                 if (updatedData.creatorScore !== null && updatedData.friendScore !== null) {
@@ -118,7 +114,6 @@ export default function TakeQuizPage() {
         const quizResultsRef = collection(firestore, 'users', user.uid, 'quiz_results');
         await addDoc(quizResultsRef, newQuizAttempt);
 
-        // Update User Profile Gamification
         const userRef = doc(firestore, 'users', user.uid);
         const userSnap = await getDoc(userRef);
         
@@ -126,7 +121,6 @@ export default function TakeQuizPage() {
             const currentData = userSnap.data() as UserProfile;
             const newTotalPoints = (currentData.points || 0) + pointsToAdd;
             
-            // Calculate Rank
             let newRank: UserProfile['rank'] = 'Bronze';
             if (newTotalPoints > 50000) newRank = 'Diamond';
             else if (newTotalPoints > 15000) newRank = 'Platinum';
@@ -188,7 +182,7 @@ export default function TakeQuizPage() {
 
   const handleReturn = () => {
       if (challengeId) {
-          router.push(`/challenge/${challengeId}`);
+          router.push(`/Quiznova.Challenge/${challengeId}`);
           setChallengeId(null);
       } else {
           router.push('/dashboard');
@@ -341,5 +335,3 @@ export default function TakeQuizPage() {
     </div>
   );
 }
-
-import { Sparkles } from 'lucide-react';

@@ -5,9 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { v4 as uuidv4 } from 'uuid';
 import { doc, setDoc } from 'firebase/firestore';
-import { Loader2, Sparkles, Swords, Copy, Check, Share2 } from 'lucide-react';
+import { Loader2, Sparkles, Swords, Copy, Check } from 'lucide-react';
 
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +26,16 @@ const formSchema = z.object({
   chapter: z.string().min(1, 'Chapter is required.'),
 });
 
+// Helper to generate a branded random ID
+const generateChallengeId = (length: number = 10) => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
+
 export default function CreateChallengePage() {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -37,6 +46,7 @@ export default function CreateChallengePage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [challengeLink, setChallengeLink] = useState<string | null>(null);
+  const [displayLink, setDisplayLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -49,7 +59,6 @@ export default function CreateChallengePage() {
     setIsLoading(true);
 
     try {
-      // 1. Generate the Quiz using Nova AI
       const result = await generateQuizAction({
         ...values,
         difficulty: 'medium',
@@ -58,8 +67,10 @@ export default function CreateChallengePage() {
         quizType: 'quiz',
       });
 
+      const challengeId = generateChallengeId();
+      
       const newQuiz: Quiz = {
-        id: uuidv4(),
+        id: challengeId,
         ...values,
         difficulty: 'medium',
         quizType: 'quiz',
@@ -68,8 +79,6 @@ export default function CreateChallengePage() {
         createdAt: Date.now(),
       };
 
-      // 2. Create the Challenge document
-      const challengeId = uuidv4();
       const challenge: Challenge = {
         id: challengeId,
         creatorId: user.uid,
@@ -85,8 +94,10 @@ export default function CreateChallengePage() {
 
       await setDoc(doc(firestore, 'challenges', challengeId), challenge);
 
-      const link = `${window.location.origin}/challenge/${challengeId}`;
-      setChallengeLink(link);
+      const fullUrl = `${window.location.origin}/Quiznova.Challenge/${challengeId}`;
+      setChallengeLink(fullUrl);
+      setDisplayLink(`Quiznova.Challenge/${challengeId}`);
+      
       toast({ title: 'Challenge Created!', description: 'Send the link to your friend to start the duel.' });
 
     } catch (error: any) {
@@ -175,7 +186,7 @@ export default function CreateChallengePage() {
               <div className="space-y-6 text-center animate-in fade-in zoom-in duration-300">
                 <div className="p-4 bg-indigo-50 border-2 border-dashed border-indigo-200 rounded-xl">
                     <p className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-2">Duel Link Generated</p>
-                    <p className="text-[10px] text-muted-foreground break-all mb-4">{challengeLink}</p>
+                    <p className="text-sm font-black text-slate-900 break-all mb-4 bg-white p-2 rounded border">{displayLink}</p>
                     <Button onClick={copyToClipboard} variant="outline" className="w-full border-indigo-200 text-indigo-600 hover:bg-indigo-100 font-bold">
                         {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
                         {copied ? 'Copied' : 'Copy Link'}
