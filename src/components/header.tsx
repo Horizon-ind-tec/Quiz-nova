@@ -49,7 +49,7 @@ export function Header({ title }: HeaderProps) {
         [firestore, isUserAdmin]
     );
     const { data: pendingUsers } = useCollection<UserProfile>(pendingUsersQuery);
-    const notificationCount = pendingUsers?.length || 0;
+    const notificationCount = (pendingUsers?.length || 0);
 
     const handleSignOut = async () => {
         localStorage.removeItem('guestStartTime');
@@ -114,9 +114,11 @@ export function Header({ title }: HeaderProps) {
                     <span>Plans & Billing</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">
-                  <HelpCircle className="mr-2 h-4 w-4" />
-                  <span>Support</span>
+                <DropdownMenuItem asChild>
+                  <Link href="/support" className="cursor-pointer">
+                    <HelpCircle className="mr-2 h-4 w-4" />
+                    <span>Support</span>
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive cursor-pointer">

@@ -1,4 +1,3 @@
-
 'use server';
 
 import {
@@ -35,6 +34,11 @@ import {
   type GenerateChapterNotesInput,
   type GenerateChapterNotesOutput,
 } from '@/ai/flows/generate-chapter-notes';
+import {
+  supportBot,
+  type SupportBotInput,
+  type SupportBotOutput
+} from '@/ai/flows/support-bot-flow';
 
 
 export async function generateQuizAction(
@@ -146,4 +150,8 @@ export async function generateChapterNotesAction(
   input: GenerateChapterNotesInput
 ): Promise<GenerateChapterNotesOutput> {
   return await generateChapterNotes(input);
+}
+
+export async function supportBotAction(input: SupportBotInput): Promise<SupportBotOutput> {
+  return await supportBot(input);
 }

@@ -1,5 +1,3 @@
-
-
 export interface MCQ {
   type: 'mcq';
   question: string;
@@ -151,4 +149,14 @@ export interface StudyPlan {
   schedule: StudyTask[];
   createdAt: number; // timestamp
 }
-    
+
+export interface SupportRequest {
+    id: string;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    message: string;
+    type: 'refund' | 'general' | 'bug';
+    status: 'pending' | 'resolved';
+    createdAt: number;
+}
