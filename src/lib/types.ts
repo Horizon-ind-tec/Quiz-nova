@@ -125,10 +125,15 @@ export interface UserProfile {
     id: string;
     email: string;
     name: string;
-    createdAt: number;
+    createdAt: string;
     plan: 'free' | 'premium' | 'ultimate';
     paymentStatus?: 'pending' | 'confirmed';
     pendingPlan?: 'premium' | 'ultimate';
+    // Gamification fields
+    points: number;
+    streak: number;
+    lastActiveDate?: string; // ISO Date
+    rank: 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond';
 }
 
 export interface StudyTask {

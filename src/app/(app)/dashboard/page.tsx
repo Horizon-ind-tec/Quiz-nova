@@ -3,21 +3,23 @@
 import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PlusCircle, BrainCircuit, Gem, BookUser, CalendarDays, Loader2, Target, GraduationCap, ChevronRight, FileText } from 'lucide-react';
+import { PlusCircle, BrainCircuit, Gem, BookUser, CalendarDays, Loader2, Target, GraduationCap, ChevronRight, FileText, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Header } from '@/components/header';
 import { PerformanceChart } from '@/components/performance-chart';
 import { RecentQuizzes } from '@/components/recent-quizzes';
-import type { QuizAttempt } from '@/lib/types';
+import { UserStats } from '@/components/user-stats';
+import type { QuizAttempt, UserProfile } from '@/lib/types';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { useLocalStorage } from '@/hooks/use-local-storage';
-import { differenceInCalendarDays } from 'date-fns';
+import { differenceInCalendarDays, isYesterday, isToday, format } from 'date-fns';
 import { StudyPlanDialog } from '@/components/study-plan-dialog';
+import { useDoc } from '@/firebase/firestore/use-doc';
 
 type ViewType = 'quiz' | 'exam';
 
@@ -35,6 +37,12 @@ function DashboardContent() {
 
   const status = searchParams.get('status');
   const plan = searchParams.get('plan');
+
+  const profileRef = useMemoFirebase(
+    () => (firestore && user ? doc(firestore, 'users', user.uid) : null),
+    [firestore, user]
+  );
+  const { data: profile } = useDoc<UserProfile>(profileRef);
 
   useEffect(() => {
     if (status === 'success') {
@@ -66,6 +74,43 @@ function DashboardContent() {
     }
   }, [examDate]);
 
+  // Streak Logic
+  useEffect(() => {
+    const updateStreak = async () => {
+        if (!user || !firestore || !profile) return;
+        
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        const lastActive = profile.lastActiveDate;
+
+        if (!lastActive) {
+            // New user activity
+            await updateDoc(doc(firestore, 'users', user.uid), {
+                streak: 1,
+                lastActiveDate: todayStr
+            });
+            return;
+        }
+
+        if (isToday(new Date(lastActive))) return; // Already updated today
+
+        if (isYesterday(new Date(lastActive))) {
+            // Increment streak
+            await updateDoc(doc(firestore, 'users', user.uid), {
+                streak: (profile.streak || 0) + 1,
+                lastActiveDate: todayStr
+            });
+        } else {
+            // Reset streak
+            await updateDoc(doc(firestore, 'users', user.uid), {
+                streak: 1,
+                lastActiveDate: todayStr
+            });
+        }
+    };
+
+    if (profile) updateStreak();
+  }, [profile, user, firestore]);
+
   const quizHistoryQuery = useMemoFirebase(
     () =>
       firestore && user
@@ -87,14 +132,23 @@ function DashboardContent() {
   return (
     <div className="flex flex-col bg-background min-h-screen">
       <Header title="Dashboard" />
-      <main className="flex-1 space-y-4 p-3 md:p-8 max-w-6xl mx-auto w-full">
+      <main className="flex-1 space-y-6 p-3 md:p-8 max-w-6xl mx-auto w-full pb-24 md:pb-8">
+        
         {/* Welcome Section */}
-        <div className="flex flex-col space-y-0.5">
-            <h2 className="text-xl md:text-3xl font-black tracking-tight text-slate-900">
-              Hey, {user?.displayName?.split(' ')[0] || 'Student'}!
-            </h2>
-            <p className="text-xs md:text-base text-muted-foreground font-semibold">Your AI learning roadmap is ready.</p>
+        <div className="flex items-end justify-between">
+            <div className="flex flex-col space-y-0.5">
+                <h2 className="text-xl md:text-3xl font-black tracking-tight text-slate-900">
+                Hey, {user?.displayName?.split(' ')[0] || 'Student'}!
+                </h2>
+                <p className="text-xs md:text-base text-muted-foreground font-semibold">Your AI learning roadmap is ready.</p>
+            </div>
+            <Button asChild variant="outline" size="sm" className="rounded-full border-2 border-indigo-100 bg-indigo-50 text-indigo-600 font-black uppercase text-[10px] tracking-widest h-8 px-4">
+                <Link href="/leaderboard"><Trophy className="mr-2 h-3.5 w-3.5" /> Leaderboard</Link>
+            </Button>
         </div>
+
+        {/* Gamification Bar */}
+        <UserStats profile={profile} />
 
         {/* Action Grid - Highly Optimized for Mobile Browsing */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4">

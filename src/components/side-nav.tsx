@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BrainCircuit, LayoutDashboard, PlusCircle, TrendingUp, MessageSquareHeart, Gem, BookUser, Shield, Bell, CalendarCheck, Target, GraduationCap, FileText } from 'lucide-react';
+import { BrainCircuit, LayoutDashboard, PlusCircle, TrendingUp, MessageSquareHeart, Gem, BookUser, Shield, Bell, CalendarCheck, Target, GraduationCap, FileText, Trophy } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -73,6 +73,20 @@ export function SideNav() {
               <Link href="/quiz/create">
                 <PlusCircle className="h-5 w-5" />
                 <span className="font-semibold">New Quiz</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              size="lg"
+              isActive={isActive('/leaderboard')}
+              tooltip={{ children: 'Leaderboard' }}
+              className="rounded-xl transition-colors"
+            >
+              <Link href="/leaderboard">
+                <Trophy className="h-5 w-5" />
+                <span className="font-semibold">Leaderboard</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

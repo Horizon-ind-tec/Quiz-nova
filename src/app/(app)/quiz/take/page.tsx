@@ -7,9 +7,10 @@ import {
   XCircle,
   Clock,
   Loader2,
+  Trophy,
 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { addDoc, collection } from 'firebase/firestore';
+import { addDoc, collection, doc, updateDoc, getDoc, increment } from 'firebase/firestore';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,7 +25,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { useLocalStorage } from '@/hooks/use-local-storage';
-import type { Quiz, QuizAttempt, MCQ, UserAnswers } from '@/lib/types';
+import type { Quiz, QuizAttempt, MCQ, UserAnswers, UserProfile } from '@/lib/types';
 import { Progress } from '@/components/ui/progress';
 import { useFirestore, useUser } from '@/firebase';
 
@@ -36,6 +37,7 @@ export default function TakeQuizPage() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<UserAnswers>({});
   const [score, setScore] = useState(0);
+  const [earnedPoints, setPoints] = useState(0);
   const router = useRouter();
   const { user } = useUser();
   const firestore = useFirestore();
@@ -45,7 +47,6 @@ export default function TakeQuizPage() {
 
   const stripOptionPrefix = (text: string) => {
     if (!text) return '';
-    // Removes patterns like "a) ", "b. ", "(c) ", "1) " from the start of the string
     return text.replace(/^([a-zA-Z0-9])[\.\)\-]\s+|^(\([a-zA-Z0-9]\))\s+/i, '').trim();
   };
   
@@ -70,6 +71,11 @@ export default function TakeQuizPage() {
     if (!quiz || !user || !firestore) return;
     const finalScore = calculateScore();
     setScore(finalScore);
+    
+    // Points logic: XP = (Score/100) * totalMarks * 10
+    const pointsToAdd = Math.round((finalScore / 100) * quiz.totalMarks * 10);
+    setPoints(pointsToAdd);
+
     const newQuizAttempt: QuizAttempt = {
       ...quiz,
       id: uuidv4(),
@@ -79,9 +85,31 @@ export default function TakeQuizPage() {
       userId: user.uid,
       completionTime: timeElapsed,
     };
+
     try {
         const quizResultsRef = collection(firestore, 'users', user.uid, 'quiz_results');
         await addDoc(quizResultsRef, newQuizAttempt);
+
+        // Update User Profile Gamification
+        const userRef = doc(firestore, 'users', user.uid);
+        const userSnap = await getDoc(userRef);
+        
+        if (userSnap.exists()) {
+            const currentData = userSnap.data() as UserProfile;
+            const newTotalPoints = (currentData.points || 0) + pointsToAdd;
+            
+            // Calculate Rank
+            let newRank: UserProfile['rank'] = 'Bronze';
+            if (newTotalPoints > 50000) newRank = 'Diamond';
+            else if (newTotalPoints > 15000) newRank = 'Platinum';
+            else if (newTotalPoints > 5000) newRank = 'Gold';
+            else if (newTotalPoints > 1000) newRank = 'Silver';
+
+            await updateDoc(userRef, {
+                points: newTotalPoints,
+                rank: newRank
+            });
+        }
     } catch(error) {
         console.error("Error saving quiz result:", error);
     }
@@ -119,8 +147,9 @@ export default function TakeQuizPage() {
     const q = quiz?.questions[questionIndex];
     if (!q) return;
     const inQuizMode = quiz?.quizType === 'quiz';
-    const isAlreadyAnswered = userAnswers[questionIndex] !== '' && userAnswers[questionIndex] !== undefined && Object.keys(userAnswers[questionIndex]).length > 0;
-    if (inQuizMode && isAlreadyAnswered) return;
+    const isAlreadyAnswered = userAnswers[questionIndex] !== '' && userAnswers[questionIndex] !== undefined && (typeof userAnswers[questionIndex] === 'object' ? Object.keys(userAnswers[questionIndex]).length > 0 : true);
+    if (inQuizMode && isAlreadyAnswered && userAnswers[questionIndex] !== '') return;
+    
     setUserAnswers(prev => ({ ...prev, [questionIndex]: answer }));
     if (inQuizMode) {
       if (q.type === 'mcq' && answer === q.correctAnswer) {
@@ -182,34 +211,53 @@ export default function TakeQuizPage() {
   const renderContent = () => {
     if (quizState === 'results' && quiz) {
         return (
-            <Card>
-                <CardHeader className="items-center text-center">
-                    <CardTitle className="text-3xl">Quiz Complete!</CardTitle>
-                    <div className="text-4xl font-bold mt-4">{score}%</div>
+            <Card className="border-none shadow-2xl overflow-hidden">
+                <CardHeader className="items-center text-center bg-indigo-600 text-white py-10 relative">
+                    <div className="absolute top-4 right-4 bg-white/20 p-2 rounded-full">
+                        <Trophy className="h-8 w-8 text-yellow-300" />
+                    </div>
+                    <CardTitle className="text-3xl font-black uppercase tracking-tighter">Assessment Complete!</CardTitle>
+                    <div className="text-6xl font-black mt-4 flex items-baseline gap-1">
+                        {score}<span className="text-2xl opacity-70">%</span>
+                    </div>
+                    <div className="mt-4 bg-white/20 px-4 py-1.5 rounded-full text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-yellow-300" />
+                        +{earnedPoints} XP Earned
+                    </div>
                 </CardHeader>
-                <CardContent>
-                    <Accordion type="single" collapsible className="w-full">
-                        {quiz.questions.map((q, index) => (
-                            <AccordionItem value={`item-${index}`} key={index}>
-                                <AccordionTrigger>Question {index + 1}</AccordionTrigger>
-                                <AccordionContent className="p-4 bg-secondary/30 rounded-md">
-                                    <p className="font-semibold mb-2">{q.question}</p>
-                                    {q.type === 'mcq' && (
-                                        <ul className="space-y-1">
-                                            {q.options.map((opt, i) => (
-                                                <li key={i} className={cn(opt === q.correctAnswer ? "text-green-600 font-bold" : "")}>
-                                                    {String.fromCharCode(65 + i)}) {stripOptionPrefix(opt)}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                    <Separator className="my-3" />
-                                    <p className="text-sm text-muted-foreground">{q.explanation}</p>
-                                </AccordionContent>
-                            </AccordionItem>
-                        ))}
-                    </Accordion>
-                    <Button onClick={() => router.push('/quiz/create')} className="w-full mt-6">Create Another</Button>
+                <CardContent className="p-6">
+                    <div className="space-y-4 mb-8">
+                        <h4 className="font-black text-xs uppercase tracking-widest text-muted-foreground border-b pb-2">Question Review</h4>
+                        <Accordion type="single" collapsible className="w-full">
+                            {quiz.questions.map((q, index) => (
+                                <AccordionItem value={`item-${index}`} key={index} className="border-slate-100">
+                                    <AccordionTrigger className="text-left font-bold text-sm">Question {index + 1}</AccordionTrigger>
+                                    <AccordionContent className="p-4 bg-slate-50 rounded-lg mt-2">
+                                        <p className="font-bold mb-3 text-slate-800">{q.question}</p>
+                                        {q.type === 'mcq' && (
+                                            <ul className="space-y-2 mb-4">
+                                                {q.options.map((opt, i) => (
+                                                    <li key={i} className={cn(
+                                                        "text-xs p-2 rounded-md border",
+                                                        opt === q.correctAnswer ? "bg-green-50 border-green-200 text-green-700 font-bold" : "bg-white border-slate-200 text-slate-500"
+                                                    )}>
+                                                        {String.fromCharCode(65 + i)}) {stripOptionPrefix(opt)}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                        <div className="bg-white p-3 rounded border-l-4 border-indigo-500 shadow-sm">
+                                            <p className="text-[10px] font-black uppercase text-indigo-600 mb-1">Nova's Explanation</p>
+                                            <p className="text-xs text-slate-600 leading-relaxed">{q.explanation}</p>
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
+                    </div>
+                    <Button onClick={() => router.push('/dashboard')} className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-lg font-black uppercase tracking-tight">
+                        Return to Dashboard
+                    </Button>
                 </CardContent>
             </Card>
         );
@@ -218,24 +266,28 @@ export default function TakeQuizPage() {
     if (!quiz || !q) return null;
 
     return (
-        <Card className="w-full">
-            <div className="p-4 border-b">
-                <Progress value={quizProgress} className="h-2" />
+        <Card className="w-full shadow-lg border-slate-200">
+            <div className="p-4 border-b bg-slate-50/50">
+                <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Progress</span>
+                    <span className="text-[10px] font-black uppercase text-indigo-600">Question {currentQuestionIndex + 1} of {totalQuestions}</span>
+                </div>
+                <Progress value={((currentQuestionIndex + 1) / totalQuestions) * 100} className="h-1.5" />
                 <div className="flex justify-between items-center mt-4">
-                    <div className="flex items-center gap-2 font-medium">
-                        <Clock className="h-5 w-5" />
+                    <div className="flex items-center gap-2 font-black text-slate-700 bg-white border px-3 py-1 rounded-full shadow-sm text-sm">
+                        <Clock className="h-4 w-4 text-indigo-600" />
                         <span>{Math.floor(timeElapsed / 60)}:{(timeElapsed % 60).toString().padStart(2, '0')}</span>
                     </div>
-                    <Button onClick={finishQuiz} className="bg-green-600">SUBMIT</Button>
+                    <Button onClick={finishQuiz} className="bg-red-600 hover:bg-red-700 font-black uppercase text-xs tracking-widest px-6 shadow-md">SUBMIT</Button>
                 </div>
             </div>
-            <CardContent className="p-6">
-                <div className="mb-6">
+            <CardContent className="p-6 md:p-10">
+                <div className="min-h-[300px]">
                     {q.type === 'mcq' ? renderMCQ(q, currentQuestionIndex) : <p>Interactive support coming soon for this type.</p>}
                 </div>
-                <div className="flex justify-between mt-8">
-                    <Button variant="outline" onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))} disabled={currentQuestionIndex === 0}>Previous</Button>
-                    <Button onClick={() => setCurrentQuestionIndex(Math.min(totalQuestions - 1, currentQuestionIndex + 1))} disabled={currentQuestionIndex === totalQuestions - 1}>Next</Button>
+                <div className="flex justify-between mt-12 pt-6 border-t">
+                    <Button variant="ghost" onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))} disabled={currentQuestionIndex === 0} className="font-bold uppercase text-[10px] tracking-widest">Previous</Button>
+                    <Button onClick={() => setCurrentQuestionIndex(Math.min(totalQuestions - 1, currentQuestionIndex + 1))} disabled={currentQuestionIndex === totalQuestions - 1} className="bg-slate-900 hover:bg-slate-800 font-bold uppercase text-[10px] tracking-widest px-8">Next</Button>
                 </div>
             </CardContent>
         </Card>
@@ -243,7 +295,7 @@ export default function TakeQuizPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-muted/30">
        <main className="flex-1 p-2 pt-4 md:p-6 flex justify-center items-start">
         <div className="w-full max-w-4xl pb-20 md:pb-0">
             {renderContent()}
@@ -252,3 +304,5 @@ export default function TakeQuizPage() {
     </div>
   );
 }
+
+import { Sparkles } from 'lucide-react';

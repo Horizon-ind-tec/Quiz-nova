@@ -60,6 +60,9 @@ export default function SignUpPage() {
                 name: name,
                 createdAt: new Date().toISOString(),
                 plan: userPlan,
+                points: 0,
+                streak: 0,
+                rank: 'Bronze',
             });
         } else if (isAdmin) {
              await setDoc(userDocRef, { plan: 'ultimate' }, { merge: true });
@@ -83,9 +86,6 @@ export default function SignUpPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       await updateProfile(userCredential.user, { displayName: values.name });
-      
-      // FAST SIGNUP: Redirect to dashboard immediately after profile update.
-      // Profile sync with Firestore happens in the background.
       syncUserProfile(userCredential.user, values.name);
       router.push('/dashboard');
     } catch (error: any) {

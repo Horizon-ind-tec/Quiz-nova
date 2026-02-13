@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { BrainCircuit, Loader2, Bot, keyborad } from 'lucide-react';
+import { BrainCircuit, Loader2, Bot } from 'lucide-react';
 import { 
   signInWithEmailAndPassword, 
   signInWithPopup, 
@@ -71,6 +70,9 @@ export default function RootPage() {
                 name: user.displayName || (isGuest ? 'AI Guest' : 'New User'),
                 createdAt: new Date().toISOString(),
                 plan: userPlan,
+                points: 0,
+                streak: 0,
+                rank: 'Bronze',
             });
         } else if (isAdmin) {
             await setDoc(userDocRef, { plan: 'ultimate' }, { merge: true });
@@ -88,7 +90,6 @@ export default function RootPage() {
     setIsLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      // FAST LOGIN: Immediate redirect
       syncUserProfile(userCredential.user);
       router.push('/dashboard');
     } catch (error: any) {
