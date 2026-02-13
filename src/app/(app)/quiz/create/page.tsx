@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, Sparkles, History, FilePlus, TestTubeDiagonal, FileText } from 'lucide-react';
+import { Loader2, Sparkles, History, FilePlus, TestTubeDiagonal, FileText, Swords } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Header } from '@/components/header';
@@ -194,7 +195,31 @@ export default function CreateQuizPage() {
       <Header title="New Quiz" />
       <main className="flex-1 overflow-y-auto">
         <div className="p-4 pt-6 md:p-8">
-          <Card className="max-w-2xl mx-auto">
+          
+          {/* Battle with Friends Section */}
+          <Card className="max-w-2xl mx-auto mb-6 border-indigo-200 bg-indigo-50/30 overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+                <Swords className="h-24 w-24 text-indigo-600 rotate-12" />
+            </div>
+            <CardHeader className="py-4 relative z-10">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-indigo-600 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-600/20">
+                            <Swords className="h-5 w-5" />
+                        </div>
+                        <div className="text-center sm:text-left">
+                            <CardTitle className="text-lg font-black uppercase tracking-tight text-indigo-900">Battle with Friends</CardTitle>
+                            <CardDescription className="text-[10px] font-bold uppercase text-indigo-600/70 tracking-widest">Live AI-Powered Quiz Duels</CardDescription>
+                        </div>
+                    </div>
+                    <Button asChild variant="default" className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 font-black uppercase text-xs tracking-widest h-10 px-6 rounded-full shadow-md shadow-indigo-600/30 active:scale-95 transition-all">
+                        <Link href="/challenge/create">Challenge Friend</Link>
+                    </Button>
+                </div>
+            </CardHeader>
+          </Card>
+
+          <Card className="max-w-2xl mx-auto border-slate-200">
             <CardHeader>
               <CardTitle>Create a New Assessment</CardTitle>
               <CardDescription>Select your preferences and let our AI generate a custom quiz or exam for you.</CardDescription>
