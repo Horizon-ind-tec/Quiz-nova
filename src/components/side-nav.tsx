@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -35,28 +34,31 @@ export function SideNav() {
   const { data: pendingUsers } = useCollection<UserProfile>(pendingUsersQuery);
   const notificationCount = pendingUsers?.length || 0;
 
-  const isActive = (path: string) => pathname.startsWith(path);
+  const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
 
   return (
-    <Sidebar>
+    <Sidebar className="border-r border-sidebar-border">
       <SidebarContent>
-        <SidebarHeader>
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <BrainCircuit className="h-7 w-7 text-primary" />
-            <span className="text-xl font-semibold">QuizNova</span>
+        <SidebarHeader className="p-4 mb-2">
+          <Link href="/dashboard" className="flex items-center gap-3">
+            <div className="bg-white rounded-lg p-1 shadow-sm">
+              <BrainCircuit className="h-8 w-8 text-primary" />
+            </div>
+            <span className="text-xl font-black tracking-tight text-white">QuizNova</span>
           </Link>
         </SidebarHeader>
-        <SidebarMenu>
+        <SidebarMenu className="px-2 space-y-1">
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
               size="lg"
               isActive={isActive('/dashboard')}
               tooltip={{ children: 'Dashboard' }}
+              className="rounded-xl transition-colors"
             >
               <Link href="/dashboard">
-                <LayoutDashboard />
-                <span>Dashboard</span>
+                <LayoutDashboard className="h-5 w-5" />
+                <span className="font-semibold">Dashboard</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -66,10 +68,11 @@ export function SideNav() {
               size="lg"
               isActive={isActive('/quiz')}
               tooltip={{ children: 'New Quiz' }}
+              className="rounded-xl transition-colors"
             >
               <Link href="/quiz/create">
-                <PlusCircle />
-                <span>New Quiz</span>
+                <PlusCircle className="h-5 w-5" />
+                <span className="font-semibold">New Quiz</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -79,10 +82,11 @@ export function SideNav() {
               size="lg"
               isActive={isActive('/notes')}
               tooltip={{ children: 'Chapter Notes' }}
+              className="rounded-xl transition-colors"
             >
               <Link href="/notes">
-                <FileText />
-                <span>Chapter Notes</span>
+                <FileText className="h-5 w-5" />
+                <span className="font-semibold">Chapter Notes</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -92,10 +96,11 @@ export function SideNav() {
               size="lg"
               isActive={isActive('/most-expected-questions')}
               tooltip={{ children: 'Most Expected' }}
+              className="rounded-xl transition-colors"
             >
               <Link href="/most-expected-questions">
-                <Target />
-                <span>Most Expected</span>
+                <Target className="h-5 w-5" />
+                <span className="font-semibold">Most Expected</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -105,10 +110,11 @@ export function SideNav() {
               size="lg"
               isActive={isActive('/helper')}
               tooltip={{ children: 'Homework Helper' }}
+              className="rounded-xl transition-colors"
             >
               <Link href="/helper">
-                <GraduationCap />
-                <span>Homework Helper</span>
+                <GraduationCap className="h-5 w-5" />
+                <span className="font-semibold">Homework Helper</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -118,10 +124,11 @@ export function SideNav() {
               size="lg"
               isActive={isActive('/report')}
               tooltip={{ children: 'AI Report' }}
+              className="rounded-xl transition-colors"
             >
               <Link href="/report">
-                <MessageSquareHeart />
-                <span>AI Report</span>
+                <MessageSquareHeart className="h-5 w-5" />
+                <span className="font-semibold">AI Report</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -131,10 +138,11 @@ export function SideNav() {
               size="lg"
               isActive={isActive('/coaching')}
               tooltip={{ children: 'Coaching' }}
+              className="rounded-xl transition-colors"
             >
               <Link href="/coaching">
-                <BookUser />
-                <span>Coaching</span>
+                <BookUser className="h-5 w-5" />
+                <span className="font-semibold">Coaching</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -144,10 +152,11 @@ export function SideNav() {
               size="lg"
               isActive={isActive('/performance')}
               tooltip={{ children: 'Performance' }}
+              className="rounded-xl transition-colors"
             >
               <Link href="/performance">
-                <TrendingUp />
-                <span>Performance</span>
+                <TrendingUp className="h-5 w-5" />
+                <span className="font-semibold">Performance</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -157,10 +166,11 @@ export function SideNav() {
               size="lg"
               isActive={isActive('/study-plan')}
               tooltip={{ children: 'Study Plan' }}
+              className="rounded-xl transition-colors"
             >
               <Link href="/study-plan">
-                <CalendarCheck />
-                <span>Study Plan</span>
+                <CalendarCheck className="h-5 w-5" />
+                <span className="font-semibold">Study Plan</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -170,25 +180,27 @@ export function SideNav() {
               size="lg"
               isActive={isActive('/plans')}
               tooltip={{ children: 'Upgrade' }}
+              className="rounded-xl transition-colors"
             >
               <Link href="/plans">
-                <Gem />
-                <span>Upgrade</span>
+                <Gem className="h-5 w-5" />
+                <span className="font-semibold">Upgrade</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
            {isUserAdmin && (
-            <SidebarMenuItem>
+            <SidebarMenuItem className="mt-4 pt-4 border-t border-sidebar-border/50">
                     <SidebarMenuButton
                     asChild
                     size="lg"
                     isActive={isActive('/notifications')}
                     tooltip={{ children: 'Admin Panel' }}
+                    className="rounded-xl transition-colors bg-sidebar-accent/20"
                     >
                     <Link href="/notifications">
-                        <Shield />
-                        <span>Admin Panel</span>
-                        {notificationCount > 0 && <SidebarMenuBadge>{notificationCount}</SidebarMenuBadge>}
+                        <Shield className="h-5 w-5" />
+                        <span className="font-semibold">Admin Panel</span>
+                        {notificationCount > 0 && <SidebarMenuBadge className="bg-red-500 text-white font-bold">{notificationCount}</SidebarMenuBadge>}
                     </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>

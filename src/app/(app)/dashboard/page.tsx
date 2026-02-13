@@ -85,124 +85,133 @@ function DashboardContent() {
   }
 
   return (
-    <div className="flex flex-col bg-background">
+    <div className="flex flex-col bg-background min-h-screen">
       <Header title="Dashboard" />
-      <main className="flex-1 space-y-8 p-4 pt-8 md:p-8 max-w-4xl mx-auto w-full">
-        <div className="flex flex-col space-y-2">
-            <h2 className="text-4xl font-extrabold tracking-tight text-slate-900">Welcome back, {user?.displayName || 'Student'}!</h2>
-            <p className="text-lg text-muted-foreground font-medium">Your personalized AI learning hub.</p>
+      <main className="flex-1 space-y-6 p-4 md:p-8 max-w-6xl mx-auto w-full">
+        {/* Welcome Section */}
+        <div className="flex flex-col space-y-1">
+            <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight text-slate-900">
+              Welcome, {user?.displayName?.split(' ')[0] || 'Student'}!
+            </h2>
+            <p className="text-sm md:text-lg text-muted-foreground font-medium">Your personal learning ecosystem is ready.</p>
         </div>
 
-        <div className="flex flex-col gap-4">
-             <Button asChild className="h-28 bg-indigo-600 hover:bg-indigo-700 shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
+        {/* Action Grid - Optimized for Mobile (2 cols) and Desktop (3-4 cols) */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+             <Button asChild className="h-24 md:h-28 bg-indigo-600 hover:bg-indigo-700 shadow-md flex flex-col items-center justify-center gap-1 md:gap-2 rounded-xl transition-all hover:scale-[1.02]">
                 <Link href="/helper">
-                    <GraduationCap className="h-7 w-7" />
-                    <span className="text-lg font-bold">Homework Helper AI</span>
+                    <GraduationCap className="h-5 w-5 md:h-7 md:h-7" />
+                    <span className="text-xs md:text-lg font-bold">Homework Helper</span>
                 </Link>
              </Button>
 
-             <Button asChild className="h-28 bg-blue-600 hover:bg-blue-700 shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
+             <Button asChild className="h-24 md:h-28 bg-blue-600 hover:bg-blue-700 shadow-md flex flex-col items-center justify-center gap-1 md:gap-2 rounded-xl transition-all hover:scale-[1.02]">
                 <Link href="/report">
-                    <BrainCircuit className="h-7 w-7" />
-                    <span className="text-lg font-bold">AI Learning Report</span>
+                    <BrainCircuit className="h-5 w-5 md:h-7 md:h-7" />
+                    <span className="text-xs md:text-lg font-bold">AI Report</span>
                 </Link>
              </Button>
 
-              <Button asChild className="h-28 bg-gradient-to-r from-amber-400 via-orange-400 to-orange-500 text-white shadow-xl hover:brightness-110 flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
+              <Button asChild className="h-24 md:h-28 bg-gradient-to-br from-amber-400 to-orange-600 text-white shadow-md hover:brightness-110 flex flex-col items-center justify-center gap-1 md:gap-2 rounded-xl transition-all hover:scale-[1.02]">
                 <Link href="/plans">
-                    <Gem className="h-7 w-7" />
-                    <span className="text-lg font-bold">Upgrade to Premium</span>
+                    <Gem className="h-5 w-5 md:h-7 md:h-7" />
+                    <span className="text-xs md:text-lg font-bold">Premium</span>
                 </Link>
              </Button>
 
-             <Button asChild variant="outline" className="h-28 bg-white border-2 border-slate-100 shadow-md flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01] hover:bg-slate-50">
+             <Button asChild variant="outline" className="h-24 md:h-28 bg-white border-2 border-slate-100 shadow-sm flex flex-col items-center justify-center gap-1 md:gap-2 rounded-xl transition-all hover:scale-[1.02] hover:bg-slate-50">
                 <Link href="/coaching">
-                    <BookUser className="h-7 w-7 text-blue-600" />
-                    <span className="text-lg font-bold text-slate-800">Video Coaching</span>
+                    <BookUser className="h-5 w-5 md:h-7 md:h-7 text-blue-600" />
+                    <span className="text-xs md:text-lg font-bold text-slate-800">Coaching</span>
                 </Link>
              </Button>
 
-            <Button asChild className="h-28 bg-blue-500/60 hover:bg-blue-500 shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
+            <Button asChild className="h-24 md:h-28 bg-blue-500 hover:bg-blue-600 shadow-md flex flex-col items-center justify-center gap-1 md:gap-2 rounded-xl transition-all hover:scale-[1.02]">
               <Link href="/quiz/create">
-                <PlusCircle className="h-7 w-7" />
-                <span className="text-lg font-bold">Create New Quiz</span>
+                <PlusCircle className="h-5 w-5 md:h-7 md:h-7" />
+                <span className="text-xs md:text-lg font-bold">Create Quiz</span>
               </Link>
             </Button>
 
-            <Button asChild className="h-28 bg-violet-600 hover:bg-violet-700 text-white shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
+            <Button asChild className="h-24 md:h-28 bg-violet-600 hover:bg-violet-700 text-white shadow-md flex flex-col items-center justify-center gap-1 md:gap-2 rounded-xl transition-all hover:scale-[1.02]">
               <Link href="/notes">
-                <FileText className="h-7 w-7" />
-                <span className="text-lg font-bold">AI Chapter Notes</span>
+                <FileText className="h-5 w-5 md:h-7 md:h-7" />
+                <span className="text-xs md:text-lg font-bold">Chapter Notes</span>
               </Link>
             </Button>
 
-            <Button asChild variant="destructive" className="h-28 bg-red-500 hover:bg-red-600 shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
+            <Button asChild variant="destructive" className="h-24 md:h-28 bg-red-500 hover:bg-red-600 shadow-md flex flex-col items-center justify-center gap-1 md:gap-2 rounded-xl transition-all hover:scale-[1.02]">
               <Link href="/most-expected-questions">
-                <Target className="h-7 w-7" />
-                <span className="text-lg font-bold">Expected Questions</span>
+                <Target className="h-5 w-5 md:h-7 md:h-7" />
+                <span className="text-xs md:text-lg font-bold">Expected Qs</span>
               </Link>
             </Button>
 
             <Dialog open={isPlanDialogOpen} onOpenChange={setIsPlanDialogOpen}>
                 <DialogTrigger asChild>
-                    <Button variant="secondary" className="h-28 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg flex flex-col items-center justify-center gap-2 rounded-xl transition-all hover:scale-[1.01]">
-                        <CalendarDays className="h-7 w-7" />
-                        <span className="text-lg font-bold">{daysLeft !== null && daysLeft >= 0 ? `${daysLeft} Days Left` : 'AI Study Planner'}</span>
+                    <Button variant="secondary" className="h-24 md:h-28 bg-emerald-500 hover:bg-emerald-600 text-white shadow-md flex flex-col items-center justify-center gap-1 md:gap-2 rounded-xl transition-all hover:scale-[1.02]">
+                        <CalendarDays className="h-5 w-5 md:h-7 md:h-7" />
+                        <span className="text-xs md:text-lg font-bold">
+                          {daysLeft !== null && daysLeft >= 0 ? `${daysLeft} Days Left` : 'Study Planner'}
+                        </span>
                     </Button>
                 </DialogTrigger>
                 <StudyPlanDialog onOpenChange={setIsPlanDialogOpen} />
             </Dialog>
         </div>
 
-        <Tabs value={view} onValueChange={(value) => setView(value as ViewType)} className="space-y-4 pt-8 border-t">
-          <div className="flex items-center justify-between">
-            <TabsList className="bg-slate-100 p-1">
-                <TabsTrigger value="quiz" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">Quiz Trends</TabsTrigger>
-                <TabsTrigger value="exam" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">Exam Trends</TabsTrigger>
+        {/* Performance Section */}
+        <Tabs value={view} onValueChange={(value) => setView(value as ViewType)} className="space-y-4 pt-6 border-t">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <TabsList className="bg-slate-100 p-1 w-full sm:w-auto">
+                <TabsTrigger value="quiz" className="flex-1 sm:flex-none data-[state=active]:bg-white data-[state=active]:shadow-sm">Quiz Trends</TabsTrigger>
+                <TabsTrigger value="exam" className="flex-1 sm:flex-none data-[state=active]:bg-white data-[state=active]:shadow-sm">Exam Trends</TabsTrigger>
             </TabsList>
-            <Button variant="ghost" size="sm" asChild className="text-blue-600 hover:text-blue-700">
-                <Link href="/performance" className="font-bold">View History <ChevronRight className="ml-1 h-4 w-4" /></Link>
+            <Button variant="ghost" size="sm" asChild className="text-blue-600 hover:text-blue-700 w-full sm:w-auto">
+                <Link href="/performance" className="font-bold justify-center">View Full History <ChevronRight className="ml-1 h-4 w-4" /></Link>
             </Button>
           </div>
-          <TabsContent value="quiz" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4 shadow-sm border-slate-200">
-                  <CardHeader>
+          
+          <TabsContent value="quiz" className="space-y-4 outline-none">
+            <div className="grid gap-4 lg:grid-cols-7">
+                <Card className="lg:col-span-4 shadow-sm border-slate-200">
+                  <CardHeader className="pb-2">
                     <CardTitle className="text-lg">Score Progression</CardTitle>
                     <CardDescription>Your last 10 quiz results.</CardDescription>
                   </CardHeader>
-                  <CardContent className="pl-2">
+                  <CardContent className="px-2 pb-2">
                      {historyLoading ? <div className="flex h-[300px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <PerformanceChart data={quizHistory || []} />}
                   </CardContent>
                 </Card>
-                <Card className="col-span-4 lg:col-span-3 shadow-sm border-slate-200">
-                  <CardHeader>
+                <Card className="lg:col-span-3 shadow-sm border-slate-200">
+                  <CardHeader className="pb-2">
                     <CardTitle className="text-lg">Recent Quizzes</CardTitle>
                     <CardDescription>Your latest attempts.</CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="px-0">
                     {historyLoading ? <div className="flex h-[300px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <RecentQuizzes data={quizHistory || []} />}
                   </CardContent>
                 </Card>
               </div>
           </TabsContent>
-          <TabsContent value="exam" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4 shadow-sm border-slate-200">
-                  <CardHeader>
+          
+          <TabsContent value="exam" className="space-y-4 outline-none">
+            <div className="grid gap-4 lg:grid-cols-7">
+                <Card className="lg:col-span-4 shadow-sm border-slate-200">
+                  <CardHeader className="pb-2">
                     <CardTitle className="text-lg">Paper Performance</CardTitle>
                     <CardDescription>Handwritten scores graded by AI.</CardDescription>
                   </CardHeader>
-                  <CardContent className="pl-2">
+                  <CardContent className="px-2 pb-2">
                     {historyLoading ? <div className="flex h-[300px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <PerformanceChart data={quizHistory || []} />}
                   </CardContent>
                 </Card>
-                <Card className="col-span-4 lg:col-span-3 shadow-sm border-slate-200">
-                  <CardHeader>
+                <Card className="lg:col-span-3 shadow-sm border-slate-200">
+                  <CardHeader className="pb-2">
                     <CardTitle className="text-lg">Recent Exams</CardTitle>
                     <CardDescription>Latest assessments.</CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="px-0">
                     {historyLoading ? <div className="flex h-[300px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <RecentQuizzes data={quizHistory || []} />}
                   </CardContent>
                 </Card>
