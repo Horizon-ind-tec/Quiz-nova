@@ -3,20 +3,21 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
-import { Loader2, Swords, Trophy, User, Zap, Sparkles } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { doc, updateDoc } from 'firebase/firestore';
+import { Loader2, Swords, User, Zap, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/header';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import type { Challenge } from '@/lib/types';
 import { useLocalStorage } from '@/hooks/use-local-storage';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ChallengeInvitePage() {
   const { id } = useParams();
   const router = useRouter();
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [, setQuiz] = useLocalStorage<any | null>('currentQuiz', null);
   const [, setChallengeMode] = useLocalStorage<string | null>('currentChallengeId', null);
 
@@ -35,7 +36,17 @@ export default function ChallengeInvitePage() {
   }, [challenge, router, id]);
 
   const handleAccept = async () => {
-    if (!user || !firestore || !challenge) return;
+    if (!firestore || !challenge) return;
+
+    if (!user) {
+        toast({
+            title: "Sign in Required",
+            description: "Please sign in to accept the challenge and compete!",
+        });
+        router.push(`/?redirect=/challenge/${id}`);
+        return;
+    }
+
     setIsProcessing(true);
 
     try {
@@ -55,28 +66,32 @@ export default function ChallengeInvitePage() {
         setChallengeMode(challenge.id);
         router.push('/quiz/take');
 
-    } catch (e) {
+    } catch (e: any) {
         console.error("Accept error:", e);
+        toast({
+            variant: "destructive",
+            title: "Access Denied",
+            description: "You don't have permission to join this duel.",
+        });
     } finally {
         setIsProcessing(false);
     }
   };
 
   if (isLoading) {
-    return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-indigo-600" /></div>;
   }
 
   if (!challenge) {
     return (
         <div className="flex h-screen flex-col items-center justify-center p-4 text-center">
-            <h1 className="text-xl font-bold mb-2">Duel Not Found</h1>
+            <h1 className="text-xl font-bold mb-2 text-slate-900">Duel Not Found</h1>
             <p className="text-muted-foreground mb-4">This challenge link might be expired or invalid.</p>
             <Button onClick={() => router.push('/dashboard')}>Go to Dashboard</Button>
         </div>
     );
   }
 
-  const isCreator = user?.uid === challenge.creatorId;
   const hasFinishedCreator = challenge.creatorScore !== null;
   const hasFinishedFriend = challenge.friendScore !== null;
 
@@ -85,9 +100,9 @@ export default function ChallengeInvitePage() {
       <Header title="Challenge Received" />
       <main className="flex-1 flex flex-col items-center justify-center p-4 space-y-8">
         
-        <div className="relative">
+        <div className="relative w-full max-w-lg">
             <div className="absolute -inset-4 bg-indigo-500/20 blur-3xl rounded-full" />
-            <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-3xl w-full max-w-lg text-center shadow-2xl">
+            <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-3xl w-full text-center shadow-2xl">
                 <div className="flex justify-center mb-6">
                     <div className="bg-indigo-600 p-4 rounded-full shadow-lg shadow-indigo-500/50">
                         <Swords className="h-10 w-10" />
@@ -121,7 +136,7 @@ export default function ChallengeInvitePage() {
                     </div>
                     <div className="flex items-center gap-3">
                         <Sparkles className="h-4 w-4 text-indigo-400" />
-                        <p className="text-sm font-bold text-slate-300">Topic: <span className="text-white">{challenge.quiz.chapter}</span></p>
+                        <p className="text-sm font-bold text-slate-300">Topic: <span className="text-white">{challenge.quiz.chapter || 'General'}</span></p>
                     </div>
                 </div>
 
@@ -130,7 +145,7 @@ export default function ChallengeInvitePage() {
                     disabled={isProcessing} 
                     className="w-full h-14 bg-indigo-600 hover:bg-indigo-700 text-lg font-black uppercase tracking-widest shadow-xl shadow-indigo-600/30 active:scale-95 transition-all"
                 >
-                    {isProcessing ? <Loader2 className="h-6 w-6 animate-spin" /> : 'ACCEPT CHALLENGE'}
+                    {isProcessing ? <Loader2 className="h-6 w-6 animate-spin" /> : (user ? 'ACCEPT CHALLENGE' : 'LOGIN TO PLAY')}
                 </Button>
                 
                 <p className="mt-6 text-[10px] font-black uppercase text-slate-500 tracking-tighter">

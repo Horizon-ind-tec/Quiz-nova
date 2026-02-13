@@ -1,66 +1,59 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper function to check if user is authenticated
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    // Helper to check if the user is an admin
+    // Admin email constant
     function isAdmin() {
-      return isAuthenticated() && request.auth.token.email == 'wizofclassknowledge@gmail.com';
+      return request.auth != null && request.auth.token.email == 'wizofclassknowledge@gmail.com';
     }
 
-    // User Profiles
+    // User profiles
     match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && request.auth.uid == userId;
-      
-      // Allow nested quiz results
-      match /quiz_results/{resultId} {
-        allow read, write: if isAuthenticated() && request.auth.uid == userId;
-      }
-      
-      // Allow nested study plans
-      match /studyPlans/{planId} {
-        allow read, write: if isAuthenticated() && request.auth.uid == userId;
-      }
+      allow get: if request.auth != null; 
+      allow list: if request.auth != null; // Needed for Leaderboard
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && (request.auth.uid == userId || isAdmin());
     }
 
-    // Challenges (Duels)
+    // Quiz results (subcollection of users)
+    match /users/{userId}/quiz_results/{resultId} {
+      allow read, write: if request.auth != null && (request.auth.uid == userId || isAdmin());
+    }
+
+    // Study plans (subcollection of users)
+    match /users/{userId}/studyPlans/{planId} {
+      allow read, write: if request.auth != null && (request.auth.uid == userId || isAdmin());
+    }
+
+    // Challenges
     match /challenges/{challengeId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && (
-        request.auth.uid == resource.data.creatorId || 
-        request.auth.uid == request.resource.data.friendId ||
-        resource.data.friendId == null
-      );
+      // Allow anyone to read a challenge so invite links work for friends who aren't logged in yet
+      allow read: if true; 
+      allow create: if request.auth != null;
+      allow update: if request.auth != null; // Participants update their scores
       allow delete: if isAdmin();
     }
 
-    // Coaching Videos
+    // Videos
     match /videos/{videoId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin();
       
       match /comments/{commentId} {
-        allow read: if isAuthenticated();
-        allow create: if isAuthenticated();
-        allow update, delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
+        allow read: if true;
+        allow create: if request.auth != null;
+        allow update, delete: if request.auth != null && (request.auth.uid == resource.data.userId || isAdmin());
       }
     }
 
-    // Support Requests
+    // Support requests
     match /support_requests/{requestId} {
-      allow create: if isAuthenticated();
-      allow read, update: if isAdmin();
+      allow create: if request.auth != null;
+      allow read, update, delete: if isAdmin();
     }
-
-    // App Settings (like UPI details)
+    
+    // Settings (UPI details etc)
     match /settings/{settingId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin();
     }
   }
