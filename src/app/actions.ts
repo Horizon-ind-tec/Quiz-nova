@@ -39,6 +39,11 @@ import {
   type SupportBotInput,
   type SupportBotOutput
 } from '@/ai/flows/support-bot-flow';
+import {
+  scanToQuiz,
+  type ScanToQuizInput,
+  type ScanToQuizOutput
+} from '@/ai/flows/scan-to-quiz-flow';
 
 
 export async function generateQuizAction(
@@ -154,4 +159,8 @@ export async function generateChapterNotesAction(
 
 export async function supportBotAction(input: SupportBotInput): Promise<SupportBotOutput> {
   return await supportBot(input);
+}
+
+export async function scanToQuizAction(input: ScanToQuizInput): Promise<ScanToQuizOutput> {
+  return await scanToQuiz(input);
 }

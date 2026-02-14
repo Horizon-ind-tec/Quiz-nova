@@ -11,3 +11,4 @@ import '@/ai/flows/generate-study-plan.ts';
 import '@/ai/flows/generate-most-expected-questions.ts';
 import '@/ai/flows/homework-helper-flow.ts';
 import '@/ai/flows/generate-chapter-notes.ts';
+import '@/ai/flows/scan-to-quiz-flow.ts';
