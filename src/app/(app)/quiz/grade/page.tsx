@@ -195,9 +195,9 @@ export default function GradeExamPage() {
       for (let i = 0; i < files.length && capturedImages.length + processedImages < MAX_IMAGES; i++) {
         const file = files[i];
 
-        // Size checks: 1MB min, 1GB max
-        if (file.size < 1 * 1024 * 1024) {
-          toast({ variant: 'destructive', title: 'File too small', description: `${file.name} is smaller than 1MB.` });
+        // Size checks: 12KB min, 1GB max
+        if (file.size < 12 * 1024) {
+          toast({ variant: 'destructive', title: 'File too small', description: `${file.name} is smaller than 12KB.` });
           continue;
         }
         if (file.size > 1024 * 1024 * 1024) {
@@ -283,7 +283,7 @@ export default function GradeExamPage() {
       <CardHeader>
         <CardTitle>Grade Your Exam</CardTitle>
         <CardDescription>
-          Use your camera to upload your answer sheets. You can upload up to {MAX_IMAGES} images (1MB to 1GB each).
+          Use your camera to upload your answer sheets. You can upload up to {MAX_IMAGES} images (12KB to 1GB each).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

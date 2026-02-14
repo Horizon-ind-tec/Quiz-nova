@@ -108,12 +108,12 @@ export default function CreateQuizPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Minimum 1MB check
-    if (file.size < 1 * 1024 * 1024) {
+    // Minimum 12KB check
+    if (file.size < 12 * 1024) {
       toast({
         variant: 'destructive',
         title: 'File too small',
-        description: 'Please upload a file larger than 1MB for clear AI analysis.',
+        description: 'Please upload a file larger than 12KB for clear AI analysis.',
       });
       return;
     }
