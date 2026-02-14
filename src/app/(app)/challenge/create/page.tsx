@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { doc, setDoc } from 'firebase/firestore';
-import { Loader2, Sparkles, Swords, Copy, Check } from 'lucide-react';
+import { Loader2, Sparkles, Swords, Copy, Check, Hash } from 'lucide-react';
 
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,7 +26,7 @@ const formSchema = z.object({
   chapter: z.string().min(1, 'Chapter is required.'),
 });
 
-// Helper to generate a branded random ID
+// Helper to generate a branded random ID (This is the "Room Code")
 const generateChallengeId = (length: number = 10) => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
@@ -47,6 +47,7 @@ export default function CreateChallengePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [challengeLink, setChallengeLink] = useState<string | null>(null);
   const [displayLink, setDisplayLink] = useState<string | null>(null);
+  const [roomCode, setRoomCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -97,8 +98,9 @@ export default function CreateChallengePage() {
       const fullUrl = `${window.location.origin}/Quiznova.Challenge/${challengeId}`;
       setChallengeLink(fullUrl);
       setDisplayLink(`Quiznova.Challenge/${challengeId}`);
+      setRoomCode(challengeId);
       
-      toast({ title: 'Challenge Created!', description: 'Send the link to your friend to start the duel.' });
+      toast({ title: 'Challenge Created!', description: 'Room code is ready to share.' });
 
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Failed to create challenge', description: error.message });
@@ -107,12 +109,12 @@ export default function CreateChallengePage() {
     }
   };
 
-  const copyToClipboard = () => {
-    if (!challengeLink) return;
-    navigator.clipboard.writeText(challengeLink);
+  const copyToClipboard = (text: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    toast({ title: 'Link Copied!' });
+    toast({ title: 'Copied!' });
   };
 
   return (
@@ -184,17 +186,26 @@ export default function CreateChallengePage() {
               </Form>
             ) : (
               <div className="space-y-6 text-center animate-in fade-in zoom-in duration-300">
-                <div className="p-4 bg-indigo-50 border-2 border-dashed border-indigo-200 rounded-xl">
-                    <p className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-2">Duel Link Generated</p>
-                    <p className="text-sm font-black text-slate-900 break-all mb-4 bg-white p-2 rounded border">{displayLink}</p>
-                    <Button onClick={copyToClipboard} variant="outline" className="w-full border-indigo-200 text-indigo-600 hover:bg-indigo-100 font-bold">
-                        {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
-                        {copied ? 'Copied' : 'Copy Link'}
-                    </Button>
+                <div className="p-6 bg-indigo-50 border-2 border-indigo-200 rounded-2xl">
+                    <p className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-4">Duel Room Code</p>
+                    <div className="bg-white border-2 border-indigo-100 rounded-xl p-4 mb-4 flex items-center justify-between">
+                        <span className="text-2xl font-black tracking-widest text-slate-900 uppercase font-mono">{roomCode}</span>
+                        <Button size="icon" variant="ghost" onClick={() => copyToClipboard(roomCode || '')} className="text-indigo-600 hover:bg-indigo-50">
+                            {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
+                        </Button>
+                    </div>
+                    <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-tight mb-6 text-left">Your friend can enter this code in the "Join Room" menu to start the duel.</p>
+                    
+                    <div className="space-y-2">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Or share link</p>
+                        <Button onClick={() => copyToClipboard(challengeLink || '')} variant="outline" className="w-full border-indigo-200 text-indigo-600 hover:bg-indigo-100 font-bold h-10 text-xs">
+                            {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+                            COPY DUEL LINK
+                        </Button>
+                    </div>
                 </div>
                 <div className="space-y-3">
-                    <p className="text-sm font-bold text-muted-foreground">Send this link to your friend. Once they accept, the duel begins!</p>
-                    <Button onClick={() => router.push('/dashboard')} className="w-full h-12 bg-slate-900 font-black uppercase tracking-tight">
+                    <Button onClick={() => router.push('/dashboard')} className="w-full h-12 bg-slate-900 font-black uppercase tracking-tight rounded-xl">
                         Done
                     </Button>
                 </div>

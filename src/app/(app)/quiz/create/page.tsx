@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, Sparkles, History, FilePlus, TestTubeDiagonal, FileText, Swords } from 'lucide-react';
+import { Loader2, Sparkles, History, FilePlus, TestTubeDiagonal, FileText, Swords, Hash, ArrowRight } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Header } from '@/components/header';
@@ -21,6 +21,7 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/use-local-storage';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 import { generateQuizAction } from '@/app/actions';
 import { CLASSES, SUBJECTS_DATA, BOARDS, DIFFICULTIES } from '@/lib/data';
@@ -54,7 +55,10 @@ export default function CreateQuizPage() {
   const router = useRouter();
   const { user } = useUser();
   const [combinedSelection, setCombinedSelection] = useState<CombinedSelection>('new-quiz');
-
+  
+  // Room Code Logic
+  const [roomCode, setRoomCode] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -88,6 +92,13 @@ export default function CreateQuizPage() {
   const handleSubjectChange = (value: string) => {
     form.setValue('subject', value, { shouldValidate: true });
     form.setValue('subCategories', [], { shouldValidate: false });
+  };
+
+  const handleJoinRoom = () => {
+    if (!roomCode.trim()) return;
+    setIsJoining(true);
+    // Directly navigate to the branded route
+    router.push(`/Quiznova.Challenge/${roomCode.trim()}`);
   };
   
   const onSubmit = async (data: FormValues) => {
@@ -197,7 +208,7 @@ export default function CreateQuizPage() {
         <div className="p-4 pt-6 md:p-8">
           
           {/* Battle with Friends Section */}
-          <Card className="max-w-2xl mx-auto mb-6 border-indigo-200 bg-indigo-50/30 overflow-hidden">
+          <Card className="max-w-2xl mx-auto mb-6 border-indigo-200 bg-indigo-50/30 overflow-hidden relative">
             <div className="absolute top-0 right-0 p-4 opacity-10">
                 <Swords className="h-24 w-24 text-indigo-600 rotate-12" />
             </div>
@@ -212,9 +223,47 @@ export default function CreateQuizPage() {
                             <CardDescription className="text-[10px] font-bold uppercase text-indigo-600/70 tracking-widest">Live AI-Powered Quiz Duels</CardDescription>
                         </div>
                     </div>
-                    <Button asChild variant="default" className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 font-black uppercase text-xs tracking-widest h-10 px-6 rounded-full shadow-md shadow-indigo-600/30 active:scale-95 transition-all">
-                        <Link href="/challenge/create">Challenge Friend</Link>
-                    </Button>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" className="flex-1 sm:flex-none border-indigo-200 text-indigo-600 font-black uppercase text-xs tracking-widest h-10 px-6 rounded-full bg-white hover:bg-indigo-50">
+                                    <Hash className="mr-2 h-4 w-4" /> Join Room
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-md">
+                                <DialogHeader>
+                                    <DialogTitle className="uppercase font-black tracking-tighter text-indigo-600 flex items-center gap-2">
+                                        <Hash className="h-5 w-5" /> Join Battle Room
+                                    </DialogTitle>
+                                    <DialogDescription className="font-bold">
+                                        Enter the 10-digit Room Code shared by your friend.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="py-4">
+                                    <Input 
+                                        placeholder="e.g. A7b2C9x1Z0" 
+                                        className="h-12 text-center text-lg font-mono font-bold tracking-widest uppercase border-2 focus:ring-indigo-500"
+                                        value={roomCode}
+                                        onChange={(e) => setRoomCode(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleJoinRoom()}
+                                    />
+                                </div>
+                                <DialogFooter>
+                                    <Button 
+                                        onClick={handleJoinRoom} 
+                                        disabled={!roomCode || isJoining} 
+                                        className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20"
+                                    >
+                                        {isJoining ? <Loader2 className="h-5 w-5 animate-spin" /> : <><ArrowRight className="mr-2 h-5 w-5" /> Enter Battle</>}
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+
+                        <Button asChild variant="default" className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 font-black uppercase text-xs tracking-widest h-10 px-6 rounded-full shadow-md shadow-indigo-600/30 active:scale-95 transition-all">
+                            <Link href="/challenge/create">Challenge Friend</Link>
+                        </Button>
+                    </div>
                 </div>
             </CardHeader>
           </Card>
