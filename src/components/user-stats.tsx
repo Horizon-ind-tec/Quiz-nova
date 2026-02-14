@@ -60,7 +60,7 @@ export function UserStats({ profile }: UserStatsProps) {
         <CardContent className="p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Learning Points</p>
+              <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Aura Points</p>
               <h3 className="text-xl font-black text-slate-900">{profile.points?.toLocaleString() || 0} XP</h3>
             </div>
             <TrendingUp className="h-5 w-5 text-indigo-600" />
