@@ -50,11 +50,22 @@ export default function HomeworkHelperPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
+    // Minimum 1MB check
+    if (file.size < 1 * 1024 * 1024) {
+      toast({
+        variant: 'destructive',
+        title: 'File too small',
+        description: 'Please upload a file larger than 1MB for clear processing.',
+      });
+      return;
+    }
+
+    // Maximum 1GB check
+    if (file.size > 1024 * 1024 * 1024) {
       toast({
         variant: 'destructive',
         title: 'File too large',
-        description: 'Please upload a file smaller than 10MB.',
+        description: 'Please upload a file smaller than 1GB.',
       });
       return;
     }

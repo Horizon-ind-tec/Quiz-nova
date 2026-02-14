@@ -108,8 +108,23 @@ export default function CreateQuizPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast({ variant: 'destructive', title: 'File too large', description: 'Upload a file smaller than 10MB.' });
+    // Minimum 1MB check
+    if (file.size < 1 * 1024 * 1024) {
+      toast({
+        variant: 'destructive',
+        title: 'File too small',
+        description: 'Please upload a file larger than 1MB for clear AI analysis.',
+      });
+      return;
+    }
+
+    // Maximum 1GB check
+    if (file.size > 1024 * 1024 * 1024) {
+      toast({
+        variant: 'destructive',
+        title: 'File too large',
+        description: 'Upload a file smaller than 1GB.',
+      });
       return;
     }
 
