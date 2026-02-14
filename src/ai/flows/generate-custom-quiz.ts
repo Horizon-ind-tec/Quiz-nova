@@ -121,13 +121,16 @@ Your task is to generate a set of questions based on the user's request.
     - You MUST ensure the 'marks' for all generated questions add up to EXACTLY {{{totalMarks}}}.
     - Assign reasonable 'marks' to each question based on its type and complexity (e.g., MCQs are usually 1-4 marks, Long Answers 5-10).
 
-3. **Format:**
+3.  **Content Coverage (CRITICAL):**
+    - If the 'Chapter/Topic' field contains multiple chapters or topics (e.g., separated by commas, "and", or semicolons), you MUST distribute the questions fairly across ALL of them. Do NOT focus on just one chapter.
+
+4. **Format:**
     - You MUST return ONLY a valid JSON object.
     - The JSON object must have a "questions" key containing an array of question objects.
     - Each question object must have: "type" (MUST be lowercase: 'mcq', 'match', 'numerical', 'shortAnswer', 'longAnswer'), "question", "correctAnswer", "explanation", "marks", and optionally "options" (for mcq) or "pairs" (for match).
     - **CRITICAL:** For Multiple Choice Questions (MCQ), the "options" MUST contain ONLY the plain text of the option. Do NOT include any prefixes like "a)", "b.", "(C)", or "1." inside the option strings. The frontend will handle the labeling.
 
-4. **Constraint:**
+5. **Constraint:**
     - Do NOT use the character sequence '*#' in your output unless explicitly mentioned or asked about in the user request.
 `,
 });
