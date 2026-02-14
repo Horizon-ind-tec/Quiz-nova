@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { doc, setDoc } from 'firebase/firestore';
-import { Loader2, Sparkles, Swords, Copy, Check, Hash } from 'lucide-react';
+import { Loader2, Sparkles, Swords, Copy, Check, Hash, Target, HelpCircle } from 'lucide-react';
 
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,6 +24,8 @@ const formSchema = z.object({
   subject: z.string().min(1, 'Please select a subject.'),
   class: z.string().min(1, 'Please select a class.'),
   chapter: z.string().min(1, 'Chapter is required.'),
+  totalMarks: z.coerce.number().min(5, 'Minimum 5 marks required.').max(100, 'Maximum 100 marks allowed.'),
+  numberOfQuestions: z.coerce.number().min(1, 'At least 1 question required.').max(50, 'Maximum 50 questions allowed.'),
 });
 
 // Helper to generate a branded random ID (This is the "Room Code")
@@ -46,13 +48,18 @@ export default function CreateChallengePage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [challengeLink, setChallengeLink] = useState<string | null>(null);
-  const [displayLink, setDisplayLink] = useState<string | null>(null);
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: { subject: '', class: '', chapter: '' },
+    defaultValues: { 
+      subject: '', 
+      class: '', 
+      chapter: '',
+      totalMarks: 20,
+      numberOfQuestions: 5
+    },
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -63,8 +70,6 @@ export default function CreateChallengePage() {
       const result = await generateQuizAction({
         ...values,
         difficulty: 'medium',
-        totalMarks: 20,
-        numberOfQuestions: 5,
         quizType: 'quiz',
       });
 
@@ -75,7 +80,6 @@ export default function CreateChallengePage() {
         ...values,
         difficulty: 'medium',
         quizType: 'quiz',
-        totalMarks: 20,
         questions: result.questions,
         createdAt: Date.now(),
       };
@@ -97,13 +101,12 @@ export default function CreateChallengePage() {
 
       const fullUrl = `${window.location.origin}/Quiznova.Challenge/${challengeId}`;
       setChallengeLink(fullUrl);
-      setDisplayLink(`Quiznova.Challenge/${challengeId}`);
       setRoomCode(challengeId);
       
-      toast({ title: 'Challenge Created!', description: 'Room code is ready to share.' });
+      toast({ title: 'Duel Created!', description: 'Room code is ready to share.' });
 
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Failed to create challenge', description: error.message });
+      toast({ variant: 'destructive', title: 'Failed to create duel', description: error.message });
     } finally {
       setIsLoading(false);
     }
@@ -127,7 +130,7 @@ export default function CreateChallengePage() {
                 <Swords className="h-8 w-8 text-indigo-600" />
             </div>
             <CardTitle className="text-2xl font-black uppercase tracking-tighter">New Duel</CardTitle>
-            <CardDescription>Challenge {targetFriend} to an AI-powered quiz battle.</CardDescription>
+            <CardDescription>Challenge {targetFriend} to an AI quiz battle.</CardDescription>
           </CardHeader>
           <CardContent>
             {!challengeLink ? (
@@ -178,9 +181,43 @@ export default function CreateChallengePage() {
                       </FormItem>
                     )}
                   />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      name="totalMarks"
+                      control={form.control}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-1.5">
+                            <Target className="h-3 w-3 text-indigo-600" /> Total Marks
+                          </FormLabel>
+                          <FormControl>
+                            <Input type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      name="numberOfQuestions"
+                      control={form.control}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-1.5">
+                            <HelpCircle className="h-3 w-3 text-indigo-600" /> Questions
+                          </FormLabel>
+                          <FormControl>
+                            <Input type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
                   <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 h-12 font-black uppercase tracking-widest mt-4" disabled={isLoading}>
                     {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
-                    {isLoading ? 'Preparing Duel...' : 'Generate Challenge'}
+                    {isLoading ? 'Preparing Duel...' : 'Generate Battle'}
                   </Button>
                 </form>
               </Form>
@@ -206,7 +243,7 @@ export default function CreateChallengePage() {
                 </div>
                 <div className="space-y-3">
                     <Button onClick={() => router.push('/dashboard')} className="w-full h-12 bg-slate-900 font-black uppercase tracking-tight rounded-xl">
-                        Done
+                        Return to Dashboard
                     </Button>
                 </div>
               </div>
