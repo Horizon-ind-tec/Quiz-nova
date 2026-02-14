@@ -24,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { getAuraStatus } from '@/lib/data';
 
 const formSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
@@ -59,6 +60,7 @@ export default function RootPage() {
     try {
         const docSnap = await getDoc(userDocRef);
         if (!docSnap.exists()) {
+            const { level, rank } = getAuraStatus(0);
             await setDoc(userDocRef, {
                 id: user.uid,
                 email: user.email || 'guest@quiznova.ai',
@@ -67,7 +69,8 @@ export default function RootPage() {
                 plan: defaultPlan,
                 points: 0,
                 streak: 0,
-                rank: 'Bronze',
+                level: level,
+                rank: rank,
             });
         } else if (isAdmin) {
             await setDoc(userDocRef, { plan: 'ultimate' }, { merge: true });

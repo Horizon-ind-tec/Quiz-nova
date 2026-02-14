@@ -133,7 +133,8 @@ export interface UserProfile {
     points: number;
     streak: number;
     lastActiveDate?: string; // ISO Date
-    rank: 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond';
+    level: number;
+    rank: 'Beginner' | 'Intermediate' | 'Advanced' | 'Elite' | 'Secret';
 }
 
 export interface StudyTask {

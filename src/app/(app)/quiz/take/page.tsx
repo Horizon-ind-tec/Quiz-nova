@@ -27,6 +27,7 @@ import type { Quiz, QuizAttempt, MCQ, UserAnswers, UserProfile, Challenge } from
 import { Progress } from '@/components/ui/progress';
 import { useFirestore, useUser } from '@/firebase';
 import { Sparkles } from 'lucide-react';
+import { getAuraStatus } from '@/lib/data';
 
 type QuizState = 'loading' | 'taking' | 'paused' | 'results';
 
@@ -127,15 +128,12 @@ export default function TakeQuizPage() {
             const currentData = userSnap.data() as UserProfile;
             const newTotalPoints = (currentData.points || 0) + auraPoints;
             
-            let newRank: UserProfile['rank'] = 'Bronze';
-            if (newTotalPoints > 50000) newRank = 'Diamond';
-            else if (newTotalPoints > 15000) newRank = 'Platinum';
-            else if (newTotalPoints > 5000) newRank = 'Gold';
-            else if (newTotalPoints > 1000) newRank = 'Silver';
+            const { level, rank } = getAuraStatus(newTotalPoints);
 
             await updateDoc(userRef, {
                 points: newTotalPoints,
-                rank: newRank
+                level: level,
+                rank: rank
             });
         }
     } catch(error) {
