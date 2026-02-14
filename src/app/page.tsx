@@ -70,7 +70,6 @@ export default function RootPage() {
                 rank: 'Bronze',
             });
         } else if (isAdmin) {
-            // Ensure admin always has ultimate plan access
             await setDoc(userDocRef, { plan: 'ultimate' }, { merge: true });
         }
     } catch (e) {
@@ -102,16 +101,19 @@ export default function RootPage() {
     setIsGoogleLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      // Force account selection screen to show every Google account
       provider.setCustomParameters({ prompt: 'select_account' });
       const userCredential = await signInWithPopup(auth, provider);
       await syncUserProfile(userCredential.user);
       router.push('/dashboard');
     } catch (error: any) {
+      const description = error.code === 'auth/operation-not-allowed'
+        ? 'Google Sign-In is not enabled in the Firebase Console. Please enable it in Authentication > Sign-in method.'
+        : error.message || 'Could not sign in with Google.';
+      
       toast({
         variant: 'destructive',
         title: 'Google Sign-In Failed',
-        description: error.message || 'Could not sign in with Google.',
+        description,
       });
       setIsGoogleLoading(false);
     }
@@ -124,10 +126,14 @@ export default function RootPage() {
       await syncUserProfile(userCredential.user);
       router.push('/dashboard');
     } catch (error: any) {
+      const description = error.code === 'auth/operation-not-allowed'
+        ? 'Anonymous Sign-In is not enabled in the Firebase Console. Please enable it in Authentication > Sign-in method.'
+        : error.message || 'Could not sign in as guest.';
+
       toast({
         variant: 'destructive',
         title: 'Guest Login Failed',
-        description: error.message || 'Could not sign in as guest.',
+        description,
       });
       setIsGuestLoading(false);
     }
