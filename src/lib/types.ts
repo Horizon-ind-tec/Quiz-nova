@@ -134,7 +134,7 @@ export interface UserProfile {
     streak: number;
     lastActiveDate?: string; // ISO Date
     level: number;
-    rank: 'Beginner' | 'Intermediate' | 'Advanced' | 'Elite' | 'Secret';
+    rank: 'Bronze' | 'Silver' | 'Platinum' | 'Gold' | 'Ruby';
 }
 
 export interface StudyTask {

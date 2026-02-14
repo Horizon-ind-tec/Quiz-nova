@@ -12,18 +12,18 @@ interface UserStatsProps {
 }
 
 const RANK_CONFIG = {
-  Beginner: { color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200' },
-  Intermediate: { color: 'text-slate-400', bg: 'bg-slate-50', border: 'border-slate-200' },
-  Advanced: { color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-200' },
-  Elite: { color: 'text-cyan-500', bg: 'bg-cyan-50', border: 'border-cyan-200' },
-  Secret: { color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-200' },
+  Bronze: { color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200' },
+  Silver: { color: 'text-slate-400', bg: 'bg-slate-50', border: 'border-slate-200' },
+  Platinum: { color: 'text-cyan-500', bg: 'bg-cyan-50', border: 'border-cyan-200' },
+  Gold: { color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-200' },
+  Ruby: { color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' },
 };
 
 export function UserStats({ profile }: UserStatsProps) {
   if (!profile) return null;
 
   const { level, rank, min, nextMin, isMax } = getAuraStatus(profile.points || 0);
-  const config = RANK_CONFIG[rank] || RANK_CONFIG.Beginner;
+  const config = RANK_CONFIG[rank as keyof typeof RANK_CONFIG] || RANK_CONFIG.Bronze;
   
   const currentLevelProgressPoints = profile.points - min;
   const levelRangePoints = nextMin - min;

@@ -36,11 +36,11 @@ export default function LeaderboardPage() {
 
   const getTierColor = (rankStr: string) => {
     switch (rankStr) {
-        case 'Beginner': return 'bg-orange-100 text-orange-700';
-        case 'Intermediate': return 'bg-slate-100 text-slate-700';
-        case 'Advanced': return 'bg-amber-100 text-amber-700';
-        case 'Elite': return 'bg-cyan-100 text-cyan-700';
-        case 'Secret': return 'bg-indigo-100 text-indigo-700';
+        case 'Bronze': return 'bg-orange-100 text-orange-700';
+        case 'Silver': return 'bg-slate-100 text-slate-700';
+        case 'Platinum': return 'bg-cyan-100 text-cyan-700';
+        case 'Gold': return 'bg-amber-100 text-amber-700';
+        case 'Ruby': return 'bg-red-100 text-red-700';
         default: return 'bg-muted text-muted-foreground';
     }
   }
@@ -136,7 +136,7 @@ export default function LeaderboardPage() {
                       <p className="font-black text-sm text-slate-900 truncate">{userProfile.name}</p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <Badge className={cn("text-[8px] font-black uppercase px-1.5 py-0", getTierColor(userProfile.rank))}>
-                            Lvl {userProfile.level || 1} • {userProfile.rank || 'Beginner'}
+                            Lvl {userProfile.level || 1} • {userProfile.rank || 'Bronze'}
                         </Badge>
                         <span className="text-[10px] font-bold text-muted-foreground uppercase">{userProfile.streak || 0} Day Streak</span>
                       </div>
