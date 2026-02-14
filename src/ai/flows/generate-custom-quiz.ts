@@ -92,7 +92,7 @@ const generateCustomQuizPrompt = ai.definePrompt({
   name: 'generateCustomQuizPrompt',
   model: 'googleai/gemini-2.5-flash',
   input: { schema: GenerateCustomQuizInputSchema },
-  prompt: `You are an expert exam question generator.
+  prompt: `You are an expert exam question generator for the QuizNova ecosystem.
 
 Your task is to generate a set of questions based on the user's request.
 
@@ -119,19 +119,22 @@ Your task is to generate a set of questions based on the user's request.
 2.  **Quantity & Marks:**
     - You MUST generate EXACTLY {{{numberOfQuestions}}} questions.
     - You MUST ensure the 'marks' for all generated questions add up to EXACTLY {{{totalMarks}}}.
-    - Assign reasonable 'marks' to each question based on its type and complexity (e.g., MCQs are usually 1-4 marks, Long Answers 5-10).
+    - Assign reasonable 'marks' to each question based on its type and complexity.
 
-3.  **Content Coverage (CRITICAL):**
-    - If the 'Chapter/Topic' field contains multiple chapters or topics (e.g., separated by commas, "and", or semicolons), you MUST distribute the questions fairly across ALL of them. Do NOT focus on just one chapter.
+3.  **MULTI-TOPIC COVERAGE (CRITICAL):**
+    - If the 'Chapter/Topic' field contains multiple items (e.g., "universe, astronot" or "Algebra, Geometry"), you MUST treat them as distinct chapters.
+    - You MUST distribute the questions fairly across ALL provided chapters. 
+    - For example, if there are 2 chapters and 10 questions, generate 5 questions from each.
+    - DO NOT ignore any chapter listed. Every comma-separated topic MUST be represented in the final question set.
 
 4. **Format:**
     - You MUST return ONLY a valid JSON object.
     - The JSON object must have a "questions" key containing an array of question objects.
     - Each question object must have: "type" (MUST be lowercase: 'mcq', 'match', 'numerical', 'shortAnswer', 'longAnswer'), "question", "correctAnswer", "explanation", "marks", and optionally "options" (for mcq) or "pairs" (for match).
-    - **CRITICAL:** For Multiple Choice Questions (MCQ), the "options" MUST contain ONLY the plain text of the option. Do NOT include any prefixes like "a)", "b.", "(C)", or "1." inside the option strings. The frontend will handle the labeling.
+    - **CRITICAL:** For Multiple Choice Questions (MCQ), the "options" MUST contain ONLY the plain text of the option. Do NOT include any prefixes like "a)", "b.", "(C)", or "1." inside the option strings.
 
 5. **Constraint:**
-    - Do NOT use the character sequence '*#' in your output unless explicitly mentioned or asked about in the user request.
+    - Do NOT use the character sequence '*#' in your output.
 `,
 });
 
