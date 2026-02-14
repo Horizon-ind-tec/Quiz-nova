@@ -86,7 +86,7 @@ export default function SignUpPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       await updateProfile(userCredential.user, { displayName: values.name });
-      syncUserProfile(userCredential.user, values.name);
+      await syncUserProfile(userCredential.user, values.name);
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -111,8 +111,10 @@ export default function SignUpPage() {
     }
     try {
       const provider = new GoogleAuthProvider();
+      // Force account selection screen to show every Google account
+      provider.setCustomParameters({ prompt: 'select_account' });
       const userCredential = await signInWithPopup(auth, provider);
-      syncUserProfile(userCredential.user, userCredential.user.displayName || 'Google User');
+      await syncUserProfile(userCredential.user, userCredential.user.displayName || 'Google User');
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -127,7 +129,7 @@ export default function SignUpPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted p-4">
-      <Card className="w-full max-w-sm">
+      <Card className="w-full max-w-sm shadow-xl border-none">
         <CardHeader className="text-center">
           <BrainCircuit className="mx-auto h-10 w-10 text-primary mb-2" />
           <CardTitle className="text-2xl">Create an Account</CardTitle>

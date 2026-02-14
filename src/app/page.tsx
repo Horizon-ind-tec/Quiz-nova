@@ -36,7 +36,6 @@ export default function RootPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isGuestLoading, setIsGuestLoading] = useState(false);
-  const [isResetLoading, setIsResetLoading] = useState(false);
   
   const { toast } = useToast();
   const router = useRouter();
@@ -86,7 +85,6 @@ export default function RootPage() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
-      // Explicitly sign in with the provided email and password
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       await syncUserProfile(userCredential.user);
       router.push('/dashboard');
@@ -104,6 +102,8 @@ export default function RootPage() {
     setIsGoogleLoading(true);
     try {
       const provider = new GoogleAuthProvider();
+      // Force account selection screen to show every Google account
+      provider.setCustomParameters({ prompt: 'select_account' });
       const userCredential = await signInWithPopup(auth, provider);
       await syncUserProfile(userCredential.user);
       router.push('/dashboard');
@@ -147,7 +147,6 @@ export default function RootPage() {
       );
   }
 
-  // If already logged in, show a "Continue" dashboard instead of a blind redirect
   if (existingUser) {
     return (
         <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
