@@ -182,8 +182,10 @@ export default function TakeQuizPage() {
 
   const handleReturn = () => {
       if (challengeId) {
-          router.push(`/Quiznova.Challenge/${challengeId}`);
-          setChallengeId(null);
+          // Navigate to branded route
+          router.push(`/Quiznova.Challenge/${challengeId}/results`);
+          // Clear current challenge after navigation
+          setTimeout(() => setChallengeId(null), 100);
       } else {
           router.push('/dashboard');
       }
@@ -287,7 +289,7 @@ export default function TakeQuizPage() {
                         </Accordion>
                     </div>
                     <Button onClick={handleReturn} className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-lg font-black uppercase tracking-tight">
-                        {challengeId ? 'View Duel Status' : 'Return to Dashboard'}
+                        {challengeId ? 'View Battle Results' : 'Return to Dashboard'}
                     </Button>
                 </CardContent>
             </Card>

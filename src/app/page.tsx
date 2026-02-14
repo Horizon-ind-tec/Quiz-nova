@@ -1,19 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { BrainCircuit, Loader2, Bot } from 'lucide-react';
+import { BrainCircuit, Loader2, Bot, ArrowRight, LogOut } from 'lucide-react';
 import { 
   signInWithEmailAndPassword, 
   signInWithPopup, 
   GoogleAuthProvider, 
   User, 
   signInAnonymously,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  signOut
 } from 'firebase/auth';
 
 import { Button } from '@/components/ui/button';
@@ -36,17 +37,12 @@ export default function RootPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isGuestLoading, setIsGuestLoading] = useState(false);
   const [isResetLoading, setIsResetLoading] = useState(false);
+  
   const { toast } = useToast();
   const router = useRouter();
   const auth = useAuth();
   const firestore = useFirestore();
   const { user: existingUser, isUserLoading } = useUser();
-
-  useEffect(() => {
-    if (!isUserLoading && existingUser) {
-      router.push('/dashboard');
-    }
-  }, [existingUser, isUserLoading, router]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -59,7 +55,7 @@ export default function RootPage() {
     
     const isAdmin = user.email === ADMIN_EMAIL;
     const isGuest = user.isAnonymous;
-    const userPlan = isAdmin ? 'ultimate' : 'free';
+    const defaultPlan = isAdmin ? 'ultimate' : 'free';
 
     try {
         const docSnap = await getDoc(userDocRef);
@@ -69,12 +65,13 @@ export default function RootPage() {
                 email: user.email || 'guest@quiznova.ai',
                 name: user.displayName || (isGuest ? 'AI Guest' : 'New User'),
                 createdAt: new Date().toISOString(),
-                plan: userPlan,
+                plan: defaultPlan,
                 points: 0,
                 streak: 0,
                 rank: 'Bronze',
             });
         } else if (isAdmin) {
+            // Ensure admin always has ultimate plan access
             await setDoc(userDocRef, { plan: 'ultimate' }, { merge: true });
         }
     } catch (e) {
@@ -89,45 +86,17 @@ export default function RootPage() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
+      // Explicitly sign in with the provided email and password
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      syncUserProfile(userCredential.user);
+      await syncUserProfile(userCredential.user);
       router.push('/dashboard');
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: error.message || 'An unknown error occurred.',
+        description: 'Incorrect email or password. Please try again.',
       });
       setIsLoading(false);
-    }
-  };
-
-  const handleForgotPassword = async () => {
-    const email = form.getValues('email');
-    if (!email) {
-      toast({
-        variant: 'destructive',
-        title: 'Email Required',
-        description: 'Please type your email address above first, then click Forgot Password.',
-      });
-      return;
-    }
-
-    setIsResetLoading(true);
-    try {
-      await sendPasswordResetEmail(auth, email);
-      toast({
-        title: 'Reset Link Sent',
-        description: 'Check your email inbox for instructions to reset your password.',
-      });
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error.message,
-      });
-    } finally {
-      setIsResetLoading(false);
     }
   };
 
@@ -136,7 +105,7 @@ export default function RootPage() {
     try {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
-      syncUserProfile(userCredential.user);
+      await syncUserProfile(userCredential.user);
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -152,7 +121,7 @@ export default function RootPage() {
     setIsGuestLoading(true);
     try {
       const userCredential = await signInAnonymously(auth);
-      syncUserProfile(userCredential.user);
+      await syncUserProfile(userCredential.user);
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -164,12 +133,43 @@ export default function RootPage() {
     }
   };
 
+  const handleSignOut = async () => {
+    await signOut(auth);
+    localStorage.removeItem('guestStartTime');
+    toast({ title: "Signed Out", description: "You can now log in with a different account." });
+  }
+
   if (isUserLoading) {
       return (
         <div className="flex h-screen items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       );
+  }
+
+  // If already logged in, show a "Continue" dashboard instead of a blind redirect
+  if (existingUser) {
+    return (
+        <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
+            <Card className="w-full max-w-md shadow-xl border-none text-center">
+                <CardHeader>
+                    <div className="bg-primary/10 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <BrainCircuit className="h-10 w-10 text-primary" />
+                    </div>
+                    <CardTitle className="text-2xl font-black">Welcome Back!</CardTitle>
+                    <CardDescription>You are currently signed in as <span className="font-bold text-foreground">{existingUser.displayName || existingUser.email}</span></CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                    <Button onClick={() => router.push('/dashboard')} className="w-full h-12 text-lg font-bold">
+                        Continue to Dashboard <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                    <Button variant="ghost" onClick={handleSignOut} className="w-full text-muted-foreground hover:text-destructive">
+                        <LogOut className="mr-2 h-4 w-4" /> Sign out to use another account
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+    );
   }
 
   return (
@@ -215,10 +215,18 @@ export default function RootPage() {
                             type="button" 
                             variant="link" 
                             className="px-0 font-bold text-xs" 
-                            onClick={handleForgotPassword}
-                            disabled={isResetLoading}
+                            onClick={async () => {
+                                const email = form.getValues('email');
+                                if (!email) return toast({ variant: "destructive", title: "Email required" });
+                                try {
+                                    await sendPasswordResetEmail(auth, email);
+                                    toast({ title: "Reset Link Sent" });
+                                } catch (e: any) {
+                                    toast({ variant: "destructive", title: "Error", description: e.message });
+                                }
+                            }}
                         >
-                            {isResetLoading ? "Sending..." : "Forgot Password?"}
+                            Forgot Password?
                         </Button>
                     </div>
                     <FormControl>
