@@ -182,9 +182,7 @@ export default function TakeQuizPage() {
 
   const handleReturn = () => {
       if (challengeId) {
-          // Navigate to branded route
           router.push(`/Quiznova.Challenge/${challengeId}/results`);
-          // Clear current challenge after navigation
           setTimeout(() => setChallengeId(null), 100);
       } else {
           router.push('/dashboard');
@@ -255,7 +253,7 @@ export default function TakeQuizPage() {
                     </div>
                     <div className="mt-4 bg-white/20 px-4 py-1.5 rounded-full text-sm font-black uppercase tracking-widest flex items-center gap-2">
                         <Sparkles className="h-4 w-4 text-yellow-300" />
-                        +{earnedPoints} XP Earned
+                        +{earnedPoints} Aura Points Earned
                     </div>
                 </CardHeader>
                 <CardContent className="p-6">

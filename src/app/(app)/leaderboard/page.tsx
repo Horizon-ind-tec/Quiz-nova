@@ -64,7 +64,7 @@ export default function LeaderboardPage() {
                     </div>
                     <div className="text-center">
                         <p className="font-black text-xs md:text-sm truncate max-w-[80px] md:max-w-none">{topUsers[1].name.split(' ')[0]}</p>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase">{topUsers[1].points} XP</p>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase">{topUsers[1].points} Aura</p>
                     </div>
                 </div>
             )}
@@ -84,7 +84,7 @@ export default function LeaderboardPage() {
                     </div>
                     <div className="text-center">
                         <p className="font-black text-sm md:text-lg truncate max-w-[100px] md:max-w-none">{topUsers[0].name.split(' ')[0]}</p>
-                        <p className="text-xs font-black text-yellow-600 uppercase tracking-widest">{topUsers[0].points} XP</p>
+                        <p className="text-xs font-black text-yellow-600 uppercase tracking-widest">{topUsers[0].points} Aura</p>
                     </div>
                 </div>
             )}
@@ -101,7 +101,7 @@ export default function LeaderboardPage() {
                     </div>
                     <div className="text-center">
                         <p className="font-black text-xs md:text-sm truncate max-w-[80px] md:max-w-none">{topUsers[2].name.split(' ')[0]}</p>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase">{topUsers[2].points} XP</p>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase">{topUsers[2].points} Aura</p>
                     </div>
                 </div>
             )}
@@ -144,7 +144,7 @@ export default function LeaderboardPage() {
                     <div className="text-right shrink-0 flex items-center gap-3">
                       <div className="mr-2">
                         <p className="text-sm font-black text-indigo-600">{userProfile.points?.toLocaleString() || 0}</p>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Points</p>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Aura Points</p>
                       </div>
                       <Button size="icon" variant="ghost" className="h-10 w-10 rounded-full hover:bg-indigo-100 hover:text-indigo-600 group" onClick={() => handleChallenge(userProfile.name)}>
                         <Swords className="h-5 w-5 transition-transform group-hover:scale-110" />
