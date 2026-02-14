@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, Sparkles, History, FilePlus, TestTubeDiagonal, FileText, Swords, Hash, ArrowRight, ScanText, X, ImageIcon, FileText as FileIcon } from 'lucide-react';
+import { Loader2, Sparkles, History, FilePlus, TestTubeDiagonal, FileText, Swords, Hash, ArrowRight, ScanText, X, ImageIcon, FileText as FileIcon, Target, HelpCircle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Header } from '@/components/header';
@@ -63,6 +63,7 @@ export default function CreateQuizPage() {
   // Scan Logic
   const [scannedFile, setScannedFile] = useState<{ name: string; dataUri: string; type: 'image' | 'pdf' } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const configRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -82,12 +83,12 @@ export default function CreateQuizPage() {
     },
   });
   
-    const handleSelectionChange = (value: CombinedSelection) => {
-        setCombinedSelection(value);
-        const [mode, type] = value.split('-');
-        form.setValue('generationMode', mode as 'new' | 'previous');
-        form.setValue('quizType', type as 'quiz' | 'exam');
-    }
+  const handleSelectionChange = (value: CombinedSelection) => {
+      setCombinedSelection(value);
+      const [mode, type] = value.split('-');
+      form.setValue('generationMode', mode as 'new' | 'previous');
+      form.setValue('quizType', type as 'quiz' | 'exam');
+  }
 
   const selectedSubjectName = form.watch('subject');
   const selectedSubject = SUBJECTS_DATA.find(s => s.name === selectedSubjectName);
@@ -108,7 +109,6 @@ export default function CreateQuizPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Minimum 12KB check
     if (file.size < 12 * 1024) {
       toast({
         variant: 'destructive',
@@ -118,7 +118,6 @@ export default function CreateQuizPage() {
       return;
     }
 
-    // Maximum 1GB check
     if (file.size > 1024 * 1024 * 1024) {
       toast({
         variant: 'destructive',
@@ -136,7 +135,12 @@ export default function CreateQuizPage() {
           dataUri: event.target.result as string,
           type: file.type.startsWith('image/') ? 'image' : 'pdf',
         });
-        toast({ title: "Notes Scanned!", description: "AI will now generate a quiz from your file." });
+        toast({ title: "Notes Scanned!", description: "AI will now generate a quiz from your file. Set your marks below." });
+        
+        // Auto-scroll to configuration
+        setTimeout(() => {
+            configRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 300);
       }
     };
     reader.readAsDataURL(file);
@@ -158,7 +162,6 @@ export default function CreateQuizPage() {
       let generationInput: FormValues;
 
       if (scannedFile) {
-        // --- SCAN MODE ---
         result = await scanToQuizAction({
           mediaDataUri: scannedFile.dataUri,
           class: data.class,
@@ -168,7 +171,6 @@ export default function CreateQuizPage() {
         });
         generationInput = data;
       } else {
-        // --- NORMAL MODE ---
         if (generationMode === 'new') {
             generationInput = { ...data };
             setLastQuizOptions(data);
@@ -257,7 +259,7 @@ export default function CreateQuizPage() {
           
           <div className="max-w-2xl mx-auto space-y-6">
             
-            {/* AI Scan & Battle Actions */}
+            {/* Step 1: Upload or Choose Source */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Battle with Friends */}
                 <Card className="border-indigo-200 bg-indigo-50/30 overflow-hidden relative">
@@ -266,7 +268,7 @@ export default function CreateQuizPage() {
                             <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-md">
                                 <Swords className="h-4 w-4" />
                             </div>
-                            <CardTitle className="text-sm font-black uppercase tracking-tight">Quiz Duel</CardTitle>
+                            <CardTitle className="text-sm font-black uppercase tracking-tight text-indigo-900">Quiz Duel</CardTitle>
                         </div>
                         <div className="flex flex-col gap-2 mt-4">
                             <Dialog>
@@ -289,13 +291,13 @@ export default function CreateQuizPage() {
                                         />
                                     </div>
                                     <DialogFooter>
-                                        <Button onClick={handleJoinRoom} disabled={!roomCode || isJoining} className="w-full h-12 bg-indigo-600 font-black uppercase tracking-widest">
+                                        <Button onClick={handleJoinRoom} disabled={!roomCode || isJoining} className="w-full h-12 bg-indigo-600 font-black uppercase tracking-widest text-white">
                                             {isJoining ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Enter Battle'}
                                         </Button>
                                     </DialogFooter>
                                 </DialogContent>
                             </Dialog>
-                            <Button asChild size="sm" className="w-full bg-indigo-600 font-black uppercase text-[10px] tracking-widest h-9 rounded-full">
+                            <Button asChild size="sm" className="w-full bg-indigo-600 font-black uppercase text-[10px] tracking-widest h-9 rounded-full text-white">
                                 <Link href="/challenge/create">Create Duel</Link>
                             </Button>
                         </div>
@@ -303,7 +305,7 @@ export default function CreateQuizPage() {
                 </Card>
 
                 {/* AI Notes Scanner */}
-                <Card className="border-emerald-200 bg-emerald-50/30 overflow-hidden relative">
+                <Card className={cn("border-emerald-200 bg-emerald-50/30 transition-all", scannedFile && "border-emerald-500 bg-emerald-100/50 shadow-inner")}>
                     <CardHeader className="py-4">
                         <div className="flex items-center gap-3">
                             <div className="bg-emerald-600 p-2 rounded-xl text-white shadow-md">
@@ -324,7 +326,9 @@ export default function CreateQuizPage() {
                                             <X className="h-3 w-3" />
                                         </Button>
                                     </div>
-                                    <p className="text-[8px] font-black text-emerald-600 uppercase text-center animate-pulse">File Ready for AI</p>
+                                    <div className="bg-emerald-600 text-white text-[8px] font-black uppercase py-1 px-2 rounded-full w-fit mx-auto flex items-center gap-1">
+                                        <Sparkles className="h-2 w-2" /> File Attached
+                                    </div>
                                 </div>
                             ) : (
                                 <Button 
@@ -339,304 +343,319 @@ export default function CreateQuizPage() {
                 </Card>
             </div>
 
-            <Card className="max-w-2xl mx-auto border-slate-200">
-                <CardHeader>
-                <CardTitle>{scannedFile ? 'Configure Scanned Quiz' : 'Create a New Assessment'}</CardTitle>
-                <CardDescription>
-                    {scannedFile 
-                        ? 'Fill in the details below and Nova will generate a quiz based on your uploaded file.' 
-                        : 'Select your preferences and let our AI generate a custom quiz or exam for you.'}
-                </CardDescription>
-                </CardHeader>
-                <CardContent>
-                <FormProvider {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    
-                    <div className={cn((generationMode === 'previous' && !scannedFile) && 'opacity-50 pointer-events-none')}>
-                        <div className="space-y-6">
-                        <FormField
-                            name="subject"
-                            control={form.control}
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Subject</FormLabel>
-                                <FormControl>
-                                <RadioGroup
-                                    onValueChange={handleSubjectChange}
-                                    value={field.value}
-                                    className="grid grid-cols-2 sm:grid-cols-3 gap-2"
-                                >
-                                    {SUBJECTS_DATA.map(subject => {
-                                    const Icon = subject.icon;
-                                    return (
-                                    <FormItem key={subject.name} className="flex-1">
-                                        <FormControl>
-                                        <RadioGroupItem value={subject.name} id={subject.name} className="sr-only" />
-                                        </FormControl>
-                                        <FormLabel
-                                        htmlFor={subject.name}
-                                        className={cn(
-                                            "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-500 [&:has([data-state=checked])]:border-green-500 cursor-pointer h-28"
-                                        )}
-                                        >
-                                        <Icon className="h-8 w-8 mb-2" />
-                                        <span>{subject.name}</span>
-                                        </FormLabel>
-                                    </FormItem>
-                                    )})}
-                                </RadioGroup>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-
-                        {selectedSubject && selectedSubject.subCategories && (
+            {/* Step 2: Configuration */}
+            <div ref={configRef}>
+                <Card className={cn("max-w-2xl mx-auto border-slate-200", scannedFile && "ring-2 ring-emerald-500/20")}>
+                    <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        {scannedFile ? <Target className="h-5 w-5 text-emerald-600" /> : <PlusCircle className="h-5 w-5 text-indigo-600" />}
+                        {scannedFile ? 'Step 2: Marks & Questions' : 'Create a New Assessment'}
+                    </CardTitle>
+                    <CardDescription>
+                        {scannedFile 
+                            ? 'The scan is ready! Now define your quiz goals and let Nova build it.' 
+                            : 'Select your preferences and let our AI generate a custom quiz or exam for you.'}
+                    </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                    <FormProvider {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        
+                        <div className={cn((generationMode === 'previous' && !scannedFile) && 'opacity-50 pointer-events-none')}>
+                            <div className="space-y-6">
+                            
+                            {/* Subject & Categories */}
                             <FormField
-                                name="subCategories"
+                                name="subject"
                                 control={form.control}
                                 render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{selectedSubject.name} Category</FormLabel>
+                                    <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground">Select Subject</FormLabel>
                                     <FormControl>
-                                        {selectedSubject.multiSelect ? (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                {selectedSubject.subCategories?.map(sub => (
-                                                    <FormItem key={sub.name} className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                                                        <FormControl>
-                                                            <Checkbox
-                                                                checked={field.value?.includes(sub.name)}
-                                                                onCheckedChange={(checked) => {
-                                                                    const current = field.value || [];
-                                                                    const updated = checked
-                                                                        ? [...current, sub.name]
-                                                                        : current.filter(v => v !== sub.name);
-                                                                    form.setValue('subCategories', updated, { shouldValidate: true });
-                                                                }}
-                                                            />
-                                                        </FormControl>
-                                                        <FormLabel className="font-normal cursor-pointer">
-                                                            {sub.name}
-                                                        </FormLabel>
-                                                    </FormItem>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <RadioGroup
-                                                onValueChange={(value) => form.setValue('subCategories', [value])}
-                                                value={field.value?.[0]}
-                                                className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+                                    <RadioGroup
+                                        onValueChange={handleSubjectChange}
+                                        value={field.value}
+                                        className="grid grid-cols-2 sm:grid-cols-3 gap-2"
+                                    >
+                                        {SUBJECTS_DATA.map(subject => {
+                                        const Icon = subject.icon;
+                                        return (
+                                        <FormItem key={subject.name} className="flex-1">
+                                            <FormControl>
+                                            <RadioGroupItem value={subject.name} id={subject.name} className="sr-only" />
+                                            </FormControl>
+                                            <FormLabel
+                                            htmlFor={subject.name}
+                                            className={cn(
+                                                "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-500 [&:has([data-state=checked])]:border-green-500 cursor-pointer h-28"
+                                            )}
                                             >
-                                                {selectedSubject.subCategories?.map(sub => (
-                                                    <FormItem key={sub.name} className="flex-1">
-                                                        <FormControl>
-                                                            <RadioGroupItem value={sub.name} id={`sub-${sub.name}`} className="sr-only" />
-                                                        </FormControl>
-                                                        <FormLabel
-                                                            htmlFor={`sub-${sub.name}`}
-                                                            className={cn(
-                                                                "flex flex-col items-start justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-500 [&:has([data-state=checked])]:border-green-500 cursor-pointer"
-                                                            )}
-                                                        >
-                                                            <span className="font-semibold">{sub.name}</span>
-                                                            {sub.description && <span className="text-sm text-muted-foreground mt-1">{sub.description}</span>}
-                                                        </FormLabel>
-                                                    </FormItem>
-                                                ))}
-                                            </RadioGroup>
-                                        )}
+                                            <Icon className="h-8 w-8 mb-2" />
+                                            <span className="text-xs font-bold text-center">{subject.name}</span>
+                                            </FormLabel>
+                                        </FormItem>
+                                        )})}
+                                    </RadioGroup>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
                                 )}
                             />
-                        )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField name="class" control={form.control} render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Class</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Select a class" /></SelectTrigger></FormControl>
-                                <SelectContent>{CLASSES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                            )} />
-                            <FormField name="board" control={form.control} render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Educational Board (Optional)</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Select a board" /></SelectTrigger></FormControl>
-                                <SelectContent>{BOARDS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                            )} />
-                        </div>
-                        
-                        <div className="flex flex-row items-center justify-between rounded-lg border p-3">
-                            <FormLabel htmlFor="ncert-mode" className="mb-0">
-                            NCERT Curriculum
-                            </FormLabel>
-                            <FormField
-                            control={form.control}
-                            name="ncert"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormControl>
-                                    <Switch
-                                    id="ncert-mode"
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                    />
-                                </FormControl>
-                                </FormItem>
-                            )}
-                            />
-                        </div>
-                        
-                        {!scannedFile && (
-                            <FormField
-                                control={form.control}
-                                name="chapter"
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Chapter/Topic (Optional)</FormLabel>
-                                    <FormControl>
-                                    <Input placeholder="e.g., Photosynthesis, Algebra" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                        )}
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                            <FormField
-                                control={form.control}
-                                name="totalMarks"
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Total Marks</FormLabel>
-                                    <FormControl>
-                                    <Input 
-                                        type="number" 
-                                        min="5" 
-                                        max="100" 
-                                        placeholder="e.g., 20" 
-                                        {...field} 
-                                        value={field.value || ''} 
-                                        onChange={e => field.onChange(e.target.valueAsNumber || undefined)} 
-                                    />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="numberOfQuestions"
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Number of Questions</FormLabel>
-                                    <FormControl>
-                                    <Input 
-                                        type="number" 
-                                        min="1" 
-                                        max="100" 
-                                        placeholder="e.g., 10" 
-                                        {...field} 
-                                        value={field.value || ''} 
-                                        onChange={e => field.onChange(e.target.valueAsNumber || undefined)} 
-                                    />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                        </div>
-                        
-                        <FormField
-                            control={form.control}
-                            name="timeLimit"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Time Limit (Minutes, optional)</FormLabel>
-                                <FormControl>
-                                <Input type="number" min="1" placeholder="Auto-assigned if blank" {...field} value={field.value || ''} />
-                                </FormControl>
-                                <FormDescription>If left blank, a time limit will be estimated based on the questions.</FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-
-
-                        <FormField name="difficulty" control={form.control} render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Difficulty</FormLabel>
-                            <FormControl>
-                                <RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-1">
-                                {DIFFICULTIES.map(d => (
-                                    <FormItem key={d.value} className="flex-1">
-                                    <FormControl>
-                                        <RadioGroupItem value={d.value} id={`diff-${d.value}`} className="sr-only" />
-                                    </FormControl>
-                                    <FormLabel htmlFor={`diff-${d.value}`} className={cn("flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-500 [&:has([data-state=checked])]:border-green-500 cursor-pointer")}>
-                                        {d.label}
-                                    </FormLabel>
-                                    </FormItem>
-                                ))}
-                                </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )} />
-                        </div>
-                    </div>
-
-                    {!scannedFile && (
-                        <FormItem>
-                            <FormLabel>Assessment Type &amp; Source</FormLabel>
-                            <RadioGroup
-                                value={combinedSelection}
-                                onValueChange={(value) => handleSelectionChange(value as CombinedSelection)}
-                                className="grid grid-cols-2 gap-4"
-                            >
-                                {[
-                                    { value: 'new-quiz', icon: TestTubeDiagonal, label: 'New Quiz', sub: 'Unique questions' },
-                                    { value: 'previous-quiz', icon: History, label: 'Regenerate last test' },
-                                    { value: 'new-exam', icon: FileText, label: 'Paper-style test' },
-                                    { value: 'previous-exam', icon: History, label: 'Regenerate last exam' }
-                                ].map((item) => (
-                                    <FormItem key={item.value}>
+                            {selectedSubject && selectedSubject.subCategories && (
+                                <FormField
+                                    name="subCategories"
+                                    control={form.control}
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground">{selectedSubject.name} Category</FormLabel>
                                         <FormControl>
-                                            <RadioGroupItem value={item.value} id={item.value} className="sr-only" />
+                                            {selectedSubject.multiSelect ? (
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                    {selectedSubject.subCategories?.map(sub => (
+                                                        <FormItem key={sub.name} className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                                                            <FormControl>
+                                                                <Checkbox
+                                                                    checked={field.value?.includes(sub.name)}
+                                                                    onCheckedChange={(checked) => {
+                                                                        const current = field.value || [];
+                                                                        const updated = checked
+                                                                            ? [...current, sub.name]
+                                                                            : current.filter(v => v !== sub.name);
+                                                                        form.setValue('subCategories', updated, { shouldValidate: true });
+                                                                    }}
+                                                                />
+                                                            </FormControl>
+                                                            <FormLabel className="font-normal cursor-pointer text-sm">
+                                                                {sub.name}
+                                                            </FormLabel>
+                                                        </FormItem>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <RadioGroup
+                                                    onValueChange={(value) => form.setValue('subCategories', [value])}
+                                                    value={field.value?.[0]}
+                                                    className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+                                                >
+                                                    {selectedSubject.subCategories?.map(sub => (
+                                                        <FormItem key={sub.name} className="flex-1">
+                                                            <FormControl>
+                                                                <RadioGroupItem value={sub.name} id={`sub-${sub.name}`} className="sr-only" />
+                                                            </FormControl>
+                                                            <FormLabel
+                                                                htmlFor={`sub-${sub.name}`}
+                                                                className={cn(
+                                                                    "flex flex-col items-start justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-500 [&:has([data-state=checked])]:border-green-500 cursor-pointer"
+                                                                )}
+                                                            >
+                                                                <span className="font-semibold text-sm">{sub.name}</span>
+                                                                {sub.description && <span className="text-[10px] text-muted-foreground mt-1">{sub.description}</span>}
+                                                            </FormLabel>
+                                                        </FormItem>
+                                                    ))}
+                                                </RadioGroup>
+                                            )}
                                         </FormControl>
-                                        <FormLabel
-                                            htmlFor={item.value}
-                                            className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-500 [&:has([data-state=checked])]:border-green-500 cursor-pointer"
-                                        >
-                                            <item.icon className="h-6 w-6 mb-1" />
-                                            <span className="font-bold">{item.label}</span>
-                                            {item.sub && <span className="text-xs text-muted-foreground">{item.sub}</span>}
-                                        </FormLabel>
+                                        <FormMessage />
                                     </FormItem>
-                                ))}
-                            </RadioGroup>
-                            <FormMessage />
-                        </FormItem>
-                    )}
+                                    )}
+                                />
+                            )}
 
-                    <Button type="submit" className="w-full !mt-8" disabled={isLoading}>
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                        {isLoading ? 'Generating...' : (scannedFile ? 'Generate from Scan' : 'Generate')}
-                    </Button>
-                    </form>
-                </FormProvider>
-                </CardContent>
-            </Card>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField name="class" control={form.control} render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground">Class</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a class" /></SelectTrigger></FormControl>
+                                    <SelectContent>{CLASSES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                                )} />
+                                <FormField name="board" control={form.control} render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground">Educational Board</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a board" /></SelectTrigger></FormControl>
+                                    <SelectContent>{BOARDS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                                )} />
+                            </div>
+                            
+                            <div className="flex flex-row items-center justify-between rounded-lg border p-3 bg-muted/5">
+                                <FormLabel htmlFor="ncert-mode" className="mb-0 text-sm font-bold">
+                                NCERT Curriculum Mode
+                                </FormLabel>
+                                <FormField
+                                control={form.control}
+                                name="ncert"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormControl>
+                                        <Switch
+                                        id="ncert-mode"
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        />
+                                    </FormControl>
+                                    </FormItem>
+                                )}
+                                />
+                            </div>
+                            
+                            {!scannedFile && (
+                                <FormField
+                                    control={form.control}
+                                    name="chapter"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground">Chapter/Topic (Optional)</FormLabel>
+                                        <FormControl>
+                                        <Input placeholder="e.g., Photosynthesis, Algebra" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                            )}
+
+                            {/* Marks & Questions Column */}
+                            <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-4 items-start p-4 rounded-xl border border-dashed", scannedFile ? "bg-emerald-50/50 border-emerald-200" : "bg-muted/5")}>
+                                <FormField
+                                    control={form.control}
+                                    name="totalMarks"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest">
+                                            <Target className="h-3 w-3 text-indigo-600" /> Total Marks
+                                        </FormLabel>
+                                        <FormControl>
+                                        <Input 
+                                            type="number" 
+                                            min="5" 
+                                            max="100" 
+                                            placeholder="e.g., 20" 
+                                            className="h-12 text-lg font-bold"
+                                            {...field} 
+                                            value={field.value || ''} 
+                                            onChange={e => field.onChange(e.target.valueAsNumber || undefined)} 
+                                        />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="numberOfQuestions"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest">
+                                            <HelpCircle className="h-3 w-3 text-indigo-600" /> Questions
+                                        </FormLabel>
+                                        <FormControl>
+                                        <Input 
+                                            type="number" 
+                                            min="1" 
+                                            max="100" 
+                                            placeholder="e.g., 10" 
+                                            className="h-12 text-lg font-bold"
+                                            {...field} 
+                                            value={field.value || ''} 
+                                            onChange={e => field.onChange(e.target.valueAsNumber || undefined)} 
+                                        />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                            </div>
+                            
+                            <FormField
+                                control={form.control}
+                                name="timeLimit"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground">Time Limit (Minutes)</FormLabel>
+                                    <FormControl>
+                                    <Input type="number" min="1" placeholder="Auto-assigned if blank" {...field} value={field.value || ''} />
+                                    </FormControl>
+                                    <FormDescription className="text-[10px]">If left blank, Nova will estimate time based on marks.</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+
+
+                            <FormField name="difficulty" control={form.control} render={({ field }) => (
+                                <FormItem>
+                                <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground">Difficulty Level</FormLabel>
+                                <FormControl>
+                                    <RadioGroup onValueChange={field.onChange} value={field.value} className="flex space-x-1">
+                                    {DIFFICULTIES.map(d => (
+                                        <FormItem key={d.value} className="flex-1">
+                                        <FormControl>
+                                            <RadioGroupItem value={d.value} id={`diff-${d.value}`} className="sr-only" />
+                                        </FormControl>
+                                        <FormLabel htmlFor={`diff-${d.value}`} className={cn("flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-500 [&:has([data-state=checked])]:border-green-500 cursor-pointer text-xs font-bold uppercase")}>
+                                            {d.label}
+                                        </FormLabel>
+                                        </FormItem>
+                                    ))}
+                                    </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )} />
+                            </div>
+                        </div>
+
+                        {!scannedFile && (
+                            <FormItem>
+                                <FormLabel className="text-xs font-black uppercase tracking-widest text-muted-foreground">Assessment Type &amp; Source</FormLabel>
+                                <RadioGroup
+                                    value={combinedSelection}
+                                    onValueChange={(value) => handleSelectionChange(value as CombinedSelection)}
+                                    className="grid grid-cols-2 gap-4"
+                                >
+                                    {[
+                                        { value: 'new-quiz', icon: TestTubeDiagonal, label: 'New Quiz', sub: 'Unique questions' },
+                                        { value: 'previous-quiz', icon: History, label: 'Regenerate', sub: 'Last settings' },
+                                        { value: 'new-exam', icon: FileText, label: 'Exam Style', sub: 'Paper-style' },
+                                        { value: 'previous-exam', icon: History, label: 'Regenerate', sub: 'Last exam' }
+                                    ].map((item) => (
+                                        <FormItem key={item.value}>
+                                            <FormControl>
+                                                <RadioGroupItem value={item.value} id={item.value} className="sr-only" />
+                                            </FormControl>
+                                            <FormLabel
+                                                htmlFor={item.value}
+                                                className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-green-500 [&:has([data-state=checked])]:border-green-500 cursor-pointer text-center"
+                                            >
+                                                <item.icon className="h-6 w-6 mb-1" />
+                                                <span className="text-[10px] font-bold uppercase">{item.label}</span>
+                                                {item.sub && <span className="text-[8px] text-muted-foreground uppercase">{item.sub}</span>}
+                                            </FormLabel>
+                                        </FormItem>
+                                    ))}
+                                </RadioGroup>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+
+                        <Button type="submit" className={cn("w-full h-14 text-lg font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all", scannedFile ? "bg-emerald-600 hover:bg-emerald-700" : "bg-indigo-600 hover:bg-indigo-700")} disabled={isLoading}>
+                            {isLoading ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Sparkles className="mr-2 h-6 w-6" />}
+                            {isLoading ? 'Preparing Assessment...' : (scannedFile ? 'Generate from Scan' : 'Generate Assessment')}
+                        </Button>
+                        </form>
+                    </FormProvider>
+                    </CardContent>
+                </Card>
+            </div>
           </div>
         </div>
       </main>
