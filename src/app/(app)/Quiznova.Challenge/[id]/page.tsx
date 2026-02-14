@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, increment } from 'firebase/firestore';
 import { Loader2, Swords, Zap, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/header';
@@ -91,6 +91,13 @@ export default function ChallengeInvitePage() {
                     friendQuiz: activeQuiz,
                     status: 'accepted'
                 });
+
+                // AURA SYSTEM: Accept challenge → +20 Aura
+                const userRef = doc(firestore, 'users', user.uid);
+                await updateDoc(userRef, {
+                    points: increment(20)
+                });
+                toast({ title: "Duel Accepted!", description: "+20 Aura earned!" });
             }
         }
 

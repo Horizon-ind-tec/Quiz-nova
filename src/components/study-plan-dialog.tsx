@@ -17,7 +17,7 @@ import { useUser, useFirestore } from '@/firebase';
 import { SUBJECTS_DATA } from '@/lib/data';
 import { generateStudyPlanAction } from '@/app/actions';
 import { addDays, format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isBefore, startOfToday } from 'date-fns';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, increment } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 
 const studyPlanSchema = z.object({
@@ -100,6 +100,12 @@ export function StudyPlanDialog({ onOpenChange }: StudyPlanDialogProps) {
             await setDoc(planRef, {
                 ...newPlanData,
                 userId: user.uid,
+            });
+
+            // AURA SYSTEM: Create study plan → +30 Aura
+            const userRef = doc(firestore, 'users', user.uid);
+            await updateDoc(userRef, {
+                points: increment(30)
             });
 
             toast({ title: "Success!", description: "Your AI study plan has been generated." });

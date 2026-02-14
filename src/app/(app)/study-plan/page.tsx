@@ -2,7 +2,7 @@
 
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { collection, query, orderBy, limit, doc, updateDoc, increment } from 'firebase/firestore';
 import { Loader2, CalendarCheck, CheckCircle2, Circle, TrendingUp, BookOpen, Clock, Target } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,11 +13,13 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { useEffect, useMemo } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
 
 export default function StudyPlanPage() {
     const { user, loading: userLoading } = useUser();
     const firestore = useFirestore();
     const router = useRouter();
+    const { toast } = useToast();
 
     const studyPlanQuery = useMemoFirebase(
         () => (firestore && user ? query(collection(firestore, 'users', user.uid, 'studyPlans'), orderBy('createdAt', 'desc'), limit(1)) : null),
@@ -59,6 +61,28 @@ export default function StudyPlanPage() {
             revisionDays: 2
         };
     }, [studyPlan]);
+
+    const handleToggleTask = async (taskIndex: number) => {
+        if (!firestore || !user || !studyPlan) return;
+
+        const updatedSchedule = [...studyPlan.schedule];
+        const isNowCompleted = !updatedSchedule[taskIndex].isCompleted;
+        updatedSchedule[taskIndex].isCompleted = isNowCompleted;
+
+        try {
+            const planRef = doc(firestore, 'users', user.uid, 'studyPlans', studyPlan.id);
+            await updateDoc(planRef, { schedule: updatedSchedule });
+
+            if (isNowCompleted) {
+                // AURA SYSTEM: Complete chapter → +45 Aura
+                const userRef = doc(firestore, 'users', user.uid);
+                await updateDoc(userRef, { points: increment(45) });
+                toast({ title: "Task Completed!", description: "+45 Aura Earned!" });
+            }
+        } catch (e) {
+            toast({ variant: "destructive", title: "Error updating task" });
+        }
+    };
 
     const isLoading = userLoading || planLoading;
     
@@ -187,16 +211,29 @@ export default function StudyPlanPage() {
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {studyPlan.schedule.map((task, index) => (
-                            <div key={index} className="flex items-center gap-4 p-4 bg-card border rounded-xl hover:shadow-md transition-all">
-                                <div className="flex flex-col items-center justify-center bg-primary text-primary-foreground rounded-lg p-2 w-16 text-center shadow-sm">
+                            <div 
+                                key={index} 
+                                onClick={() => handleToggleTask(index)}
+                                className={cn(
+                                    "flex items-center gap-4 p-4 border rounded-xl hover:shadow-md transition-all cursor-pointer",
+                                    task.isCompleted ? "bg-green-50 border-green-200" : "bg-card border-slate-200"
+                                )}
+                            >
+                                <div className={cn(
+                                    "flex flex-col items-center justify-center rounded-lg p-2 w-16 text-center shadow-sm",
+                                    task.isCompleted ? "bg-green-500 text-white" : "bg-primary text-primary-foreground"
+                                )}>
                                     <span className="text-[10px] font-black uppercase leading-none">{format(new Date(task.date.replace(/-/g, '/')), 'MMM')}</span>
                                     <span className="text-xl font-black leading-none mt-1">{format(new Date(task.date.replace(/-/g, '/')), 'dd')}</span>
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <Badge variant="outline" className="text-[10px] uppercase font-black tracking-widest bg-primary/5">{task.subject}</Badge>
+                                        <Badge variant="outline" className={cn(
+                                            "text-[10px] uppercase font-black tracking-widest",
+                                            task.isCompleted ? "bg-green-100 text-green-700 border-green-200" : "bg-primary/5"
+                                        )}>{task.subject}</Badge>
                                     </div>
-                                    <p className="font-bold text-sm truncate">{task.chapter}</p>
+                                    <p className={cn("font-bold text-sm truncate", task.isCompleted && "line-through text-green-600")}>{task.chapter}</p>
                                 </div>
                                 <div>
                                     {task.isCompleted ? (

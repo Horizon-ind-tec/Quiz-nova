@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -19,7 +18,8 @@ import { useLocalStorage } from '@/hooks/use-local-storage';
 
 import { generateChapterNotesAction } from '@/app/actions';
 import { CLASSES, SUBJECTS_DATA, BOARDS } from '@/lib/data';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
+import { doc, updateDoc, increment } from 'firebase/firestore';
 
 const formSchema = z.object({
   class: z.string().min(1, 'Please select a class.'),
@@ -34,6 +34,7 @@ export default function NotesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useUser();
+  const firestore = useFirestore();
   const router = useRouter();
   const [, setGeneratedNotes] = useLocalStorage<string | null>('lastGeneratedNotes', null);
   const [, setNotesDetails] = useLocalStorage<any | null>('lastNotesDetails', null);
@@ -49,7 +50,7 @@ export default function NotesPage() {
   });
 
   const onSubmit = async (data: FormValues) => {
-    if (!user) {
+    if (!user || !firestore) {
       toast({
         variant: 'destructive',
         title: 'Not logged in',
@@ -63,6 +64,12 @@ export default function NotesPage() {
       const result = await generateChapterNotesAction(data);
 
       if (result && result.notes) {
+        // AURA SYSTEM: Add notes → +15 Aura
+        const userRef = doc(firestore, 'users', user.uid);
+        await updateDoc(userRef, {
+            points: increment(15)
+        });
+
         setGeneratedNotes(result.notes);
         setNotesDetails(data);
         router.push('/notes/view');

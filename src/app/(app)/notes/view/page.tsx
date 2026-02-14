@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -9,6 +8,8 @@ import { Header } from '@/components/header';
 import { ArrowLeft, Loader2, FileDown, Copy, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useUser, useFirestore } from '@/firebase';
+import { doc, updateDoc, increment } from 'firebase/firestore';
 
 type NotesDetails = {
     class: string;
@@ -20,6 +21,8 @@ type NotesDetails = {
 export default function ViewNotesPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const { user } = useUser();
+    const firestore = useFirestore();
     const [generatedNotes] = useLocalStorage<string | null>('lastGeneratedNotes', null);
     const [notesDetails] = useLocalStorage<NotesDetails | null>('lastNotesDetails', null);
     const [isClient, setIsClient] = useState(false);
@@ -36,6 +39,16 @@ export default function ViewNotesPage() {
             router.replace('/notes');
         }
     }, [isClient, generatedNotes, router]);
+
+    // AURA SYSTEM: Read notes → +10 Aura
+    useEffect(() => {
+        if (isClient && user && firestore && generatedNotes) {
+            const userRef = doc(firestore, 'users', user.uid);
+            updateDoc(userRef, {
+                points: increment(10)
+            }).catch(err => console.error("Aura error:", err));
+        }
+    }, [isClient, user, firestore, generatedNotes]);
 
     const copyToClipboard = () => {
         if (!generatedNotes) return;

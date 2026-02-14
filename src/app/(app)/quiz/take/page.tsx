@@ -72,8 +72,14 @@ export default function TakeQuizPage() {
     const finalScore = calculateScore();
     setScore(finalScore);
     
-    const pointsToAdd = Math.round((finalScore / 100) * quiz.totalMarks * 10);
-    setPoints(pointsToAdd);
+    // QUIZNOVA AURA SYSTEM LOGIC
+    let auraPoints = 20; // +20 Aura for completing 1 quiz
+    if (finalScore >= 80) auraPoints += 30; // +30 Aura for Score 80%+
+    if (finalScore === 100) auraPoints += 50; // +50 Aura for Perfect score
+    if (quiz.difficulty === 'hard') auraPoints += 60; // +60 Aura for Hard quiz completed
+    if (quiz.quizType === 'exam') auraPoints += 70; // +70 Aura for Mock test (Exam mode)
+    
+    setPoints(auraPoints);
 
     if (challengeId) {
         try {
@@ -119,7 +125,7 @@ export default function TakeQuizPage() {
         
         if (userSnap.exists()) {
             const currentData = userSnap.data() as UserProfile;
-            const newTotalPoints = (currentData.points || 0) + pointsToAdd;
+            const newTotalPoints = (currentData.points || 0) + auraPoints;
             
             let newRank: UserProfile['rank'] = 'Bronze';
             if (newTotalPoints > 50000) newRank = 'Diamond';

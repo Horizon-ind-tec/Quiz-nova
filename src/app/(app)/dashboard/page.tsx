@@ -13,7 +13,7 @@ import { UserStats } from '@/components/user-stats';
 import type { QuizAttempt, UserProfile } from '@/lib/types';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc, getDoc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { useLocalStorage } from '@/hooks/use-local-storage';
@@ -74,7 +74,7 @@ function DashboardContent() {
     }
   }, [examDate]);
 
-  // Streak Logic
+  // Streak Logic & Aura Bonus
   useEffect(() => {
     const updateStreak = async () => {
         if (!user || !firestore || !profile) return;
@@ -86,7 +86,8 @@ function DashboardContent() {
             // New user activity
             await updateDoc(doc(firestore, 'users', user.uid), {
                 streak: 1,
-                lastActiveDate: todayStr
+                lastActiveDate: todayStr,
+                points: increment(15) // +15 Aura for Daily streak
             });
             return;
         }
@@ -95,21 +96,31 @@ function DashboardContent() {
 
         if (isYesterday(new Date(lastActive))) {
             // Increment streak
+            const newStreak = (profile.streak || 0) + 1;
+            let bonusPoints = 15; // +15 Aura for Daily streak
+            
+            if (newStreak > 0 && newStreak % 7 === 0) {
+                bonusPoints += 100; // Special Bonus: 7-day streak → +100 Aura
+                toast({ title: "7-Day Mega Streak!", description: "+100 Aura Bonus!" });
+            }
+
             await updateDoc(doc(firestore, 'users', user.uid), {
-                streak: (profile.streak || 0) + 1,
-                lastActiveDate: todayStr
+                streak: newStreak,
+                lastActiveDate: todayStr,
+                points: increment(bonusPoints)
             });
         } else {
             // Reset streak
             await updateDoc(doc(firestore, 'users', user.uid), {
                 streak: 1,
-                lastActiveDate: todayStr
+                lastActiveDate: todayStr,
+                points: increment(15)
             });
         }
     };
 
     if (profile) updateStreak();
-  }, [profile, user, firestore]);
+  }, [profile, user, firestore, toast]);
 
   const quizHistoryQuery = useMemoFirebase(
     () =>

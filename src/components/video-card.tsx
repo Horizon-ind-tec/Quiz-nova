@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -28,15 +27,21 @@ export function VideoCard({ video }: VideoCardProps) {
   // --- Like/View Logic ---
   const hasLiked = video.likes?.includes(user?.uid ?? '');
   
-  // Increment view count once per component mount
+  // Increment view count once per component mount and add Aura
   useEffect(() => {
-    if (firestore && video.id) {
+    if (firestore && video.id && user) {
       const videoRef = doc(firestore, 'videos', video.id);
       updateDoc(videoRef, {
         views: increment(1)
       }).catch(err => console.error("Failed to increment view count:", err));
+
+      // AURA SYSTEM: Watch learning video → +10 Aura
+      const userRef = doc(firestore, 'users', user.uid);
+      updateDoc(userRef, {
+        points: increment(10)
+      }).catch(err => console.error("Failed to add Aura for video:", err));
     }
-  }, [firestore, video.id]);
+  }, [firestore, video.id, user]);
 
   const handleLike = async () => {
     if (!firestore || !user) return;
@@ -64,6 +69,13 @@ export function VideoCard({ video }: VideoCardProps) {
       text: newComment,
       createdAt: Date.now(),
     });
+
+    // AURA SYSTEM: Comment on video → +5 Aura
+    const userRef = doc(firestore, 'users', user.uid);
+    await updateDoc(userRef, {
+        points: increment(5)
+    });
+
     setNewComment('');
   };
 

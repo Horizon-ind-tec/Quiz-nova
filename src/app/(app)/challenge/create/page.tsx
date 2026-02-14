@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, increment } from 'firebase/firestore';
 import { Loader2, Sparkles, Swords, Copy, Check, Hash, Target, HelpCircle } from 'lucide-react';
 
 import { Header } from '@/components/header';
@@ -108,11 +108,17 @@ export default function CreateChallengePage() {
 
       await setDoc(doc(firestore, 'challenges', challengeId), challenge);
 
+      // AURA SYSTEM: Challenge friend → +20 Aura
+      const userRef = doc(firestore, 'users', user.uid);
+      await updateDoc(userRef, {
+          points: increment(20)
+      });
+
       const fullUrl = `${window.location.origin}/Quiznova.Challenge/${challengeId}`;
       setChallengeLink(fullUrl);
       setRoomCode(challengeId);
       
-      toast({ title: 'Duel Created!', description: 'Room code is ready to share.' });
+      toast({ title: 'Duel Created!', description: 'Room code is ready to share. +20 Aura earned!' });
 
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Failed to create duel', description: error.message });
