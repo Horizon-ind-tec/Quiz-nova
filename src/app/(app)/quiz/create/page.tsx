@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, Sparkles, History, FilePlus, TestTubeDiagonal, FileText, Swords, Hash, ArrowRight, ScanText, X, ImageIcon, FileText as FileIcon, Target, HelpCircle } from 'lucide-react';
+import { Loader2, Sparkles, History, PlusCircle, TestTubeDiagonal, FileText, Swords, Hash, ArrowRight, ScanText, X, ImageIcon, FileText as FileIcon, Target, HelpCircle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Header } from '@/components/header';
