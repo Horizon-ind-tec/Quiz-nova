@@ -174,7 +174,16 @@ export interface Challenge {
   friendId: string | null;
   friendName: string | null;
   friendScore: number | null;
-  quiz: Quiz;
+  // Duel parameters for unique quiz generation
+  subject: string;
+  class: string;
+  chapter: string;
+  totalMarks: number;
+  numberOfQuestions: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+  // Specific quizzes for each player
+  creatorQuiz?: Quiz;
+  friendQuiz?: Quiz;
   status: 'pending' | 'accepted' | 'completed';
   createdAt: number;
 }

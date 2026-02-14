@@ -97,8 +97,8 @@ export default function ChallengeResultsPage() {
                             <div className="flex items-center gap-3">
                                 <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600"><Trophy className="h-5 w-5" /></div>
                                 <div>
-                                    <p className="text-xs font-black uppercase leading-none">{challenge.quiz.subject}</p>
-                                    <p className="text-[10px] text-muted-foreground font-bold uppercase mt-1">{challenge.quiz.chapter}</p>
+                                    <p className="text-xs font-black uppercase leading-none">{challenge.subject}</p>
+                                    <p className="text-[10px] text-muted-foreground font-bold uppercase mt-1">{challenge.chapter}</p>
                                 </div>
                             </div>
                             <div className="text-right">

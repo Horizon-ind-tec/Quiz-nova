@@ -67,6 +67,7 @@ export default function CreateChallengePage() {
     setIsLoading(true);
 
     try {
+      // 1. Generate Creator's unique version of the quiz
       const result = await generateQuizAction({
         ...values,
         difficulty: 'medium',
@@ -75,8 +76,8 @@ export default function CreateChallengePage() {
 
       const challengeId = generateChallengeId();
       
-      const newQuiz: Quiz = {
-        id: challengeId,
+      const creatorQuiz: Quiz = {
+        id: challengeId + '-creator',
         ...values,
         difficulty: 'medium',
         quizType: 'quiz',
@@ -84,6 +85,7 @@ export default function CreateChallengePage() {
         createdAt: Date.now(),
       };
 
+      // 2. Create the Challenge document with parameters
       const challenge: Challenge = {
         id: challengeId,
         creatorId: user.uid,
@@ -92,7 +94,14 @@ export default function CreateChallengePage() {
         friendId: null,
         friendName: targetFriend,
         friendScore: null,
-        quiz: newQuiz,
+        // Params for unique friend generation
+        subject: values.subject,
+        class: values.class,
+        chapter: values.chapter,
+        totalMarks: values.totalMarks,
+        numberOfQuestions: values.numberOfQuestions,
+        difficulty: 'medium',
+        creatorQuiz: creatorQuiz,
         status: 'pending',
         createdAt: Date.now(),
       };
